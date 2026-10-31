@@ -1,3 +1,7 @@
+declare const process: {
+  env: Record<string, string | undefined>
+}
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-03-01',
   devtools: { enabled: true },
@@ -27,6 +31,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     preset: 'cloudflare_module',
+    minify: process.env.NITRO_MINIFY !== 'false',
     cloudflare: {
       deployConfig: true,
       nodeCompat: true,
