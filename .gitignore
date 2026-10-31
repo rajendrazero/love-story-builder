@@ -1,6 +1,7 @@
 .nuxt
 .output
 .wrangler
+.certs
 .data
 node_modules
 .env

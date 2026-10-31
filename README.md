@@ -10,10 +10,19 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 4. Siapkan `.dev.vars` (file lokal ini diabaikan Git). `BETTER_AUTH_SECRET` harus berupa nilai acak minimal 32 karakter; `NUXT_PUBLIC_TURNSTILE_SITE_KEY` dan `TURNSTILE_SECRET_KEY` boleh memakai pasangan test di `.dev.vars.example` hanya untuk localhost. Untuk menyelesaikan pendaftaran dan menerima email verifikasi/reset, isi `RESEND_API_KEY` serta `EMAIL_FROM` dengan akun/domain Resend milikmu. Foto menggunakan kredensial Cloudinary lokal.
 5. Untuk HTTPS lokal, set `BETTER_AUTH_URL=https://localhost:8787` di `.dev.vars`. Jangan gunakan site key Turnstile production di localhost.
 6. Terapkan skema D1 lokal: `pnpm db:local`.
-7. Jalankan Worker lokal dengan binding D1 dan HTTPS: `pnpm dev`, lalu buka `https://localhost:8787`. Wrangler menggunakan sertifikat development lokal; browser mungkin meminta konfirmasi kepercayaan sertifikat.
-8. Siapkan tabel akun lokal satu kali dengan POST ke `https://localhost:8787/api/dev/auth/migrate`. Jika sertifikat lokal belum dipercaya, gunakan hanya untuk localhost: `curl.exe -k -X POST https://localhost:8787/api/dev/auth/migrate`.
+7. Pasang `mkcert` di Windows (contoh: `winget install FiloSottile.mkcert`), buka terminal baru, lalu jalankan sekali:
 
-`pnpm dev` membangun Worker sebelum Wrangler menjalankannya; endpoint API, autentikasi, dan D1 lokal tersedia pada origin HTTPS tersebut. Untuk HTTP, gunakan `pnpm dev:http` dan set `BETTER_AUTH_URL=http://localhost:8787`. Jika mengganti protokol, `BETTER_AUTH_URL` harus cocok dengan URL browser agar callback autentikasi dan cookie benar. `pnpm dev:ui` hanya untuk iterasi UI dengan HMR dan tidak menyediakan binding D1 atau API Worker. `pnpm preview` menjalankan Worker lokal seperti `pnpm dev`.
+   ```powershell
+   mkcert -install
+   New-Item -ItemType Directory -Force .certs | Out-Null
+   mkcert -key-file .certs/localhost-key.pem -cert-file .certs/localhost.pem localhost 127.0.0.1 ::1
+   ```
+
+   Sertifikat dan private key tersimpan lokal di `.certs/` dan tidak masuk Git. `mkcert -install` menambahkan CA lokal ke trust store Windows; mulai ulang browser setelah instalasi bila perlu.
+8. Jalankan Worker lokal dengan binding D1 dan sertifikat tepercaya: `pnpm dev`, lalu buka `https://localhost:8787`. Jika muncul `CertificateUnknown`, pastikan sertifikat `.certs` dibuat oleh `mkcert -install` dan hostname yang dibuka adalah `localhost`.
+9. Siapkan tabel akun lokal satu kali dengan POST ke `https://localhost:8787/api/dev/auth/migrate`. Dengan sertifikat tepercaya, gunakan `curl.exe -X POST https://localhost:8787/api/dev/auth/migrate` tanpa opsi `-k`.
+
+`pnpm dev` membangun Worker sebelum Wrangler menjalankannya; endpoint API, autentikasi, dan D1 lokal tersedia pada origin HTTPS tersebut. `pnpm dev:https:untrusted` menjalankan sertifikat self-signed bawaan Wrangler (browser dapat menolaknya dengan `CertificateUnknown`). Untuk HTTP, gunakan `pnpm dev:http` dan set `BETTER_AUTH_URL=http://localhost:8787`. Jika mengganti protokol, `BETTER_AUTH_URL` harus cocok dengan URL browser agar callback autentikasi dan cookie benar. `pnpm dev:ui` hanya untuk iterasi UI dengan HMR dan tidak menyediakan binding D1 atau API Worker. `pnpm preview` menjalankan Worker lokal seperti `pnpm dev`.
 
 Jalankan `pnpm typecheck` dan `pnpm test` untuk pemeriksaan tipe serta tes otomatis. Periksa integritas dan relasi D1 lokal tanpa menyentuh database production:
 
