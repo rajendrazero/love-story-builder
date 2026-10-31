@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth'
-import { captcha } from 'better-auth/plugins'
+import { captcha, username } from 'better-auth/plugins'
 import { createError } from 'h3'
 import { getRequestURL, type H3Event } from 'h3'
 import { getAppEnv, requireDatabase } from './cloudflare'
@@ -55,18 +55,26 @@ export function createAuth(event: H3Event) {
     secret,
     baseURL,
     trustedOrigins: [baseURL],
-    plugins: [captcha({
-      provider: 'cloudflare-turnstile',
-      secretKey: turnstileSecret,
-      allowedHostnames: [allowedHostname],
-      endpoints: [
-        '/sign-up/email',
-        '/sign-in/email',
-        '/request-password-reset',
-        '/reset-password',
-        '/send-verification-email',
-      ],
-    })],
+    plugins: [
+      username({
+        minUsernameLength: 3,
+        maxUsernameLength: 30,
+        usernameValidator: value => /^[a-zA-Z0-9_.]+$/.test(value),
+      }),
+      captcha({
+        provider: 'cloudflare-turnstile',
+        secretKey: turnstileSecret,
+        allowedHostnames: [allowedHostname],
+        endpoints: [
+          '/sign-up/email',
+          '/sign-in/email',
+          '/sign-in/username',
+          '/request-password-reset',
+          '/reset-password',
+          '/send-verification-email',
+        ],
+      }),
+    ],
     rateLimit: {
       enabled: true,
       window: 60,
@@ -74,6 +82,7 @@ export function createAuth(event: H3Event) {
       storage: 'database',
       customRules: {
         '/sign-in/email': { window: 60, max: 5 },
+        '/sign-in/username': { window: 60, max: 5 },
         '/sign-up/email': { window: 3600, max: 5 },
         '/request-password-reset': { window: 3600, max: 3 },
         '/reset-password': { window: 3600, max: 5 },

@@ -29,6 +29,16 @@ export const storyTemplates = [
     highlights: ['Foto cetak jurnal', 'Catatan lapangan', 'Halaman bernuansa kertas'],
     colors: ['#e7ebd8', '#53684b', '#fcf8ed'],
   },
+  {
+    id: 'love-letter',
+    name: 'Love Letter',
+    mood: 'Intim, hangat, seperti surat tulisan tangan',
+    description: 'Kenangan disusun seperti surat cinta: kertas bertekstur, catatan personal, dan foto-foto yang disimpan di antara halaman.',
+    previewLabel: 'Surat untuk selamanya',
+    layout: 'Surat cinta',
+    highlights: ['Pembuka seperti surat', 'Foto bergaya polaroid', 'Buku kenangan bertekstur'],
+    colors: ['#f5e8d5', '#995d50', '#342923'],
+  },
 ] as const
 
 export type StoryTemplateId = typeof storyTemplates[number]['id']

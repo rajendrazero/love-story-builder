@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048)
 const imageUrl = httpsUrl
-export const storyTemplateSchema = z.enum(['editorial-rose', 'midnight-cinema', 'botanical-journal'])
+export const storyTemplateSchema = z.enum(['editorial-rose', 'midnight-cinema', 'botanical-journal', 'love-letter'])
 export const storyCursorSchema = z.enum(['ring', 'heart', 'sparkle', 'flower', 'star', 'system'])
 const templateDetailsSchema = z.object({
   editorialRose: z.object({

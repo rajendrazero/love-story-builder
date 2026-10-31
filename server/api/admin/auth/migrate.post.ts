@@ -1,9 +1,9 @@
 import { createError, defineEventHandler } from 'h3'
 import { applyAuthMigrations } from '../../../utils/auth-migrations'
-import { requireAdmin } from '../../../utils/admin-auth'
+import { requireAdminBootstrap } from '../../../utils/admin-auth'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requireAdminBootstrap(event)
   try {
     return await applyAuthMigrations(event)
   } catch (error) {

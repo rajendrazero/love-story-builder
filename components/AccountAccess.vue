@@ -44,9 +44,14 @@
             <span class="editor-label">Nama</span>
             <input v-model="name" class="editor-input" autocomplete="name" maxlength="80" required placeholder="Nama yang ingin ditampilkan">
           </label>
+          <label v-if="props.mode === 'signup'">
+            <span class="editor-label">Username</span>
+            <input v-model="username" class="editor-input" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+" required placeholder="contoh: ceritakita">
+            <span class="auth-hint">3–30 karakter: huruf, angka, titik, atau garis bawah. Username tidak dapat dipakai ulang.</span>
+          </label>
           <label>
-            <span class="editor-label">Alamat email</span>
-            <input v-model="email" class="editor-input" type="email" autocomplete="email" maxlength="254" required placeholder="kamu@email.com">
+            <span class="editor-label">{{ props.mode === 'signup' ? 'Alamat email' : 'Username atau email' }}</span>
+            <input v-model="identifier" class="editor-input" :type="props.mode === 'signup' ? 'email' : 'text'" :autocomplete="props.mode === 'signup' ? 'email' : 'username'" maxlength="254" required :placeholder="props.mode === 'signup' ? 'kamu@email.com' : 'username atau kamu@email.com'">
           </label>
           <label>
             <span class="editor-label">Kata sandi</span>
@@ -73,16 +78,18 @@
 
 <script setup lang="ts">
 import { createAuthClient } from 'better-auth/vue'
+import { usernameClient } from 'better-auth/client/plugins'
 
 const props = defineProps<{
   mode: 'signin' | 'signup'
 }>()
 
-const authClient = createAuthClient()
+const authClient = createAuthClient({ plugins: [usernameClient()] })
 const route = useRoute()
 const router = useRouter()
 const name = ref('')
-const email = ref('')
+const username = ref('')
+const identifier = ref('')
 const password = ref('')
 const captchaToken = ref('')
 const turnstile = ref<{ reset: () => void } | null>(null)
@@ -117,7 +124,8 @@ async function submit() {
     if (props.mode === 'signup') {
       const result = await authClient.signUp.email({
         name: name.value.trim(),
-        email: email.value.trim(),
+        email: identifier.value.trim(),
+        username: username.value.trim(),
         password: password.value,
         callbackURL: destination(),
         fetchOptions: { headers: { 'x-captcha-response': captchaToken.value } },
@@ -127,12 +135,20 @@ async function submit() {
       return
     }
 
-    const result = await authClient.signIn.email({
-      email: email.value.trim(),
-      password: password.value,
-      callbackURL: destination(),
-      fetchOptions: { headers: { 'x-captcha-response': captchaToken.value } },
-    })
+    const fetchOptions = { headers: { 'x-captcha-response': captchaToken.value } }
+    const result = identifier.value.includes('@')
+      ? await authClient.signIn.email({
+          email: identifier.value.trim(),
+          password: password.value,
+          callbackURL: destination(),
+          fetchOptions,
+        })
+      : await authClient.signIn.username({
+          username: identifier.value.trim(),
+          password: password.value,
+          callbackURL: destination(),
+          fetchOptions,
+        })
     if (result.error) throw new Error(result.error.message || 'Email atau sandi tidak benar.')
     await router.push(destination())
   } catch (caught) {
@@ -144,6 +160,10 @@ async function submit() {
 }
 
 async function sendResetLink() {
+  if (!identifier.value.includes('@')) {
+    error.value = 'Masukkan alamat email akun untuk menerima tautan reset sandi.'
+    return
+  }
   if (!captchaToken.value) {
     error.value = 'Selesaikan pemeriksaan manusia sebelum meminta tautan reset.'
     return
@@ -153,7 +173,7 @@ async function sendResetLink() {
   message.value = ''
   try {
     const result = await authClient.requestPasswordReset({
-      email: email.value.trim(),
+      email: identifier.value.trim(),
       redirectTo: `${window.location.origin}/reset-password`,
       fetchOptions: { headers: { 'x-captcha-response': captchaToken.value } },
     })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { before, test } from 'node:test'
 import { verifyAccessToken } from '../server/utils/access-token.ts'
+import { getAdminEmailAllowlist, isAdminEmailAllowed } from '../server/utils/admin-allowlist.ts'
 
 const issuer = 'selamanya.cloudflareaccess.com'
 const audience = 'story-admin-audience'
@@ -88,4 +89,11 @@ test('rejects a signed token when its email is not allowlisted', async () => {
     verifyAccessToken(token, options, resolveTestKey),
     error => error.statusCode === 403,
   )
+})
+
+test('allows only normalized email addresses from the admin allowlist', () => {
+  const allowlist = getAdminEmailAllowlist(' Admin@Example.com, , owner@example.com ')
+  assert.deepEqual(allowlist, ['admin@example.com', 'owner@example.com'])
+  assert.equal(isAdminEmailAllowed('ADMIN@example.com', allowlist), true)
+  assert.equal(isAdminEmailAllowed('user@example.com', allowlist), false)
 })

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" fill="none">
+  <defs>
+    <linearGradient id="morning" x1="600" y1="0" x2="600" y2="1500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9C8B2"/>
+      <stop offset=".52" stop-color="#E9D8B9"/>
+      <stop offset="1" stop-color="#829077"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#morning)" d="M0 0h1200v1500H0z"/>
+  <circle cx="859" cy="350" r="171" fill="#F7E5C5" fill-opacity=".85"/>
+  <path fill="#B5A68E" d="M0 749c181-177 335-191 490-75 145 108 269 103 405-7 120-97 208-105 305-60v893H0z"/>
+  <path fill="#7D8B72" d="M0 938c185-108 342-113 514-8 168 103 342 107 686-43v613H0z"/>
+  <path fill="#566A58" d="M0 1181c209-133 401-140 583-10 187 134 385 124 617 22v307H0z"/>
+  <path fill="#D8C6A7" d="M472 1500c61-153 118-276 146-412 28-134 18-276-15-425 94 125 152 283 132 450-18 154-72 275-139 387z"/>
+  <path fill="#5A5146" d="M384 1171c-24-61-20-119 15-174 18 57 23 115-15 174Zm411 64c-25-67-18-129 23-187 15 63 17 124-23 187Z"/>
+  <path stroke="#F0DFC1" stroke-opacity=".72" stroke-width="3" d="M83 112h1034M83 1388h1034"/>
+  <path stroke="#F4E9D5" stroke-linecap="round" stroke-width="5" d="M152 205h58m-29-29v58m791 494h49m-24-24v49"/>
+</svg>

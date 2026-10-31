@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="600" y1="0" x2="600" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1C8A8"/>
+      <stop offset=".6" stop-color="#D68B78"/>
+      <stop offset="1" stop-color="#51434A"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h1200v1000H0z"/>
+  <circle cx="836" cy="300" r="158" fill="#FBE7C4" fill-opacity=".9"/>
+  <path fill="#A86F68" d="M0 581c143-82 287-79 423-7 125 67 220 65 353-7 166-90 294-77 424-22v455H0z"/>
+  <path fill="#4E4147" d="M0 710c188-72 345-66 505-5 205 78 394 58 695-69v364H0z"/>
+  <path stroke="#E8B495" stroke-linecap="round" stroke-width="6" d="M0 805c187-31 359-26 521 16m132 26c169 7 331-18 489-75"/>
+  <path fill="#332D32" d="M547 654c20-23 59-23 78 0l20 78H527zm-8 73c-52 27-85 83-90 164l-8 109h171l-10-109c-6-82-23-137-63-164Z"/>
+  <circle cx="585" cy="627" r="37" fill="#332D32"/>
+  <path fill="#29262B" d="M668 684c18-22 54-22 71 0l20 72h-109zm-4 68c-46 26-75 79-79 151l-7 97h157l-9-97c-5-76-21-127-62-151Z"/>
+  <circle cx="704" cy="657" r="34" fill="#29262B"/>
+  <path stroke="#E9CBAE" stroke-linecap="round" stroke-width="7" d="M615 789c27 11 49 11 73 0"/>
+</svg>

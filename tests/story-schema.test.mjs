@@ -38,6 +38,11 @@ test('accepts each template-specific set of copy and safe cursor presets', () =>
       cursorPreset: 'flower',
     },
     {
+      templateId: 'love-letter',
+      templateDetails: { editorialRose: { dedication: 'For you, always', signature: 'With love' } },
+      cursorPreset: 'heart',
+    },
+    {
       templateId: 'editorial-rose',
       cursorPreset: 'system',
     },

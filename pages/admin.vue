@@ -9,11 +9,11 @@
     </header>
 
     <section class="mx-auto max-w-6xl">
-      <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Panel admin · dilindungi Cloudflare Access</p>
+      <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Panel admin</p>
       <div class="mt-3 flex flex-wrap items-end justify-between gap-5">
         <div>
           <h1 class="font-display text-5xl md:text-6xl">Ruang kendali.</h1>
-          <p class="mt-3 max-w-xl leading-7 text-[#756a62]">Kelola cerita terbit dan draft. Akses admin memerlukan identitas Cloudflare Access yang diizinkan.</p>
+          <p class="mt-3 max-w-xl leading-7 text-[#756a62]">Kelola cerita terbit dan draft. Masuk dengan akun terverifikasi yang emailnya terdaftar sebagai admin.</p>
         </div>
         <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-sm" :disabled="loading" @click="load">
           {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
@@ -21,13 +21,6 @@
       </div>
 
       <p v-if="error" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ error }}</p>
-      <div class="my-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e7ddd4] bg-white/70 p-4">
-        <p class="max-w-2xl text-sm leading-6 text-[#756a62]">Sebelum akun pengguna dipakai, jalankan migrasi tabel autentikasi satu kali setelah menyiapkan secret dan email provider.</p>
-        <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-xs" :disabled="migratingAuth" @click="migrateAuth">
-          {{ migratingAuth ? 'Menyiapkan…' : 'Siapkan tabel akun' }}
-        </button>
-      </div>
-      <p v-if="migrationMessage" class="mb-5 text-sm text-[#53684b]" role="status">{{ migrationMessage }}</p>
       <div class="my-8 grid gap-4 sm:grid-cols-2">
         <article class="admin-stat"><span>Cerita aktif</span><strong>{{ stories.filter(story => story.isActive).length }}</strong></article>
         <article class="admin-stat"><span>Draft tersimpan</span><strong>{{ drafts.length }}</strong></article>
@@ -91,6 +84,8 @@
 import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
 import type { StoryContent } from '#shared/schema/story'
 
+definePageMeta({ middleware: 'auth' })
+
 interface AdminStory {
   slug: string
   title: string
@@ -114,8 +109,6 @@ const drafts = ref<AdminDraft[]>([])
 const adminEmail = ref('')
 const error = ref('')
 const loading = ref(false)
-const migratingAuth = ref(false)
-const migrationMessage = ref('')
 
 useSeoMeta({ title: 'Admin — Selamanya', robots: 'noindex, nofollow' })
 
@@ -132,26 +125,10 @@ async function load() {
     drafts.value = draftResult.drafts
   } catch (caught) {
     error.value = caught instanceof Error
-      ? `${caught.message}. Pastikan aplikasi dilindungi Cloudflare Access dan akunmu termasuk ADMIN_EMAILS.`
+      ? `${caught.message}. Pastikan email akunmu termasuk ADMIN_EMAILS.`
       : 'Panel admin belum dapat dimuat.'
   } finally {
     loading.value = false
-  }
-}
-
-async function migrateAuth() {
-  migratingAuth.value = true
-  migrationMessage.value = ''
-  error.value = ''
-  try {
-    const result = await $fetch<{ migrated: boolean, pending: { create: string[], add: string[] } }>('/api/admin/auth/migrate', { method: 'POST' })
-    migrationMessage.value = result.migrated
-      ? `Migrasi akun selesai. Tabel baru: ${result.pending.create.join(', ') || 'tidak ada'}.`
-      : 'Tabel akun sudah siap dan tidak memerlukan perubahan.'
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Migrasi akun belum berhasil.'
-  } finally {
-    migratingAuth.value = false
   }
 }
 

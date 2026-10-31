@@ -18,7 +18,7 @@
         <NuxtLink to="/login" class="text-sm text-[#9c6257] underline underline-offset-4">Sudah punya akun? Masuk</NuxtLink>
       </div>
 
-      <div class="mt-10 grid gap-6 lg:grid-cols-3">
+      <div class="mt-10 grid gap-6 sm:grid-cols-2 2xl:grid-cols-4">
         <article
           v-for="template in storyTemplates"
           :key="template.id"
@@ -57,19 +57,22 @@
       </div>
     </section>
 
-    <div v-if="previewId" class="fixed inset-0 z-50 overflow-y-auto bg-[#201d28]/85 p-3 md:p-8">
-      <button
-        type="button"
-        class="fixed right-5 top-5 z-[60] rounded-full bg-[#fffdfa] px-5 py-3 text-sm text-[#201d28] shadow-lg"
-        @click="previewId = ''"
-      >
-        Tutup preview ×
-      </button>
-      <div class="mx-auto max-w-7xl pt-14">
+    <div
+      v-if="previewId"
+      class="template-preview-overlay"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="`Preview ${activePreviewTemplate.name}`"
+      @keydown.esc.prevent.stop="closePreview"
+    >
+      <div class="mx-auto max-w-7xl">
         <StoryExperience
+          :key="previewId"
           :story="previewStory"
-          :demo="true"
+          demo
+          closable
           :create-to="createPath"
+          @close="closePreview"
         />
       </div>
     </div>
@@ -84,6 +87,7 @@ const previewId = ref<StoryTemplateId | ''>('')
 const activePreviewTemplate = computed(() => storyTemplates.find(template => template.id === previewId.value) ?? storyTemplates[0])
 const previewStory = computed(() => ({ ...demoStory, templateId: activePreviewTemplate.value.id }))
 const createPath = computed(() => `/studio?template=${activePreviewTemplate.value.id}&new=1`)
+let previousBodyOverflow = ''
 
 useSeoMeta({
   title: 'Pilih template cerita — Selamanya',
@@ -94,9 +98,27 @@ function previewTemplate(id: StoryTemplateId) {
   previewId.value = id
 }
 
+function closePreview() {
+  previewId.value = ''
+}
+
 async function chooseTemplate(id: StoryTemplateId) {
   await navigateTo(`/studio?template=${id}&new=1`)
 }
+
+watch(previewId, (id) => {
+  if (!import.meta.client) return
+  if (id) {
+    previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = previousBodyOverflow
+  }
+})
+
+onBeforeUnmount(() => {
+  if (import.meta.client) document.body.style.overflow = previousBodyOverflow
+})
 </script>
 
 <style scoped>
@@ -208,5 +230,43 @@ async function chooseTemplate(id: StoryTemplateId) {
   text-transform: none;
 }
 .template-card-botanical-journal img { filter: sepia(0.28) saturate(0.76); }
+.template-card-love-letter .template-card-art {
+  justify-content: center;
+  border: 0.45rem solid #f5e8d5;
+  outline: 1px solid rgb(153 93 80 / 62%);
+  outline-offset: -0.85rem;
+  color: #342923;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 1.65rem, rgb(153 93 80 / 10%) 1.65rem 1.7rem),
+    linear-gradient(140deg, rgb(255 249 236 / 94%), rgb(245 232 213 / 88%));
+  box-shadow: 0 1rem 2rem rgb(20 16 22 / 16%);
+}
+.template-card-love-letter .template-card-tag {
+  color: #fffaf5 !important;
+  background: #995d50;
+}
+.template-card-love-letter .template-card-art > strong {
+  margin-top: 1rem;
+  color: #49362f;
+  font-size: 2rem;
+  font-style: italic;
+}
+.template-card-love-letter .template-card-art > span:not(.template-card-tag) {
+  color: #69483e;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.2;
+}
+.template-card-love-letter img { filter: sepia(0.35) saturate(0.72); }
 .template-highlight-mark { color: #5045f5; font-size: 0.8rem; }
+.template-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgb(32 29 40 / 92%);
+  scrollbar-gutter: stable;
+}
 </style>

@@ -73,11 +73,15 @@
               <label><span class="editor-label">Dedikasi pada sampul majalah</span><input v-model="draft.templateDetails!.editorialRose!.dedication" class="editor-input" maxlength="180" placeholder="Edisi khusus untuk dua hati"></label>
               <label><span class="editor-label">Tanda tangan penutup</span><input v-model="draft.templateDetails!.editorialRose!.signature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
             </template>
+            <template v-else-if="draft.templateId === 'love-letter'">
+              <label><span class="editor-label">Salam pembuka surat</span><input v-model="draft.templateDetails!.editorialRose!.dedication" class="editor-input" maxlength="180" placeholder="Untuk orang yang selalu kupilih"></label>
+              <label><span class="editor-label">Tanda tangan surat</span><input v-model="draft.templateDetails!.editorialRose!.signature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
+            </template>
             <template v-else-if="draft.templateId === 'midnight-cinema'">
               <label><span class="editor-label">Kutipan pembuka film</span><textarea v-model="draft.templateDetails!.midnightCinema!.openingQuote" class="editor-input min-h-24" maxlength="220" placeholder="Setiap kisah punya satu adegan yang ingin diulang."></textarea></label>
               <label><span class="editor-label">Kredit penutup film</span><input v-model="draft.templateDetails!.midnightCinema!.credits" class="editor-input" maxlength="120" placeholder="Dibintangi kalian · 2021—selamanya"></label>
             </template>
-            <template v-else>
+            <template v-else-if="draft.templateId === 'botanical-journal'">
               <label><span class="editor-label">Label jurnal</span><input v-model="draft.templateDetails!.botanicalJournal!.journalLabel" class="editor-input" maxlength="80" placeholder="Catatan perjalanan no. 01"></label>
               <label><span class="editor-label">Catatan lapangan</span><textarea v-model="draft.templateDetails!.botanicalJournal!.fieldNote" class="editor-input min-h-24" maxlength="220" placeholder="Bahagia tumbuh dari hal-hal kecil yang dirawat bersama."></textarea></label>
             </template>

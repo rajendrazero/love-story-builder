@@ -2,12 +2,23 @@
   <main
     ref="experience"
     class="story-experience bg-paper"
-    :class="`template-${story.templateId ?? 'editorial-rose'}`"
+    :class="[`template-${story.templateId ?? 'editorial-rose'}`, { 'is-demo': demo }]"
   >
     <div v-if="demo" class="preview-bar">
       <NuxtLink to="/" class="preview-brand">selamanya<span>.</span></NuxtLink>
-      <span class="preview-label">Pratinjau template · konten contoh</span>
-      <NuxtLink :to="createTo" class="preview-link">Buat versiku ↗</NuxtLink>
+      <span v-if="!templatePicker" class="preview-label">Pratinjau template · konten contoh</span>
+      <div class="preview-actions">
+        <label v-if="templatePicker" class="preview-template-label">
+          <span class="sr-only">Pilih gaya cerita</span>
+          <select :value="story.templateId" class="preview-template-select" @change="selectTemplate">
+            <option v-for="template in storyTemplates" :key="template.id" :value="template.id">
+              {{ template.name }}
+            </option>
+          </select>
+        </label>
+        <button v-if="closable" type="button" class="preview-close" @click="emit('close')">Tutup ×</button>
+        <NuxtLink :to="createTo" class="preview-link">Buat versiku ↗</NuxtLink>
+      </div>
     </div>
 
     <section class="story-screen story-hero">
@@ -16,7 +27,7 @@
         <h1>{{ story.coupleNames }}</h1>
         <p class="story-title">{{ story.title }}</p>
         <p
-          v-if="story.templateId === 'editorial-rose' && story.templateDetails?.editorialRose?.dedication"
+          v-if="['editorial-rose', 'love-letter'].includes(story.templateId ?? '') && story.templateDetails?.editorialRose?.dedication"
           class="template-detail template-editorial-detail"
         >
           {{ story.templateDetails.editorialRose.dedication }}
@@ -54,7 +65,7 @@
 
     <section class="story-screen story-greeting">
       <div class="greeting-copy">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : 'Untukmu, selalu ♡' }}</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : story.templateId === 'love-letter' ? 'Surat yang kusimpan' : 'Untukmu, selalu ♡' }}</p>
         <p class="greeting-text">{{ story.greetingText }}</p>
         <p
           v-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.fieldNote"
@@ -74,15 +85,15 @@
           aria-label="Video kartu ucapan"
         />
         <img v-else :src="story.greetingImage" alt="Kartu ucapan">
-        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : 'one for the scrapbook ✳' }}</span>
+        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : story.templateId === 'love-letter' ? 'disimpan di antara halaman ♡' : 'one for the scrapbook ✳' }}</span>
       </div>
     </section>
 
     <section ref="gallerySection" class="story-screen story-gallery">
       <header class="section-heading">
         <div>
-          <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'selected scenes · the feature' : story.templateId === 'botanical-journal' ? 'spesimen kenangan · no. 01' : 'The camera roll, but make it forever' }}</p>
-          <h2>{{ story.templateId === 'midnight-cinema' ? 'Adegan yang ingin diulang.' : story.templateId === 'botanical-journal' ? 'Jejak kecil perjalanan kita.' : 'Kita, dalam bingkai.' }}</h2>
+          <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'selected scenes · the feature' : story.templateId === 'botanical-journal' ? 'spesimen kenangan · no. 01' : story.templateId === 'love-letter' ? 'potongan kecil yang kusimpan' : 'The camera roll, but make it forever' }}</p>
+          <h2>{{ story.templateId === 'midnight-cinema' ? 'Adegan yang ingin diulang.' : story.templateId === 'botanical-journal' ? 'Jejak kecil perjalanan kita.' : story.templateId === 'love-letter' ? 'Halaman-halaman kesayanganku.' : 'Kita, dalam bingkai.' }}</h2>
         </div>
         <p class="gallery-hint">{{ story.templateId === 'midnight-cinema' ? 'Bingkai berikutnya →' : story.templateId === 'botanical-journal' ? 'Lembar berikutnya →' : 'Geser untuk melihat →' }}</p>
       </header>
@@ -125,8 +136,8 @@
 
     <section class="story-screen story-book">
       <header class="book-heading">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : 'the lore, in chapters' }}</p>
-        <h2>{{ story.templateId === 'midnight-cinema' ? 'Film yang terus kita pilih.' : story.templateId === 'botanical-journal' ? 'Jurnal kecil tentang kita.' : 'Buku kecil tentang kita' }}</h2>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : story.templateId === 'love-letter' ? 'surat yang selalu ingin kubaca' : 'the lore, in chapters' }}</p>
+        <h2>{{ story.templateId === 'midnight-cinema' ? 'Film yang terus kita pilih.' : story.templateId === 'botanical-journal' ? 'Jurnal kecil tentang kita.' : story.templateId === 'love-letter' ? 'Satu cerita, banyak halaman.' : 'Buku kecil tentang kita' }}</h2>
       </header>
 
       <div class="book-stage" :class="{ 'book-is-open': bookOpen }">
@@ -185,12 +196,12 @@
         >
           <span class="cover-front">
             <span class="cover-ornament" aria-hidden="true">✳</span>
-            <span class="cover-kicker">{{ story.templateId === 'midnight-cinema' ? 'A FILM ABOUT US' : story.templateId === 'botanical-journal' ? 'FIELD NOTES · ' + story.date : 'OUR LITTLE STORY' }}</span>
+            <span class="cover-kicker">{{ story.templateId === 'midnight-cinema' ? 'A FILM ABOUT US' : story.templateId === 'botanical-journal' ? 'FIELD NOTES · ' + story.date : story.templateId === 'love-letter' ? 'SURAT KECIL UNTUKMU' : 'OUR LITTLE STORY' }}</span>
             <strong>{{ story.coupleNames }}</strong>
             <span class="cover-title">{{ story.title }}</span>
             <span class="cover-date">{{ story.date }}</span>
           </span>
-          <span class="cover-inside" aria-hidden="true">{{ story.templateId === 'midnight-cinema' ? 'Fade in, us ♡' : story.templateId === 'botanical-journal' ? 'tumbuh, hari demi hari ♡' : 'Untuk kita, selalu ♡' }}</span>
+          <span class="cover-inside" aria-hidden="true">{{ story.templateId === 'midnight-cinema' ? 'Fade in, us ♡' : story.templateId === 'botanical-journal' ? 'tumbuh, hari demi hari ♡' : story.templateId === 'love-letter' ? 'Dengan cinta, selalu ♡' : 'Untuk kita, selalu ♡' }}</span>
         </button>
         <span class="book-spine" aria-hidden="true" />
       </div>
@@ -246,15 +257,15 @@
     <section class="story-screen story-finale">
       <figure class="final-photo">
         <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
-        <figcaption>{{ story.templateId === 'midnight-cinema' ? 'THE END? NEVER.' : story.templateId === 'botanical-journal' ? 'kenangan yang terus tumbuh ♡' : 'keep this one forever ♡' }}</figcaption>
+        <figcaption>{{ story.templateId === 'midnight-cinema' ? 'THE END? NEVER.' : story.templateId === 'botanical-journal' ? 'kenangan yang terus tumbuh ♡' : story.templateId === 'love-letter' ? 'PS. aku memilihmu lagi ♡' : 'keep this one forever ♡' }}</figcaption>
       </figure>
       <div class="final-copy">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'roll credits · just the beginning' : story.templateId === 'botanical-journal' ? 'akhir catatan · awal perjalanan' : 'sampai halaman terakhir ✳' }}</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'roll credits · just the beginning' : story.templateId === 'botanical-journal' ? 'akhir catatan · awal perjalanan' : story.templateId === 'love-letter' ? 'sampai surat berikutnya' : 'sampai halaman terakhir ✳' }}</p>
         <p class="final-message">{{ story.finalMessage }}</p>
         <p v-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.credits" class="final-signature">
           {{ story.templateDetails.midnightCinema.credits }}
         </p>
-        <p v-else-if="story.templateId === 'editorial-rose' && story.templateDetails?.editorialRose?.signature" class="final-signature">
+        <p v-else-if="['editorial-rose', 'love-letter'].includes(story.templateId ?? '') && story.templateDetails?.editorialRose?.signature" class="final-signature">
           {{ story.templateDetails.editorialRose.signature }}
         </p>
         <p v-else class="final-signature">{{ story.coupleNames }} · {{ story.date }}</p>
@@ -269,6 +280,7 @@
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { StoryContent } from '#shared/schema/story'
+import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
 
 type StoryPage = StoryContent['storyPages'][number]
 type TurnDirection = 'next' | 'previous'
@@ -277,10 +289,18 @@ const props = withDefaults(defineProps<{
   story: StoryContent
   demo?: boolean
   createTo?: string
+  templatePicker?: boolean
+  closable?: boolean
 }>(), {
   demo: false,
   createTo: '/templates',
+  templatePicker: false,
+  closable: false,
 })
+const emit = defineEmits<{
+  close: []
+  selectTemplate: [id: StoryTemplateId]
+}>()
 
 const experience = ref<HTMLElement | null>(null)
 const audio = ref<HTMLAudioElement | null>(null)
@@ -303,6 +323,11 @@ watch(() => props.story.cursorPreset, (preset) => {
 
 const leftPage = computed(() => props.story.storyPages[activePage.value - 1] ?? null)
 const rightPage = computed(() => props.story.storyPages[activePage.value] ?? null)
+
+function selectTemplate(event: Event) {
+  const selected = storyTemplates.find(template => template.id === (event.currentTarget as HTMLSelectElement).value)
+  if (selected) emit('selectTemplate', selected.id)
+}
 
 function scrollGallery(direction: -1 | 1) {
   const track = experience.value?.querySelector<HTMLElement>('.gallery-track')
@@ -464,6 +489,35 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 
+.preview-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(0.35rem, 1.5vw, 1rem);
+}
+
+.preview-template-select {
+  max-width: min(38vw, 13rem);
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  padding: 0.5rem 1.8rem 0.5rem 0.8rem;
+  color: #fffaf5;
+  background: #302b39;
+  font-size: 0.72rem;
+}
+
+.preview-template-select option { color: #201d28; background: #fffaf5; }
+
+.preview-close {
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  color: #fffaf5;
+  background: transparent;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
 .preview-brand span {
   color: #ff7968;
 }
@@ -488,9 +542,9 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   width: 100%;
-  height: 100vh;
-  height: 100svh;
-  min-height: 0;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100svh;
   overflow: hidden;
   padding: clamp(4.2rem, 9svh, 6.5rem) var(--screen-pad) clamp(1rem, 3svh, 2rem);
   scroll-snap-align: start;
@@ -1311,7 +1365,7 @@ onBeforeUnmount(() => {
 
   .story-greeting {
     grid-template-columns: 1fr;
-    grid-template-rows: 0.78fr 1.22fr;
+    grid-template-rows: auto minmax(42svh, 1fr);
     padding-top: 4.2rem;
   }
 
@@ -2021,11 +2075,169 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 760px) {
-  .template-midnight-cinema .story-hero { grid-template-columns: 1fr; }
-  .template-midnight-cinema .story-hero-photo { inset: 0; opacity: 0.42; }
-  .template-midnight-cinema .story-hero-copy { align-self: end; }
+  .template-midnight-cinema .story-hero,
   .template-editorial-rose .story-hero,
-  .template-botanical-journal .story-hero { grid-template-columns: 1fr 0.9fr; }
+  .template-botanical-journal .story-hero,
+  .template-love-letter .story-hero { grid-template-columns: 1fr; }
+  .template-midnight-cinema .story-hero-photo,
+  .template-editorial-rose .story-hero-photo,
+  .template-botanical-journal .story-hero-photo,
+  .template-love-letter .story-hero-photo {
+    position: absolute;
+    inset: 15% 5% auto auto;
+    width: 53%;
+    height: 55%;
+  }
+  .template-midnight-cinema .story-hero-photo {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.42;
+  }
+  .template-midnight-cinema .story-hero-photo img { border-radius: 0; }
+  .template-midnight-cinema .story-hero-copy { align-self: end; }
+  .template-editorial-rose .story-hero-copy,
+  .template-botanical-journal .story-hero-copy,
+  .template-love-letter .story-hero-copy { align-self: end; width: 72%; }
   .template-botanical-journal .story-detail { grid-template-columns: 1fr 1fr; }
+}
+
+.template-love-letter {
+  --letter-paper: #f5e8d5;
+  --letter-ink: #342923;
+  --letter-accent: #995d50;
+  color: var(--letter-ink);
+}
+.template-love-letter .story-hero,
+.template-love-letter .story-greeting,
+.template-love-letter .story-detail,
+.template-love-letter .story-finale {
+  background-color: var(--letter-paper);
+  background-image:
+    radial-gradient(ellipse at 10% 12%, rgb(255 255 255 / 74%), transparent 38%),
+    repeating-linear-gradient(0deg, transparent 0 2.25rem, rgb(153 93 80 / 7%) 2.25rem 2.3rem);
+}
+.template-love-letter .story-hero-copy {
+  border-left: 1px solid rgb(153 93 80 / 35%);
+  padding: clamp(1rem, 4vw, 3rem);
+}
+.template-love-letter .story-hero h1,
+.template-love-letter .story-title,
+.template-love-letter .greeting-text,
+.template-love-letter .detail-copy h2,
+.template-love-letter .final-message {
+  color: #49362f;
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+.template-love-letter .story-hero h1 { font-size: clamp(3.2rem, 8.5vw, 7.5rem); }
+.template-love-letter .story-title { color: var(--letter-accent); }
+.template-love-letter .story-date {
+  color: #fffaf5;
+  background: var(--letter-accent);
+  transform: rotate(-1deg);
+}
+.template-love-letter .eyebrow,
+.template-love-letter .story-date,
+.template-love-letter .hero-sparkle,
+.template-love-letter .final-sparkle { color: var(--letter-accent); }
+.template-love-letter .story-date { color: #fffaf5; }
+.template-love-letter .story-gallery {
+  color: var(--letter-ink);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgb(255 255 255 / 35%), transparent 64%),
+    #d8b8a0;
+}
+.template-love-letter .story-gallery .eyebrow,
+.template-love-letter .book-heading .eyebrow { color: #70463d; }
+.template-love-letter .gallery-card {
+  border: 1px solid rgb(73 54 47 / 18%);
+  border-radius: 0.2rem;
+  padding: 0.55rem;
+  background: #f5e8d5;
+  box-shadow: 0 1.5rem 3rem rgb(63 45 38 / 20%);
+}
+.template-love-letter .gallery-card:nth-child(odd) { transform: rotate(-1deg) translateY(-0.4rem); }
+.template-love-letter .gallery-card:nth-child(even) { transform: rotate(1deg) translateY(0.4rem); }
+.template-love-letter .gallery-print {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.template-love-letter .gallery-print img { border-radius: 0; }
+.template-love-letter .gallery-print figcaption { color: #49362f; }
+.template-love-letter .detail-photo,
+.template-love-letter .final-photo {
+  border: 0.65rem solid #fff9ee;
+  border-bottom-width: 3rem;
+  border-radius: 0.15rem;
+  padding: 0.3rem;
+  background: #fff9ee;
+  box-shadow: 0 1.2rem 2.8rem rgb(63 45 38 / 18%);
+}
+.template-love-letter .detail-copy > p:last-child { color: rgb(52 41 35 / 76%); }
+.template-love-letter .story-book {
+  color: #49362f;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgb(153 93 80 / 13%), transparent 58%),
+    #ead7bd;
+}
+.template-love-letter .book-page,
+.template-love-letter .book-inside-cover {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 1.8rem, rgb(153 93 80 / 9%) 1.8rem 1.85rem),
+    #fff9ee;
+}
+.template-love-letter .book-page img,
+.template-love-letter .page-turn-face img { border-radius: 0; }
+.template-love-letter .page-copy > span,
+.template-love-letter .book-inside-cover span { color: var(--letter-accent); }
+.template-love-letter .book-cover {
+  border-radius: 0.15rem 0.55rem 0.55rem 0.15rem;
+  background: var(--letter-accent);
+  box-shadow: inset 0.5rem 0 1rem rgb(0 0 0 / 16%), 0.45rem 0 0 #74453e;
+}
+.template-love-letter .cover-front {
+  border-color: rgb(255 249 238 / 65%);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2rem, rgb(255 249 238 / 8%) 2rem 2.05rem),
+    linear-gradient(135deg, #ae7060, #75463e);
+}
+.template-love-letter .cover-ornament,
+.template-love-letter .cover-title { color: #f5e8d5; }
+.template-love-letter .book-open-control { color: #fffaf5; background: var(--letter-accent); }
+.template-love-letter .final-copy {
+  border: 1px solid rgb(153 93 80 / 20%);
+  border-radius: 0.15rem;
+  background: #fff9ee;
+  box-shadow: 0 1.2rem 2.8rem rgb(63 45 38 / 14%);
+}
+.template-love-letter .final-signature {
+  color: var(--letter-accent);
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .preview-bar {
+    gap: 0.5rem;
+    padding-inline: 0.8rem;
+  }
+
+  .preview-brand { font-size: 1.08rem; }
+  .preview-actions { gap: 0.35rem; }
+  .preview-template-select { max-width: 34vw; padding-inline: 0.55rem 1.4rem; font-size: 0.65rem; }
+  .preview-link,
+  .preview-close { padding: 0.45rem 0.6rem; font-size: 0.64rem; }
+}
+
+@media (max-width: 760px) {
+  .template-love-letter .story-hero-copy { width: 77%; }
+  .template-love-letter .story-detail { grid-template-columns: 0.9fr 1.1fr; }
+  .template-love-letter .story-finale { grid-template-columns: 0.85fr 1.15fr; }
 }
 </style>
