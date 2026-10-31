@@ -1,6 +1,7 @@
-import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
+import { createError, defineEventHandler, getRouterParam, readBody, setResponseHeader } from 'h3'
 import { unlockStorySchema } from '#shared/schema/story'
 import { requireDatabase, toHex } from '../../../utils/cloudflare'
+import { enforceRateLimit } from '../../../utils/rate-limit'
 
 interface ProtectedStoryRow {
   payload_json: string
@@ -27,6 +28,7 @@ function hashesMatch(actual: string, expected: string): boolean {
 }
 
 export default defineEventHandler(async (event) => {
+  setResponseHeader(event, 'Cache-Control', 'no-store')
   const slug = getRouterParam(event, 'slug')
   const parsed = unlockStorySchema.safeParse(await readBody(event))
   if (!parsed.success) {
@@ -35,9 +37,10 @@ export default defineEventHandler(async (event) => {
   if (!slug || !/^[a-f0-9]{12}$/.test(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
+  await enforceRateLimit(event, 'story-unlock', 5, 900, slug)
 
   const row = await requireDatabase(event)
-    .prepare('SELECT payload_json, password_salt, password_hash FROM stories WHERE slug = ?')
+    .prepare('SELECT payload_json, password_salt, password_hash FROM stories WHERE slug = ? AND is_active = 1')
     .bind(slug)
     .first<ProtectedStoryRow>()
 

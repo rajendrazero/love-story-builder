@@ -2,8 +2,27 @@ import { z } from 'zod'
 
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048)
 const imageUrl = httpsUrl
+export const storyTemplateSchema = z.enum(['editorial-rose', 'midnight-cinema', 'botanical-journal'])
+export const storyCursorSchema = z.enum(['ring', 'heart', 'sparkle', 'flower', 'star', 'system'])
+const templateDetailsSchema = z.object({
+  editorialRose: z.object({
+    dedication: z.string().max(180).optional(),
+    signature: z.string().max(80).optional(),
+  }).strict().optional(),
+  midnightCinema: z.object({
+    openingQuote: z.string().max(220).optional(),
+    credits: z.string().max(120).optional(),
+  }).strict().optional(),
+  botanicalJournal: z.object({
+    journalLabel: z.string().max(80).optional(),
+    fieldNote: z.string().max(220).optional(),
+  }).strict().optional(),
+}).strict()
 
 export const storyContentSchema = z.object({
+  templateId: storyTemplateSchema.optional(),
+  cursorPreset: storyCursorSchema.optional(),
+  templateDetails: templateDetailsSchema.optional(),
   title: z.string().trim().min(1).max(100),
   coupleNames: z.string().trim().min(1).max(100),
   date: z.string().trim().min(1).max(80),
@@ -29,7 +48,15 @@ export const storyContentSchema = z.object({
 })
 
 export const publishStorySchema = storyContentSchema.extend({
+  draftId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
   password: z.string().max(128).optional().transform((value) => value?.trim() || undefined),
+  removePassword: z.boolean().optional(),
+})
+
+export const updateStorySchema = storyContentSchema.extend({
+  draftId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
+  password: z.string().max(128).optional().transform((value) => value?.trim() || undefined),
+  removePassword: z.boolean().optional(),
 })
 
 export const unlockStorySchema = z.object({

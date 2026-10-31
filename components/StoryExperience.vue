@@ -1,9 +1,13 @@
 <template>
-  <main ref="experience" class="story-experience bg-paper">
+  <main
+    ref="experience"
+    class="story-experience bg-paper"
+    :class="`template-${story.templateId ?? 'editorial-rose'}`"
+  >
     <div v-if="demo" class="preview-bar">
       <NuxtLink to="/" class="preview-brand">selamanya<span>.</span></NuxtLink>
       <span class="preview-label">Pratinjau template · konten contoh</span>
-      <NuxtLink to="/studio" class="preview-link">Buat versiku ↗</NuxtLink>
+      <NuxtLink :to="createTo" class="preview-link">Buat versiku ↗</NuxtLink>
     </div>
 
     <section class="story-screen story-hero">
@@ -11,6 +15,24 @@
         <p class="story-date">{{ story.date }}</p>
         <h1>{{ story.coupleNames }}</h1>
         <p class="story-title">{{ story.title }}</p>
+        <p
+          v-if="story.templateId === 'editorial-rose' && story.templateDetails?.editorialRose?.dedication"
+          class="template-detail template-editorial-detail"
+        >
+          {{ story.templateDetails.editorialRose.dedication }}
+        </p>
+        <p
+          v-else-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.openingQuote"
+          class="template-detail template-cinema-detail"
+        >
+          “{{ story.templateDetails.midnightCinema.openingQuote }}”
+        </p>
+        <p
+          v-else-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.journalLabel"
+          class="template-detail template-botanical-detail"
+        >
+          {{ story.templateDetails.botanicalJournal.journalLabel }}
+        </p>
         <button
           v-if="story.musicUrl"
           type="button"
@@ -34,6 +56,12 @@
       <div class="greeting-copy">
         <p class="eyebrow">Untukmu, selalu ♡</p>
         <p class="greeting-text">{{ story.greetingText }}</p>
+        <p
+          v-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.fieldNote"
+          class="template-field-note"
+        >
+          {{ story.templateDetails.botanicalJournal.fieldNote }}
+        </p>
       </div>
       <div class="greeting-photo">
         <video
@@ -223,7 +251,13 @@
       <div class="final-copy">
         <p class="eyebrow">sampai halaman terakhir ✳</p>
         <p class="final-message">{{ story.finalMessage }}</p>
-        <p class="final-signature">{{ story.coupleNames }} · {{ story.date }}</p>
+        <p v-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.credits" class="final-signature">
+          {{ story.templateDetails.midnightCinema.credits }}
+        </p>
+        <p v-else-if="story.templateId === 'editorial-rose' && story.templateDetails?.editorialRose?.signature" class="final-signature">
+          {{ story.templateDetails.editorialRose.signature }}
+        </p>
+        <p v-else class="final-signature">{{ story.coupleNames }} · {{ story.date }}</p>
       </div>
       <span class="final-sparkle" aria-hidden="true">✳</span>
     </section>
@@ -242,8 +276,10 @@ type TurnDirection = 'next' | 'previous'
 const props = withDefaults(defineProps<{
   story: StoryContent
   demo?: boolean
+  createTo?: string
 }>(), {
   demo: false,
+  createTo: '/templates',
 })
 
 const experience = ref<HTMLElement | null>(null)
@@ -259,6 +295,11 @@ const flipFrontPage = ref<StoryPage | null>(null)
 const flipBackPage = ref<StoryPage | null>(null)
 let motionMedia: gsap.MatchMedia | undefined
 let turnTimer: ReturnType<typeof setTimeout> | undefined
+const appCursorPreset = useState<NonNullable<StoryContent['cursorPreset']>>('story-cursor', () => 'ring')
+
+watch(() => props.story.cursorPreset, (preset) => {
+  appCursorPreset.value = preset ?? 'ring'
+})
 
 const leftPage = computed(() => props.story.storyPages[activePage.value - 1] ?? null)
 const rightPage = computed(() => props.story.storyPages[activePage.value] ?? null)
@@ -327,6 +368,7 @@ function turnPage(direction: TurnDirection) {
 }
 
 onMounted(() => {
+  appCursorPreset.value = props.story.cursorPreset ?? 'ring'
   const root = experience.value
   if (!root) return
 
@@ -388,6 +430,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  appCursorPreset.value = 'ring'
   if (turnTimer) clearTimeout(turnTimer)
   motionMedia?.revert()
   audio.value?.pause()
@@ -1608,5 +1651,148 @@ onBeforeUnmount(() => {
   .gallery-print img {
     transition: none;
   }
+}
+
+.template-editorial-rose .story-hero { background-color: #f2d9d4; }
+.template-editorial-rose .story-date,
+.template-editorial-rose .story-gallery { background-color: #9c6257; }
+.template-editorial-rose .story-title,
+.template-editorial-rose .story-date,
+.template-editorial-rose .eyebrow,
+.template-editorial-rose .hero-sparkle,
+.template-editorial-rose .final-sparkle { color: #8d4c50; }
+.template-editorial-rose .story-date { color: white; }
+.template-editorial-rose .story-gallery .eyebrow,
+.template-editorial-rose .book-heading .eyebrow { color: #f4c7b9; }
+.template-editorial-rose .story-greeting { background: #e9c2b9; }
+.template-editorial-rose .story-detail { background: #dce8da; }
+.template-editorial-rose .photo-sticker,
+.template-editorial-rose .final-copy,
+.template-editorial-rose .book-open-control { background: #f2d9d4; }
+.template-editorial-rose .story-finale { background: #cf8b7e; }
+
+.template-midnight-cinema .story-hero {
+  color: #f6edf7;
+  background-color: #19151f;
+  background-image: radial-gradient(ellipse at 75% 30%, rgb(150 105 183 / 32%), transparent 48%);
+}
+.template-midnight-cinema .story-date,
+.template-midnight-cinema .story-gallery { background-color: #392b45; }
+.template-midnight-cinema .story-date,
+.template-midnight-cinema .story-title,
+.template-midnight-cinema .eyebrow,
+.template-midnight-cinema .hero-sparkle,
+.template-midnight-cinema .final-sparkle { color: #d2a7ff; }
+.template-midnight-cinema .story-date { color: #211b29; background-color: #d2a7ff; }
+.template-midnight-cinema .story-greeting,
+.template-midnight-cinema .story-detail,
+.template-midnight-cinema .story-finale { color: #f6edf7; background-color: #241e2a; }
+.template-midnight-cinema .story-detail-copy > p:last-child { color: rgb(246 237 247 / 75%); }
+.template-midnight-cinema .detail-copy > p:last-child { color: rgb(246 237 247 / 75%); }
+.template-midnight-cinema .photo-sticker,
+.template-midnight-cinema .final-copy,
+.template-midnight-cinema .book-open-control { color: #211b29; background: #d2a7ff; }
+.template-midnight-cinema .story-book { background-color: #120f17; background-image: radial-gradient(ellipse at 50% 70%, rgb(150 105 183 / 30%), transparent 58%); }
+.template-midnight-cinema .book-page { color: #211b29; }
+
+.template-botanical-journal .story-hero {
+  background-color: #e7ebd8;
+  background-image: radial-gradient(ellipse at 75% 35%, rgb(83 104 75 / 16%), transparent 52%);
+}
+.template-botanical-journal .story-date,
+.template-botanical-journal .story-gallery { background-color: #53684b; }
+.template-botanical-journal .story-date,
+.template-botanical-journal .story-title,
+.template-botanical-journal .eyebrow,
+.template-botanical-journal .hero-sparkle,
+.template-botanical-journal .final-sparkle { color: #53684b; }
+.template-botanical-journal .story-date { color: white; }
+.template-botanical-journal .story-gallery .eyebrow,
+.template-botanical-journal .book-heading .eyebrow { color: #dce5c8; }
+.template-botanical-journal .story-greeting { background: #e7dcc1; }
+.template-botanical-journal .story-detail { background: #d8e2d0; }
+.template-botanical-journal .story-finale { background: #bfcbab; }
+.template-botanical-journal .photo-sticker,
+.template-botanical-journal .final-copy,
+.template-botanical-journal .book-open-control { color: #263322; background: #dce5c8; }
+
+.template-detail {
+  max-width: 32ch;
+  margin: 1.25rem 0 0;
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+}
+.template-editorial-rose .story-hero-copy { padding-left: clamp(0rem, 3vw, 3rem); }
+.template-editorial-rose .template-editorial-detail {
+  border-left: 2px solid #9c6257;
+  padding-left: 0.9rem;
+  color: #704249;
+  font-style: italic;
+}
+.template-editorial-rose .story-hero-photo { transform: rotate(2deg); }
+
+.template-midnight-cinema .story-hero { grid-template-columns: 1.15fr 0.85fr; }
+.template-midnight-cinema .story-hero h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+.template-midnight-cinema .story-hero-photo {
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0;
+  background: transparent;
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 48%);
+  transform: none;
+}
+.template-midnight-cinema .story-hero-photo img { border-radius: 0.4rem; }
+.template-midnight-cinema .template-cinema-detail {
+  border-left: 1px solid #d2a7ff;
+  padding-left: 1rem;
+  color: #e2caff;
+  font-style: italic;
+}
+.template-midnight-cinema .story-greeting { grid-template-columns: 1fr 0.8fr; }
+.template-midnight-cinema .story-finale { grid-template-columns: 0.8fr 1.2fr; }
+
+.template-botanical-journal .story-hero {
+  grid-template-columns: 0.85fr 1.15fr;
+  background-image: radial-gradient(ellipse at 15% 15%, rgb(255 255 255 / 54%), transparent 48%);
+}
+.template-botanical-journal .story-hero h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+}
+.template-botanical-journal .story-hero-photo {
+  border: 1px solid #53684b;
+  border-radius: 0.25rem;
+  padding: 0.65rem 0.65rem 3.2rem;
+  transform: rotate(-1deg);
+}
+.template-botanical-journal .story-greeting { grid-template-columns: 1fr 1fr; }
+.template-botanical-journal .story-detail { grid-template-columns: 1.1fr 0.9fr; }
+.template-botanical-journal .template-botanical-detail {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid #53684b;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  color: #53684b;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.template-field-note {
+  margin-top: 1.5rem;
+  border-left: 2px solid #53684b;
+  padding-left: 1rem;
+  color: #53684b;
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.6;
 }
 </style>

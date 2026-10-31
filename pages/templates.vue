@@ -1,0 +1,144 @@
+<template>
+  <main class="min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+    <header class="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
+      <nav class="flex items-center gap-4 text-sm">
+        <NuxtLink to="/account" class="text-[#9c6257]">Akun saya</NuxtLink>
+        <NuxtLink to="/preview" class="text-[#9c6257]">Contoh umum</NuxtLink>
+      </nav>
+    </header>
+
+    <section class="mx-auto max-w-6xl pb-20 pt-16">
+      <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Pilih suasana cerita</p>
+      <div class="mt-3 grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
+        <div>
+          <h1 class="font-display text-5xl md:text-7xl">Mulai dari tampilan<br>yang terasa <em>kalian.</em></h1>
+          <p class="mt-4 max-w-2xl text-sm leading-7 text-[#756a62]">Setiap template punya komposisi, nuansa, dan kolom cerita khasnya sendiri. Lihat preview utuh sebelum memilih; draft baru langsung tersimpan saat editor dibuka.</p>
+        </div>
+        <NuxtLink to="/login" class="text-sm text-[#9c6257] underline underline-offset-4">Sudah punya akun? Masuk</NuxtLink>
+      </div>
+
+      <div class="mt-10 grid gap-6 lg:grid-cols-3">
+        <article
+          v-for="template in storyTemplates"
+          :key="template.id"
+          class="template-card"
+          :style="{ '--template-paper': template.colors[0], '--template-accent': template.colors[1], '--template-ink': template.colors[2] }"
+        >
+          <div class="template-card-preview" :class="`template-card-${template.id}`">
+            <img :src="demoStory.heroImage" :alt="`Contoh sampul ${template.name}`" loading="lazy">
+            <span class="template-card-tag">{{ template.previewLabel }}</span>
+            <strong>{{ demoStory.coupleNames }}</strong>
+            <span>{{ template.name }}</span>
+          </div>
+          <div class="p-6">
+            <p class="text-xs uppercase tracking-[0.18em] text-[#9c6257]">{{ template.mood }}</p>
+            <h2 class="mt-2 font-display text-3xl">{{ template.name }}</h2>
+            <p class="mt-2 min-h-14 text-sm leading-6 text-[#756a62]">{{ template.description }}</p>
+            <div class="mt-5 flex gap-3">
+              <button type="button" class="flex-1 rounded-full border border-[#cbbcb0] px-4 py-3 text-xs" @click="previewTemplate(template.id)">
+                Lihat preview
+              </button>
+              <button type="button" class="flex-1 rounded-full bg-[#201d28] px-4 py-3 text-xs text-white" @click="chooseTemplate(template.id)">
+                Pilih template ↗
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div v-if="previewId" class="fixed inset-0 z-50 overflow-y-auto bg-[#201d28]/85 p-3 md:p-8">
+      <button
+        type="button"
+        class="fixed right-5 top-5 z-[60] rounded-full bg-[#fffdfa] px-5 py-3 text-sm text-[#201d28] shadow-lg"
+        @click="previewId = ''"
+      >
+        Tutup preview ×
+      </button>
+      <div class="mx-auto max-w-7xl pt-14">
+        <StoryExperience
+          :story="previewStory"
+          :demo="true"
+          :create-to="createPath"
+        />
+      </div>
+    </div>
+  </main>
+</template>
+
+<script setup lang="ts">
+import { demoStory } from '#shared/demo-story'
+import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
+
+const previewId = ref<StoryTemplateId | ''>('')
+const activePreviewTemplate = computed(() => storyTemplates.find(template => template.id === previewId.value) ?? storyTemplates[0])
+const previewStory = computed(() => ({ ...demoStory, templateId: activePreviewTemplate.value.id }))
+const createPath = computed(() => `/studio?template=${activePreviewTemplate.value.id}&new=1`)
+
+useSeoMeta({
+  title: 'Pilih template cerita — Selamanya',
+  description: 'Bandingkan preview Editorial Rose, Midnight Cinema, dan Botanical Journal sebelum membuat cerita.',
+})
+
+function previewTemplate(id: StoryTemplateId) {
+  previewId.value = id
+}
+
+async function chooseTemplate(id: StoryTemplateId) {
+  await navigateTo(`/studio?template=${id}&new=1`)
+}
+</script>
+
+<style scoped>
+.template-card {
+  overflow: hidden;
+  border: 1px solid #e7ddd4;
+  border-radius: 1.75rem;
+  background: #fffdfa;
+  box-shadow: 0 16px 50px rgb(35 25 20 / 6%);
+}
+.template-card-preview {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 1.5rem;
+  color: var(--template-ink);
+  background: var(--template-paper);
+}
+.template-card-preview::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 10%, rgb(20 16 22 / 72%));
+  content: '';
+}
+.template-card-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.62;
+  transition: transform 500ms ease;
+}
+.template-card:hover .template-card-preview img { transform: scale(1.05); }
+.template-card-preview > span,
+.template-card-preview > strong { position: relative; z-index: 1; color: white; }
+.template-card-preview > strong { font-family: 'Instrument Serif', serif; font-size: 2.5rem; }
+.template-card-tag {
+  align-self: flex-start;
+  margin-bottom: auto;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  color: var(--template-ink) !important;
+  background: var(--template-paper);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.template-card-midnight-cinema img { filter: saturate(0.55) contrast(1.1); }
+.template-card-botanical-journal img { filter: sepia(0.28) saturate(0.76); }
+</style>

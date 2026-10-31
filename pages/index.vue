@@ -5,11 +5,15 @@
       <div class="home-nav-links">
         <a href="#fitur">Isi ceritamu</a>
         <NuxtLink to="/preview">Lihat contoh</NuxtLink>
-        <NuxtLink to="/studio" class="home-nav-cta">Mulai bikin ↗</NuxtLink>
+        <NuxtLink to="/login">Masuk</NuxtLink>
+        <NuxtLink to="/register">Daftar</NuxtLink>
+        <NuxtLink to="/templates" class="home-nav-cta">Mulai bikin ↗</NuxtLink>
       </div>
       <div class="home-nav-mobile">
         <NuxtLink to="/preview">Preview</NuxtLink>
-        <NuxtLink to="/studio" class="home-nav-cta">Bikin punyaku ↗</NuxtLink>
+        <NuxtLink to="/login">Masuk</NuxtLink>
+        <NuxtLink to="/register">Daftar</NuxtLink>
+        <NuxtLink to="/templates" class="home-nav-cta">Bikin punyaku ↗</NuxtLink>
       </div>
     </nav>
 
@@ -24,7 +28,7 @@
           <p class="home-intro">Bikin halaman internet dari foto receh, cerita dalam, dan lagu yang cuma kalian berdua tahu.</p>
           <div class="home-actions">
             <NuxtLink to="/preview" class="button-primary">Intip hasil jadinya ↗</NuxtLink>
-            <NuxtLink to="/studio" class="button-quiet">Bikin cerita kalian ↗</NuxtLink>
+            <NuxtLink to="/templates" class="button-quiet">Bikin cerita kalian ↗</NuxtLink>
           </div>
         </div>
         <div class="home-hero-collage" aria-label="Kolase foto kenangan">
@@ -94,7 +98,7 @@
           <p>Lihat contoh dulu. Kalau suka, ubah semuanya jadi cerita kalian. Tidak ada yang diterbitkan sebelum kamu bilang siap.</p>
           <div class="home-actions">
             <NuxtLink to="/preview" class="button-primary">Lihat pratinjau ↗</NuxtLink>
-            <NuxtLink to="/studio" class="button-quiet">Mulai bikin cerita ↗</NuxtLink>
+            <NuxtLink to="/templates" class="button-quiet">Mulai bikin cerita ↗</NuxtLink>
           </div>
         </div>
         <div class="cta-photo-wrap">

@@ -1,6 +1,13 @@
 import type { StoryContent } from '#shared/schema/story'
 
 export const demoStory: StoryContent = {
+  templateId: 'editorial-rose',
+  cursorPreset: 'ring',
+  templateDetails: {
+    editorialRose: { dedication: 'Edisi khusus untuk dua hati', signature: 'Dengan cinta, selalu' },
+    midnightCinema: { openingQuote: 'Setiap kisah punya satu adegan yang ingin diulang.', credits: 'Dibintangi Nara & Arka · 2021—selamanya' },
+    botanicalJournal: { journalLabel: 'Catatan perjalanan no. 01', fieldNote: 'Bahagia tumbuh dari hal-hal kecil yang dirawat bersama.' },
+  },
   title: 'Hal-hal kecil yang jadi selamanya',
   coupleNames: 'Nara & Arka',
   date: 'Sejak 12 Juni 2021',

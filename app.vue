@@ -1,11 +1,13 @@
 <template>
-  <div class="cinematic-cursor min-h-screen">
+  <div class="min-h-screen" :class="{ 'cinematic-cursor': cursorPreset !== 'system' }">
     <NuxtPage />
     <div
+      v-show="cursorPreset !== 'system'"
       ref="cursor"
-      class="pointer-events-none fixed left-0 top-0 z-[100] hidden h-7 w-7 rounded-full border border-white/70 mix-blend-difference md:block"
+      class="app-cursor pointer-events-none fixed left-0 top-0 z-[100] hidden h-7 w-7 items-center justify-center rounded-full border border-white/70 mix-blend-difference md:flex"
+      :class="`app-cursor-${cursorPreset}`"
       aria-hidden="true"
-    />
+    >{{ cursorSymbol }}</div>
     <div
       v-if="scrollbarVisible"
       ref="scrollbarTrack"
@@ -34,6 +36,15 @@
 import { gsap } from 'gsap'
 
 const cursor = ref<HTMLElement | null>(null)
+const cursorPreset = useState<'ring' | 'heart' | 'sparkle' | 'flower' | 'star' | 'system'>('story-cursor', () => 'ring')
+const cursorSymbol = computed(() => ({
+  ring: '',
+  heart: '♥',
+  sparkle: '✦',
+  flower: '✿',
+  star: '★',
+  system: '',
+})[cursorPreset.value])
 const scrollbarTrack = ref<HTMLElement | null>(null)
 const scrollbarThumb = ref<HTMLButtonElement | null>(null)
 const scrollbarVisible = ref(false)
@@ -194,6 +205,17 @@ onBeforeUnmount(() => {
   z-index: 110;
   width: 0.75rem;
   touch-action: none;
+}
+
+.app-cursor-heart,
+.app-cursor-sparkle,
+.app-cursor-flower,
+.app-cursor-star {
+  border: 0;
+  color: #fffaf5;
+  font-size: 1.15rem;
+  line-height: 1;
+  text-shadow: 0 1px 5px rgb(32 29 40 / 45%);
 }
 
 .custom-scrollbar-thumb {
