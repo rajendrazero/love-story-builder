@@ -336,7 +336,7 @@ onMounted(() => {
     const revealGroups = [
       '.story-hero-copy, .story-hero-photo',
       '.greeting-copy, .greeting-photo',
-      '.section-heading, .gallery-track',
+      '.section-heading, .gallery-card',
       '.detail-photo, .detail-copy',
       '.book-heading, .book-stage, .book-controls',
       '.final-photo, .final-copy',
@@ -352,13 +352,35 @@ onMounted(() => {
       gsap.from(targets, {
         y: 18,
         autoAlpha: 0,
-        duration: 0.65,
-        stagger: 0.08,
-        ease: 'power2.out',
+        duration: 0.8,
+        stagger: 0.12,
+        ease: 'power3.out',
         scrollTrigger: {
           trigger: section,
-          start: 'top 78%',
+          start: 'top 72%',
           once: true,
+        },
+      })
+    })
+
+    root.querySelectorAll<HTMLElement>(
+      '.story-hero-photo img, .greeting-photo img, .greeting-photo video, .detail-photo img, .final-photo img',
+    ).forEach((image) => {
+      const section = image.closest<HTMLElement>('.story-screen')
+      if (!section) return
+
+      gsap.fromTo(image, {
+        yPercent: 7,
+        scale: 1.08,
+      }, {
+        yPercent: -7,
+        scale: 1.02,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 0.7,
         },
       })
     })
@@ -513,6 +535,7 @@ onBeforeUnmount(() => {
   border: clamp(0.35rem, 1vw, 0.7rem) solid white;
   border-radius: clamp(1rem, 3vw, 2rem);
   padding: 0.45rem 0.45rem 2.8rem;
+  overflow: hidden;
   background: white;
   box-shadow: 0 2rem 5rem rgb(32 29 40 / 20%);
   transform: rotate(3deg);
@@ -745,6 +768,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: min(72svh, 44rem);
   min-height: 0;
+  overflow: hidden;
   border: clamp(0.4rem, 1.1vw, 0.8rem) solid white;
   border-radius: 1.6rem;
   padding: 0.3rem;
@@ -1122,6 +1146,7 @@ onBeforeUnmount(() => {
   height: min(68svh, 42rem);
   justify-self: center;
   margin: 0;
+  overflow: hidden;
   border: 0.6rem solid white;
   border-bottom-width: clamp(2.5rem, 6svh, 3.5rem);
   padding: 0.4rem;
