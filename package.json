@@ -7,10 +7,9 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "build:local": "node scripts/build-local.mjs",
-    "dev": "pnpm build:local && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol https --https-key-path .certs/localhost-key.pem --https-cert-path .certs/localhost.pem",
-    "dev:https:untrusted": "pnpm build:local && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol https",
-    "dev:http": "pnpm build:local && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol http",
+    "dev": "pnpm build && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol https --https-key-path .certs/localhost-key.pem --https-cert-path .certs/localhost.pem",
+    "dev:https:untrusted": "pnpm build && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol https",
+    "dev:http": "pnpm build && wrangler dev --var AUTH_DEV_MIGRATION:true --local-protocol http",
     "dev:ui": "nuxt dev",
     "build": "nuxt build",
     "test": "node --experimental-strip-types --test",
@@ -28,6 +27,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@rollup/plugin-terser": "1.0.2",
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

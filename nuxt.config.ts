@@ -1,6 +1,4 @@
-declare const process: {
-  env: Record<string, string | undefined>
-}
+import terser from '@rollup/plugin-terser'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-03-01',
@@ -31,7 +29,6 @@ export default defineNuxtConfig({
   },
   nitro: {
     preset: 'cloudflare_module',
-    minify: process.env.NITRO_MINIFY !== 'false',
     cloudflare: {
       deployConfig: true,
       nodeCompat: true,
@@ -45,6 +42,39 @@ export default defineNuxtConfig({
           'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
         },
       },
+    },
+  },
+  hooks: {
+    'nitro:init'(nitro) {
+      nitro.hooks.hook('rollup:before', (_nitro, rollupConfig) => {
+        const plugins = rollupConfig.plugins
+
+        if (!plugins) {
+          throw new Error('Nitro Rollup plugins were not initialized before minification.')
+        }
+
+        const pluginIndex = plugins.findIndex(
+          plugin => typeof plugin === 'object'
+            && plugin !== null
+            && 'name' in plugin
+            && plugin.name === 'terser',
+        ) ?? -1
+
+        if (pluginIndex < 0) {
+          throw new Error('Nitro Terser plugin was not found; refusing to build without a worker limit.')
+        }
+
+        plugins[pluginIndex] = terser({
+          maxWorkers: 2,
+          mangle: {
+            keep_fnames: true,
+            keep_classnames: true,
+          },
+          format: {
+            comments: false,
+          },
+        })
+      })
     },
   },
   typescript: {
