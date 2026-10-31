@@ -54,7 +54,7 @@
 
     <section class="story-screen story-greeting">
       <div class="greeting-copy">
-        <p class="eyebrow">Untukmu, selalu ♡</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : 'Untukmu, selalu ♡' }}</p>
         <p class="greeting-text">{{ story.greetingText }}</p>
         <p
           v-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.fieldNote"
@@ -74,17 +74,17 @@
           aria-label="Video kartu ucapan"
         />
         <img v-else :src="story.greetingImage" alt="Kartu ucapan">
-        <span class="photo-sticker">one for the scrapbook ✳</span>
+        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : 'one for the scrapbook ✳' }}</span>
       </div>
     </section>
 
     <section ref="gallerySection" class="story-screen story-gallery">
       <header class="section-heading">
         <div>
-          <p class="eyebrow">The camera roll, but make it forever</p>
-          <h2>Kita, dalam bingkai.</h2>
+          <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'selected scenes · the feature' : story.templateId === 'botanical-journal' ? 'spesimen kenangan · no. 01' : 'The camera roll, but make it forever' }}</p>
+          <h2>{{ story.templateId === 'midnight-cinema' ? 'Adegan yang ingin diulang.' : story.templateId === 'botanical-journal' ? 'Jejak kecil perjalanan kita.' : 'Kita, dalam bingkai.' }}</h2>
         </div>
-        <p class="gallery-hint">Geser untuk melihat →</p>
+        <p class="gallery-hint">{{ story.templateId === 'midnight-cinema' ? 'Bingkai berikutnya →' : story.templateId === 'botanical-journal' ? 'Lembar berikutnya →' : 'Geser untuk melihat →' }}</p>
       </header>
       <div
         class="gallery-track"
@@ -114,7 +114,7 @@
     <section class="story-screen story-detail">
       <div class="detail-photo">
         <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
-        <span class="photo-sticker">my favorite person ♡</span>
+        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'THE LEAD, ALWAYS' : story.templateId === 'botanical-journal' ? 'tumbuh bersama ♡' : 'my favorite person ♡' }}</span>
       </div>
       <div class="detail-copy">
         <p class="eyebrow">{{ story.date }}</p>
@@ -125,8 +125,8 @@
 
     <section class="story-screen story-book">
       <header class="book-heading">
-        <p class="eyebrow">the lore, in chapters</p>
-        <h2>Buku kecil tentang kita</h2>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : 'the lore, in chapters' }}</p>
+        <h2>{{ story.templateId === 'midnight-cinema' ? 'Film yang terus kita pilih.' : story.templateId === 'botanical-journal' ? 'Jurnal kecil tentang kita.' : 'Buku kecil tentang kita' }}</h2>
       </header>
 
       <div class="book-stage" :class="{ 'book-is-open': bookOpen }">
@@ -185,12 +185,12 @@
         >
           <span class="cover-front">
             <span class="cover-ornament" aria-hidden="true">✳</span>
-            <span class="cover-kicker">OUR LITTLE STORY</span>
+            <span class="cover-kicker">{{ story.templateId === 'midnight-cinema' ? 'A FILM ABOUT US' : story.templateId === 'botanical-journal' ? 'FIELD NOTES · ' + story.date : 'OUR LITTLE STORY' }}</span>
             <strong>{{ story.coupleNames }}</strong>
             <span class="cover-title">{{ story.title }}</span>
             <span class="cover-date">{{ story.date }}</span>
           </span>
-          <span class="cover-inside" aria-hidden="true">Untuk kita, selalu ♡</span>
+          <span class="cover-inside" aria-hidden="true">{{ story.templateId === 'midnight-cinema' ? 'Fade in, us ♡' : story.templateId === 'botanical-journal' ? 'tumbuh, hari demi hari ♡' : 'Untuk kita, selalu ♡' }}</span>
         </button>
         <span class="book-spine" aria-hidden="true" />
       </div>
@@ -246,10 +246,10 @@
     <section class="story-screen story-finale">
       <figure class="final-photo">
         <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
-        <figcaption>keep this one forever ♡</figcaption>
+        <figcaption>{{ story.templateId === 'midnight-cinema' ? 'THE END? NEVER.' : story.templateId === 'botanical-journal' ? 'kenangan yang terus tumbuh ♡' : 'keep this one forever ♡' }}</figcaption>
       </figure>
       <div class="final-copy">
-        <p class="eyebrow">sampai halaman terakhir ✳</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'roll credits · just the beginning' : story.templateId === 'botanical-journal' ? 'akhir catatan · awal perjalanan' : 'sampai halaman terakhir ✳' }}</p>
         <p class="final-message">{{ story.finalMessage }}</p>
         <p v-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.credits" class="final-signature">
           {{ story.templateDetails.midnightCinema.credits }}
@@ -295,10 +295,10 @@ const flipFrontPage = ref<StoryPage | null>(null)
 const flipBackPage = ref<StoryPage | null>(null)
 let motionMedia: gsap.MatchMedia | undefined
 let turnTimer: ReturnType<typeof setTimeout> | undefined
-const appCursorPreset = useState<NonNullable<StoryContent['cursorPreset']>>('story-cursor', () => 'ring')
+const appCursorPreset = useState<NonNullable<StoryContent['cursorPreset']>>('story-cursor', () => 'system')
 
 watch(() => props.story.cursorPreset, (preset) => {
-  appCursorPreset.value = preset ?? 'ring'
+  appCursorPreset.value = preset ?? 'system'
 })
 
 const leftPage = computed(() => props.story.storyPages[activePage.value - 1] ?? null)
@@ -368,7 +368,7 @@ function turnPage(direction: TurnDirection) {
 }
 
 onMounted(() => {
-  appCursorPreset.value = props.story.cursorPreset ?? 'ring'
+  appCursorPreset.value = props.story.cursorPreset ?? 'system'
   const root = experience.value
   if (!root) return
 
@@ -430,7 +430,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  appCursorPreset.value = 'ring'
+  appCursorPreset.value = 'system'
   if (turnTimer) clearTimeout(turnTimer)
   motionMedia?.revert()
   audio.value?.pause()
@@ -1794,5 +1794,238 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
   font-style: italic;
   line-height: 1.6;
+}
+
+.template-editorial-rose .story-hero {
+  grid-template-columns: 1fr 0.95fr;
+  background-image:
+    radial-gradient(ellipse at 88% 14%, rgb(255 250 245 / 72%), transparent 31%),
+    repeating-linear-gradient(0deg, transparent 0 2.4rem, rgb(141 76 80 / 5%) 2.4rem 2.45rem);
+}
+.template-editorial-rose .story-hero-photo {
+  border: 0.65rem solid #fffaf5;
+  border-bottom-width: 3.2rem;
+  border-radius: 0.2rem;
+  padding: 0;
+  background: #fffaf5;
+  box-shadow: 0 1.2rem 3rem rgb(89 48 52 / 18%);
+  transform: rotate(2deg);
+}
+.template-editorial-rose .story-hero-photo figcaption {
+  right: 0.5rem;
+  bottom: -2.35rem;
+  color: #704249;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.05rem;
+}
+.template-editorial-rose .story-gallery {
+  background-image: radial-gradient(ellipse at 50% 100%, rgb(255 250 245 / 15%), transparent 55%);
+}
+.template-editorial-rose .gallery-card:nth-child(odd) { transform: rotate(-2deg); }
+.template-editorial-rose .gallery-card:nth-child(even) { transform: rotate(2deg) translateY(0.7rem); }
+.template-editorial-rose .gallery-print {
+  border: 0.55rem solid #fffaf5;
+  border-bottom-width: 2rem;
+  background: #fffaf5;
+  box-shadow: 0 0.8rem 1.8rem rgb(32 20 20 / 18%);
+}
+.template-editorial-rose .story-book {
+  background:
+    radial-gradient(ellipse at 15% 50%, rgb(255 250 245 / 55%), transparent 45%),
+    #f2d9d4;
+}
+.template-editorial-rose .book-cover {
+  background: #9c6257;
+  box-shadow: inset 0.5rem 0 1rem rgb(0 0 0 / 16%), 0.45rem 0 0 #704249;
+}
+.template-editorial-rose .cover-front {
+  background:
+    radial-gradient(ellipse at 50% 45%, rgb(255 250 245 / 22%), transparent 56%),
+    linear-gradient(135deg, #b97870, #704249);
+}
+.template-editorial-rose .cover-ornament,
+.template-editorial-rose .cover-title { color: #f4c7b9; }
+
+.template-midnight-cinema .story-hero {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: 1fr;
+  align-items: end;
+  background-image:
+    linear-gradient(90deg, #120f17 4%, rgb(18 15 23 / 88%) 35%, rgb(18 15 23 / 28%) 100%),
+    radial-gradient(ellipse at 80% 25%, rgb(150 105 183 / 32%), transparent 48%);
+}
+.template-midnight-cinema .story-hero-copy {
+  z-index: 2;
+  max-width: 54rem;
+  padding-bottom: clamp(1rem, 8svh, 5rem);
+}
+.template-midnight-cinema .story-hero-photo {
+  position: absolute;
+  inset: 0 0 0 32%;
+  z-index: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  opacity: 0.68;
+  box-shadow: none;
+}
+.template-midnight-cinema .story-hero-photo img {
+  border-radius: 0;
+  object-position: center;
+}
+.template-midnight-cinema .story-hero-photo figcaption { display: none; }
+.template-midnight-cinema .story-date {
+  border: 1px solid rgb(210 167 255 / 54%);
+  background: rgb(25 21 31 / 72%);
+}
+.template-midnight-cinema .story-gallery {
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 3rem, rgb(255 255 255 / 3%) 3rem 3.1rem),
+    linear-gradient(180deg, #392b45, #211a29);
+}
+.template-midnight-cinema .gallery-card {
+  border: 1px solid rgb(210 167 255 / 45%);
+  border-radius: 0.3rem;
+  padding: 0.45rem;
+  background: #120f17;
+  box-shadow: 0 1rem 2rem rgb(0 0 0 / 35%);
+}
+.template-midnight-cinema .gallery-print { border-radius: 0.15rem; }
+.template-midnight-cinema .gallery-print figcaption {
+  color: #e2caff;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.06em;
+}
+.template-midnight-cinema .story-greeting {
+  grid-template-columns: 1.1fr 0.9fr;
+  background-image: radial-gradient(ellipse at 10% 70%, rgb(150 105 183 / 22%), transparent 50%);
+}
+.template-midnight-cinema .greeting-copy { position: relative; }
+.template-midnight-cinema .greeting-copy::before {
+  position: absolute;
+  top: -4rem;
+  left: -1rem;
+  color: rgb(210 167 255 / 16%);
+  content: '“';
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(8rem, 16vw, 15rem);
+  line-height: 1;
+}
+.template-midnight-cinema .story-book { color: #f6edf7; }
+.template-midnight-cinema .book-cover {
+  border-radius: 0.15rem;
+  background: #342541;
+  box-shadow: inset 0.5rem 0 1rem rgb(0 0 0 / 30%), 0.45rem 0 0 #17131d;
+}
+.template-midnight-cinema .cover-front {
+  border-color: rgb(210 167 255 / 42%);
+  background:
+    linear-gradient(0deg, rgb(18 15 23 / 68%), transparent),
+    radial-gradient(ellipse at 50% 30%, rgb(150 105 183 / 45%), transparent 58%),
+    #211a29;
+}
+.template-midnight-cinema .cover-ornament,
+.template-midnight-cinema .cover-title { color: #d2a7ff; }
+.template-midnight-cinema .story-finale {
+  grid-template-columns: 0.9fr 1.1fr;
+  background-image: radial-gradient(ellipse at 85% 50%, rgb(150 105 183 / 20%), transparent 52%);
+}
+.template-midnight-cinema .final-copy {
+  border: 1px solid rgb(210 167 255 / 30%);
+  background: rgb(18 15 23 / 48%);
+  backdrop-filter: blur(0.4rem);
+}
+
+.template-botanical-journal .story-hero {
+  grid-template-columns: 0.9fr 1.1fr;
+  background-image:
+    radial-gradient(ellipse at 12% 18%, rgb(255 255 255 / 66%), transparent 42%),
+    repeating-linear-gradient(0deg, transparent 0 2.1rem, rgb(83 104 75 / 7%) 2.1rem 2.15rem);
+}
+.template-botanical-journal .story-hero-photo {
+  border: 0.7rem solid #f8f4e8;
+  border-bottom-width: 3rem;
+  border-radius: 50% 50% 0.4rem 0.4rem;
+  padding: 0;
+  box-shadow: 0 1rem 2.5rem rgb(38 51 34 / 20%);
+  transform: rotate(-1.5deg);
+}
+.template-botanical-journal .story-hero-photo img { border-radius: inherit; }
+.template-botanical-journal .story-hero-photo figcaption {
+  right: 0;
+  bottom: -2.2rem;
+  color: #53684b;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+}
+.template-botanical-journal .story-greeting {
+  grid-template-columns: 1fr 1.1fr;
+  background-image: repeating-linear-gradient(0deg, transparent 0 2.2rem, rgb(83 104 75 / 6%) 2.2rem 2.25rem);
+}
+.template-botanical-journal .greeting-photo,
+.template-botanical-journal .detail-photo,
+.template-botanical-journal .final-photo {
+  border: 0.55rem solid #f8f4e8;
+  box-shadow: 0 1rem 2rem rgb(38 51 34 / 15%);
+}
+.template-botanical-journal .story-gallery {
+  background-image: radial-gradient(ellipse at 50% 50%, rgb(220 229 200 / 12%), transparent 60%);
+}
+.template-botanical-journal .gallery-card:nth-child(odd) { transform: rotate(-1deg) translateY(-0.4rem); }
+.template-botanical-journal .gallery-card:nth-child(even) { transform: rotate(1deg) translateY(0.4rem); }
+.template-botanical-journal .gallery-print {
+  border: 0.45rem solid #f8f4e8;
+  background: #f8f4e8;
+  box-shadow: 0 0.7rem 1.5rem rgb(20 30 18 / 20%);
+}
+.template-botanical-journal .gallery-print figcaption { color: #53684b; }
+.template-botanical-journal .story-detail {
+  grid-template-columns: 1.1fr 0.9fr;
+  background-image: repeating-linear-gradient(0deg, transparent 0 2.2rem, rgb(83 104 75 / 6%) 2.2rem 2.25rem);
+}
+.template-botanical-journal .detail-copy {
+  border-left: 1px solid rgb(83 104 75 / 32%);
+  padding-left: clamp(1rem, 4vw, 3rem);
+}
+.template-botanical-journal .story-book {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgb(83 104 75 / 14%), transparent 58%),
+    #e7dcc1;
+}
+.template-botanical-journal .book-page,
+.template-botanical-journal .book-inside-cover {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 1.8rem, rgb(83 104 75 / 10%) 1.8rem 1.85rem),
+    #f8f4e8;
+}
+.template-botanical-journal .book-cover {
+  border-radius: 0.15rem;
+  background: #53684b;
+  box-shadow: inset 0.5rem 0 1rem rgb(0 0 0 / 18%), 0.45rem 0 0 #354731;
+}
+.template-botanical-journal .cover-front {
+  border-color: rgb(248 244 232 / 70%);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2rem, rgb(248 244 232 / 8%) 2rem 2.05rem),
+    linear-gradient(135deg, #697d5a, #354731);
+}
+.template-botanical-journal .cover-ornament,
+.template-botanical-journal .cover-title { color: #dce5c8; }
+.template-botanical-journal .story-finale {
+  grid-template-columns: 1fr 1fr;
+  background-image: radial-gradient(ellipse at 20% 50%, rgb(255 255 255 / 46%), transparent 45%);
+}
+
+@media (max-width: 760px) {
+  .template-midnight-cinema .story-hero { grid-template-columns: 1fr; }
+  .template-midnight-cinema .story-hero-photo { inset: 0; opacity: 0.42; }
+  .template-midnight-cinema .story-hero-copy { align-self: end; }
+  .template-editorial-rose .story-hero,
+  .template-botanical-journal .story-hero { grid-template-columns: 1fr 0.9fr; }
+  .template-botanical-journal .story-detail { grid-template-columns: 1fr 1fr; }
 }
 </style>

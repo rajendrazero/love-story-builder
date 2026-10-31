@@ -1,26 +1,11 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishStorySchema } from '#shared/schema/story'
-import { requireDatabase, toHex } from '../../utils/cloudflare'
+import { requireDatabase } from '../../utils/cloudflare'
 import { requireOwnedDraft } from '../../utils/drafts'
 import { requireUser } from '../../utils/require-user'
 import { enforceRateLimit } from '../../utils/rate-limit'
-
-async function hashPassword(password: string): Promise<{ salt: string, hash: string }> {
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16))
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  )
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: 120_000 },
-    key,
-    256,
-  )
-  return { salt: toHex(saltBytes.buffer), hash: toHex(bits) }
-}
+import { storyContentStatements } from '../../utils/story-content'
+import { hashStoryPassword } from '../../utils/story-password'
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
@@ -42,28 +27,31 @@ export default defineEventHandler(async (event) => {
   const slug = crypto.randomUUID().replaceAll('-', '').slice(0, 12)
   const id = crypto.randomUUID()
   const publishedAt = new Date().toISOString()
-  const passwordFields = password ? await hashPassword(password) : undefined
+  const passwordFields = password ? await hashStoryPassword(password) : undefined
 
-  await database.prepare(
-    `INSERT INTO stories (id, slug, title, payload_json, password_salt, password_hash, owner_user_id, published_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(
-    id,
-    slug,
-    content.title,
-    JSON.stringify(content),
-    passwordFields?.salt ?? null,
-    passwordFields?.hash ?? null,
-    user.id,
-    publishedAt,
-    publishedAt,
-  ).run()
+  const statements = [
+    ...storyContentStatements(database, id, content),
+    database.prepare(
+      `INSERT INTO stories (id, slug, content_id, password_salt, password_hash, owner_user_id, published_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      id,
+      slug,
+      id,
+      passwordFields?.salt ?? null,
+      passwordFields?.hash ?? null,
+      user.id,
+      publishedAt,
+      publishedAt,
+    ),
+  ]
 
   if (draft) {
-    await database.prepare(
+    statements.push(database.prepare(
       'UPDATE story_drafts SET published_slug = ?, updated_at = ? WHERE id = ? AND owner_user_id = ? AND published_slug IS NULL',
-    ).bind(slug, publishedAt, draft.id, user.id).run()
+    ).bind(slug, publishedAt, draft.id, user.id))
   }
+  await database.batch(statements)
 
   return { slug, publishedAt }
 })

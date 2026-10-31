@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
     <header class="mx-auto mb-10 flex max-w-6xl items-center justify-between">
       <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
       <div class="flex items-center gap-4">
@@ -94,7 +94,7 @@ import type { StoryContent } from '#shared/schema/story'
 interface AdminStory {
   slug: string
   title: string
-  story: StoryContent
+  story: Pick<StoryContent, 'templateId' | 'coupleNames' | 'heroImage'>
   passwordProtected: boolean
   isActive: boolean
   publishedAt: string
@@ -212,7 +212,7 @@ onMounted(load)
 
 <style scoped>
 .section-kicker {
-  color: #9c6257;
+  color: #5045f5;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.2em;

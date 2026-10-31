@@ -1,5 +1,5 @@
 <template>
-  <main ref="studioPage" class="min-h-screen bg-paper px-5 py-8 md:px-12">
+  <main ref="studioPage" class="brand-ui min-h-screen bg-paper px-5 py-8 md:px-12">
     <header class="mx-auto mb-10 flex max-w-5xl items-center justify-between">
       <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
       <div class="flex items-center gap-5">
@@ -150,9 +150,9 @@
                 <option value="sparkle">Kilau</option>
                 <option value="flower">Bunga</option>
                 <option value="star">Bintang</option>
-                <option value="system">Kursor perangkat</option>
+                <option value="system">Default perangkat</option>
               </select>
-              <span class="mt-2 block text-xs text-muted">Ikon bawaan yang aman; tidak menerima URL atau CSS dari pengguna.</span>
+              <span class="mt-2 block text-xs text-muted">Default mengikuti kursor perangkat. Pilihan lain memakai ikon bawaan yang aman.</span>
             </label>
             <label>
               <span class="editor-label">{{ editingStorySlug ? 'Ubah sandi cerita (opsional)' : 'Sandi cerita (opsional)' }}</span>
@@ -171,8 +171,8 @@
           <button type="button" class="rounded-full border border-[#cbbcb0] px-6 py-3 text-sm disabled:opacity-40" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)">← Sebelumnya</button>
           <p v-if="error" class="text-sm text-red-700" role="alert">{{ error }}</p>
           <div class="flex flex-wrap gap-3">
-            <button v-if="activeStep < steps.length - 1" type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#9c6257]" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</button>
-            <button v-else type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#9c6257]" @click="openPreview">Lihat pratinjau ↗</button>
+            <button v-if="activeStep < steps.length - 1" type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</button>
+            <button v-else type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" @click="openPreview">Lihat pratinjau ↗</button>
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@ const steps = [
 ]
 const draft = reactive<StoryContent & { password: string }>({
   templateId: 'editorial-rose',
-  cursorPreset: 'ring',
+  cursorPreset: 'system',
   templateDetails: {
     editorialRose: { dedication: '', signature: '' },
     midnightCinema: { openingQuote: '', credits: '' },
@@ -296,7 +296,7 @@ function draftPayload() {
 function applyStoryContent(content: Partial<StoryContent>) {
   Object.assign(draft, content)
   draft.templateId = content.templateId ?? 'editorial-rose'
-  draft.cursorPreset = content.cursorPreset ?? 'ring'
+  draft.cursorPreset = content.cursorPreset ?? 'system'
   draft.templateDetails = {
     editorialRose: {
       dedication: content.templateDetails?.editorialRose?.dedication ?? '',
@@ -612,7 +612,7 @@ onBeforeUnmount(() => {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: #9c6257;
+  color: #5045f5;
 }
 .step-tab {
   display: flex;
@@ -629,13 +629,13 @@ onBeforeUnmount(() => {
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 .step-tab span:first-child {
-  color: #9c6257;
+  color: #5045f5;
   font-size: 0.65rem;
   font-weight: 700;
 }
 .step-tab:hover { transform: translateY(-2px); }
 .step-tab-active {
-  border-color: #9c6257;
+  border-color: #5045f5;
   background: #fffdfa;
   color: #201d28;
   box-shadow: 0 8px 24px rgb(75 44 36 / 9%);

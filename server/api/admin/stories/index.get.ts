@@ -5,7 +5,9 @@ import { requireAdmin } from '../../../utils/admin-auth'
 interface AdminStoryRow {
   slug: string
   title: string
-  payload_json: string
+  template_id: string
+  couple_names: string
+  hero_image: string
   password_hash: string | null
   published_at: string
   is_active: number
@@ -19,7 +21,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const result = await database.prepare(
-    'SELECT slug, title, payload_json, password_hash, published_at, is_active FROM stories ORDER BY published_at DESC LIMIT 200',
+    `SELECT s.slug, c.title, c.template_id, c.couple_names, c.hero_image,
+            s.password_hash, s.published_at, s.is_active
+     FROM stories s
+     JOIN story_content c ON c.id = s.content_id
+     ORDER BY s.published_at DESC LIMIT 200`,
   ).all<AdminStoryRow>()
 
   return {
@@ -27,7 +33,11 @@ export default defineEventHandler(async (event) => {
     stories: result.results.map(row => ({
       slug: row.slug,
       title: row.title,
-      story: JSON.parse(row.payload_json),
+      story: {
+        templateId: row.template_id,
+        coupleNames: row.couple_names,
+        heroImage: row.hero_image,
+      },
       passwordProtected: Boolean(row.password_hash),
       isActive: row.is_active === 1,
       publishedAt: row.published_at,

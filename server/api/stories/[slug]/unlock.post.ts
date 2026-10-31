@@ -1,30 +1,14 @@
 import { createError, defineEventHandler, getRouterParam, readBody, setResponseHeader } from 'h3'
 import { unlockStorySchema } from '#shared/schema/story'
-import { requireDatabase, toHex } from '../../../utils/cloudflare'
+import { requireDatabase } from '../../../utils/cloudflare'
 import { enforceRateLimit } from '../../../utils/rate-limit'
+import { getStoryContent } from '../../../utils/story-content'
+import { verifyStoryPassword } from '../../../utils/story-password'
 
 interface ProtectedStoryRow {
-  payload_json: string
+  content_id: string
   password_salt: string | null
   password_hash: string | null
-}
-
-function fromHex(value: string): ArrayBuffer {
-  const buffer = new ArrayBuffer(value.length / 2)
-  const bytes = new Uint8Array(buffer)
-  for (let index = 0; index < bytes.length; index += 1) {
-    bytes[index] = Number.parseInt(value.slice(index * 2, index * 2 + 2), 16)
-  }
-  return buffer
-}
-
-function hashesMatch(actual: string, expected: string): boolean {
-  if (actual.length !== expected.length) return false
-  let difference = 0
-  for (let index = 0; index < actual.length; index += 1) {
-    difference |= actual.charCodeAt(index) ^ expected.charCodeAt(index)
-  }
-  return difference === 0
 }
 
 export default defineEventHandler(async (event) => {
@@ -39,32 +23,28 @@ export default defineEventHandler(async (event) => {
   }
   await enforceRateLimit(event, 'story-unlock', 5, 900, slug)
 
-  const row = await requireDatabase(event)
-    .prepare('SELECT payload_json, password_salt, password_hash FROM stories WHERE slug = ? AND is_active = 1')
+  const database = requireDatabase(event)
+  const row = await database
+    .prepare('SELECT content_id, password_salt, password_hash FROM stories WHERE slug = ? AND is_active = 1')
     .bind(slug)
     .first<ProtectedStoryRow>()
 
   if (!row) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
-  if (!row.password_salt || !row.password_hash) {
-    return { story: JSON.parse(row.payload_json) }
+  if (Boolean(row.password_salt) !== Boolean(row.password_hash)) {
+    throw createError({ statusCode: 500, statusMessage: 'Konfigurasi sandi cerita tidak lengkap.' })
   }
-
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(parsed.data.password),
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  )
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: fromHex(row.password_salt), iterations: 120_000 },
-    key,
-    256,
-  )
-  if (!hashesMatch(toHex(bits), row.password_hash)) {
+  if (
+    row.password_salt
+    && row.password_hash
+    && !await verifyStoryPassword(parsed.data.password, row.password_salt, row.password_hash)
+  ) {
     throw createError({ statusCode: 401, statusMessage: 'Sandi yang kamu masukkan belum tepat.' })
   }
-  return { story: JSON.parse(row.payload_json) }
+  const story = await getStoryContent(database, row.content_id)
+  if (!story) {
+    throw createError({ statusCode: 500, statusMessage: 'Konten cerita tidak ditemukan.' })
+  }
+  return { story }
 })

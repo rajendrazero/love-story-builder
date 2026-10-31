@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
     <header class="mx-auto flex max-w-6xl items-center justify-between gap-4">
       <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
       <nav class="flex items-center gap-4 text-sm">
@@ -27,14 +27,23 @@
         >
           <div class="template-card-preview" :class="`template-card-${template.id}`">
             <img :src="demoStory.heroImage" :alt="`Contoh sampul ${template.name}`" loading="lazy">
-            <span class="template-card-tag">{{ template.previewLabel }}</span>
-            <strong>{{ demoStory.coupleNames }}</strong>
-            <span>{{ template.name }}</span>
+            <div class="template-card-art">
+              <span class="template-card-tag">{{ template.previewLabel }}</span>
+              <span class="template-card-layout">{{ template.layout }}</span>
+              <strong>{{ demoStory.coupleNames }}</strong>
+              <span>{{ demoStory.title }}</span>
+              <span class="template-card-date">{{ demoStory.date }}</span>
+            </div>
           </div>
           <div class="p-6">
             <p class="text-xs uppercase tracking-[0.18em] text-[#9c6257]">{{ template.mood }}</p>
             <h2 class="mt-2 font-display text-3xl">{{ template.name }}</h2>
             <p class="mt-2 min-h-14 text-sm leading-6 text-[#756a62]">{{ template.description }}</p>
+            <ul class="mt-4 grid gap-2 text-xs text-[#756a62]">
+              <li v-for="highlight in template.highlights" :key="highlight" class="flex items-center gap-2">
+                <span class="template-highlight-mark" aria-hidden="true">✳</span>{{ highlight }}
+              </li>
+            </ul>
             <div class="mt-5 flex gap-3">
               <button type="button" class="flex-1 rounded-full border border-[#cbbcb0] px-4 py-3 text-xs" @click="previewTemplate(template.id)">
                 Lihat preview
@@ -78,7 +87,7 @@ const createPath = computed(() => `/studio?template=${activePreviewTemplate.valu
 
 useSeoMeta({
   title: 'Pilih template cerita — Selamanya',
-  description: 'Bandingkan preview Editorial Rose, Midnight Cinema, dan Botanical Journal sebelum membuat cerita.',
+  description: 'Pilih komposisi cerita, bukan hanya warna: majalah editorial, film pendek, atau jurnal perjalanan.',
 })
 
 function previewTemplate(id: StoryTemplateId) {
@@ -100,10 +109,9 @@ async function chooseTemplate(id: StoryTemplateId) {
 }
 .template-card-preview {
   position: relative;
-  display: flex;
-  min-height: 18rem;
-  flex-direction: column;
-  justify-content: flex-end;
+  display: grid;
+  min-height: 20rem;
+  place-items: center;
   overflow: hidden;
   padding: 1.5rem;
   color: var(--template-ink);
@@ -112,7 +120,7 @@ async function chooseTemplate(id: StoryTemplateId) {
 .template-card-preview::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 10%, rgb(20 16 22 / 72%));
+  background: linear-gradient(180deg, rgb(20 16 22 / 5%), rgb(20 16 22 / 72%));
   content: '';
 }
 .template-card-preview img {
@@ -121,16 +129,43 @@ async function chooseTemplate(id: StoryTemplateId) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.62;
+  opacity: 0.5;
   transition: transform 500ms ease;
 }
 .template-card:hover .template-card-preview img { transform: scale(1.05); }
-.template-card-preview > span,
-.template-card-preview > strong { position: relative; z-index: 1; color: white; }
-.template-card-preview > strong { font-family: 'Instrument Serif', serif; font-size: 2.5rem; }
-.template-card-tag {
-  align-self: flex-start;
+.template-card-art {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100%, 19rem);
+  min-height: 16rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  border: 1px solid rgb(255 255 255 / 55%);
+  padding: 1.3rem;
+  color: white;
+  background: linear-gradient(180deg, transparent 15%, rgb(20 16 22 / 53%));
+  box-shadow: 0 1rem 2rem rgb(20 16 22 / 18%);
+}
+.template-card-layout,
+.template-card-art > span:not(.template-card-tag) { font-size: 0.68rem; }
+.template-card-layout {
   margin-bottom: auto;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.template-card-art > strong {
+  font-family: 'Instrument Serif', serif;
+  font-size: 2.3rem;
+  line-height: 1;
+}
+.template-card-art > span:not(.template-card-tag) { margin-top: 0.45rem; }
+.template-card-date { opacity: 0.76; }
+.template-card-tag {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   color: var(--template-ink) !important;
@@ -139,6 +174,39 @@ async function chooseTemplate(id: StoryTemplateId) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.template-card-midnight-cinema .template-card-art {
+  align-items: center;
+  justify-content: center;
+  border-inline: 0;
+  text-align: center;
+  background: linear-gradient(180deg, transparent 10%, rgb(18 15 23 / 82%));
+}
+.template-card-midnight-cinema .template-card-layout {
+  margin: 0 0 1rem;
+  color: #e2caff;
+  font-size: 0.58rem;
+}
+.template-card-midnight-cinema .template-card-art > span:not(.template-card-tag) {
+  max-width: 22ch;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+}
 .template-card-midnight-cinema img { filter: saturate(0.55) contrast(1.1); }
+.template-card-botanical-journal .template-card-art {
+  width: min(100%, 18rem);
+  min-height: 17rem;
+  border: 0.45rem solid #f5f0e2;
+  outline: 1px solid rgb(83 104 75 / 80%);
+  outline-offset: -0.75rem;
+  color: #fffaf0;
+  background: linear-gradient(180deg, transparent 15%, rgb(38 51 34 / 78%));
+}
+.template-card-botanical-journal .template-card-layout {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
 .template-card-botanical-journal img { filter: sepia(0.28) saturate(0.76); }
+.template-highlight-mark { color: #5045f5; font-size: 0.8rem; }
 </style>

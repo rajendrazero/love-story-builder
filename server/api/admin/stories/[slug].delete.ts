@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   }
   await database.prepare(
     `DELETE FROM story_drafts
-     WHERE published_slug = ? OR json_extract(payload_json, '$.editingSlug') = ?`,
+     WHERE published_slug = ? OR editing_slug = ?`,
   ).bind(slug, slug).run()
 
   return { deleted: true }

@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   await database.prepare(
     `DELETE FROM story_drafts
      WHERE owner_user_id = ?
-       AND (published_slug = ? OR json_extract(payload_json, '$.editingSlug') = ?)`,
+       AND (published_slug = ? OR editing_slug = ?)`,
   ).bind(user.id, slug, slug).run()
   return { deleted: true }
 })

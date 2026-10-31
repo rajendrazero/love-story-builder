@@ -15,9 +15,12 @@ export default defineEventHandler(async (event) => {
   const id = createDraftId()
   const key = createDraftKey()
   const now = new Date().toISOString()
-  await database.prepare(
-    'INSERT INTO story_drafts (id, key_hash, owner_user_id, payload_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-  ).bind(id, await hashDraftKey(key), user.id, '{}', now, now).run()
+  await database.batch([
+    database.prepare('INSERT INTO story_content (id) VALUES (?)').bind(id),
+    database.prepare(
+      'INSERT INTO story_drafts (id, key_hash, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).bind(id, await hashDraftKey(key), user.id, now, now),
+  ])
 
   return { id, updatedAt: now }
 })

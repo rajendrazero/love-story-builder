@@ -1,24 +1,16 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { updateStorySchema } from '#shared/schema/story'
-import { getAppEnv, toHex } from '../../../utils/cloudflare'
+import { getAppEnv } from '../../../utils/cloudflare'
 import { requireOwnedDraft } from '../../../utils/drafts'
 import { requireUser } from '../../../utils/require-user'
 import { enforceRateLimit } from '../../../utils/rate-limit'
+import { storyContentStatements } from '../../../utils/story-content'
+import { hashStoryPassword } from '../../../utils/story-password'
 
 interface ExistingStoryRow {
+  content_id: string
   password_salt: string | null
   password_hash: string | null
-}
-
-async function hashPassword(password: string): Promise<{ salt: string, hash: string }> {
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16))
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'])
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: 120_000 },
-    key,
-    256,
-  )
-  return { salt: toHex(saltBytes.buffer), hash: toHex(bits) }
 }
 
 export default defineEventHandler(async (event) => {
@@ -42,7 +34,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Binding D1 tidak tersedia.' })
   }
   const existing = await database.prepare(
-    'SELECT password_salt, password_hash FROM stories WHERE slug = ? AND owner_user_id = ?',
+    'SELECT content_id, password_salt, password_hash FROM stories WHERE slug = ? AND owner_user_id = ?',
   ).bind(slug, user.id).first<ExistingStoryRow>()
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
@@ -53,26 +45,23 @@ export default defineEventHandler(async (event) => {
   if (draft?.published_slug && draft.published_slug !== slug) {
     throw createError({ statusCode: 409, statusMessage: 'Draft ini terhubung ke cerita lain.' })
   }
-  const passwordFields = password ? await hashPassword(password) : undefined
+  const passwordFields = password ? await hashStoryPassword(password) : undefined
   const passwordSalt = removePassword ? null : passwordFields?.salt ?? existing.password_salt
   const passwordHash = removePassword ? null : passwordFields?.hash ?? existing.password_hash
   const publishedAt = new Date().toISOString()
-  await database.prepare(
-    'UPDATE stories SET title = ?, payload_json = ?, password_salt = ?, password_hash = ?, published_at = ? WHERE slug = ? AND owner_user_id = ?',
-  ).bind(
-    content.title,
-    JSON.stringify(content),
-    passwordSalt,
-    passwordHash,
-    publishedAt,
-    slug,
-    user.id,
-  ).run()
+  const statements = [
+    ...storyContentStatements(database, existing.content_id, content),
+    ...(draft ? storyContentStatements(database, draft.id, content) : []),
+    database.prepare(
+      'UPDATE stories SET password_salt = ?, password_hash = ?, published_at = ? WHERE slug = ? AND owner_user_id = ?',
+    ).bind(passwordSalt, passwordHash, publishedAt, slug, user.id),
+  ]
 
   if (draft) {
-    await database.prepare(
+    statements.push(database.prepare(
       'UPDATE story_drafts SET published_slug = ?, updated_at = ? WHERE id = ? AND owner_user_id = ?',
-    ).bind(slug, publishedAt, draft.id, user.id).run()
+    ).bind(slug, publishedAt, draft.id, user.id))
   }
+  await database.batch(statements)
   return { slug, publishedAt }
 })

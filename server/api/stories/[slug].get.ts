@@ -1,11 +1,11 @@
 import { createError, defineEventHandler, getRouterParam, setResponseHeader } from 'h3'
 import { requireDatabase } from '../../utils/cloudflare'
+import { getStoryContent } from '../../utils/story-content'
 
 interface StoryRow {
   title: string
-  payload_json: string
+  content_id: string
   password_hash: string | null
-  is_active: number
 }
 
 export default defineEventHandler(async (event) => {
@@ -15,8 +15,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
 
-  const row = await requireDatabase(event)
-    .prepare('SELECT title, payload_json, password_hash, is_active FROM stories WHERE slug = ? AND is_active = 1')
+  const database = requireDatabase(event)
+  const row = await database
+    .prepare(
+      `SELECT c.title, s.content_id, s.password_hash
+       FROM stories s
+       JOIN story_content c ON c.id = s.content_id
+       WHERE s.slug = ? AND s.is_active = 1`,
+    )
     .bind(slug)
     .first<StoryRow>()
 
@@ -27,5 +33,9 @@ export default defineEventHandler(async (event) => {
   if (row.password_hash) {
     return { title: row.title, locked: true }
   }
-  return { title: row.title, locked: false, story: JSON.parse(row.payload_json) }
+  const story = await getStoryContent(database, row.content_id)
+  if (!story) {
+    throw createError({ statusCode: 500, statusMessage: 'Konten cerita tidak ditemukan.' })
+  }
+  return { title: row.title, locked: false, story }
 })

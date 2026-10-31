@@ -37,6 +37,10 @@ test('accepts each template-specific set of copy and safe cursor presets', () =>
       templateDetails: { botanicalJournal: { journalLabel: 'Field notes', fieldNote: 'Growing together' } },
       cursorPreset: 'flower',
     },
+    {
+      templateId: 'editorial-rose',
+      cursorPreset: 'system',
+    },
   ]
 
   for (const options of templateOptions) {

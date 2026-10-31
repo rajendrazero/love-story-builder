@@ -4,7 +4,8 @@ import { requireAdmin } from '../../../utils/admin-auth'
 
 interface AdminDraftRow {
   id: string
-  payload_json: string
+  title: string
+  couple_names: string
   published_slug: string | null
   created_at: string
   updated_at: string
@@ -17,20 +18,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Binding D1 tidak tersedia.' })
   }
   const result = await database.prepare(
-    'SELECT id, payload_json, published_slug, created_at, updated_at FROM story_drafts ORDER BY updated_at DESC LIMIT 200',
+    `SELECT d.id, c.title, c.couple_names, d.published_slug, d.created_at, d.updated_at
+     FROM story_drafts d
+     JOIN story_content c ON c.id = d.id
+     ORDER BY d.updated_at DESC LIMIT 200`,
   ).all<AdminDraftRow>()
 
   return {
-    drafts: result.results.map((row) => {
-      const payload = JSON.parse(row.payload_json) as { title?: string, coupleNames?: string }
-      return {
-        id: row.id,
-        title: payload.title || 'Draft tanpa judul',
-        coupleNames: payload.coupleNames || '',
-        publishedSlug: row.published_slug,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }
-    }),
+    drafts: result.results.map(row => ({
+      id: row.id,
+      title: row.title || 'Draft tanpa judul',
+      coupleNames: row.couple_names,
+      publishedSlug: row.published_slug,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })),
   }
 })

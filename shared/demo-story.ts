@@ -2,7 +2,7 @@ import type { StoryContent } from '#shared/schema/story'
 
 export const demoStory: StoryContent = {
   templateId: 'editorial-rose',
-  cursorPreset: 'ring',
+  cursorPreset: 'system',
   templateDetails: {
     editorialRose: { dedication: 'Edisi khusus untuk dua hati', signature: 'Dengan cinta, selalu' },
     midnightCinema: { openingQuote: 'Setiap kisah punya satu adegan yang ingin diulang.', credits: 'Dibintangi Nara & Arka · 2021—selamanya' },

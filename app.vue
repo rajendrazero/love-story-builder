@@ -36,7 +36,7 @@
 import { gsap } from 'gsap'
 
 const cursor = ref<HTMLElement | null>(null)
-const cursorPreset = useState<'ring' | 'heart' | 'sparkle' | 'flower' | 'star' | 'system'>('story-cursor', () => 'ring')
+const cursorPreset = useState<'ring' | 'heart' | 'sparkle' | 'flower' | 'star' | 'system'>('story-cursor', () => 'system')
 const cursorSymbol = computed(() => ({
   ring: '',
   heart: '♥',

@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
     <header class="mx-auto mb-10 flex max-w-6xl items-center justify-between gap-4">
       <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
       <div class="flex items-center gap-3">
@@ -95,7 +95,7 @@ useSeoMeta({ title: 'Akun — Selamanya', robots: 'noindex, nofollow' })
 interface AccountStory {
   slug: string
   title: string
-  story: StoryContent
+  story: Pick<StoryContent, 'templateId' | 'coupleNames' | 'heroImage'>
   passwordProtected: boolean
   isActive: boolean
   publishedAt: string
@@ -209,7 +209,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.section-kicker { color: #9c6257; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+.section-kicker { color: #5045f5; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
 .account-stat, .account-card, .account-draft { border: 1px solid #e7ddd4; border-radius: 1.5rem; background: #fffdfa; box-shadow: 0 12px 40px rgb(35 25 20 / 4%); }
 .account-stat { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; color: #756a62; font-size: 0.8rem; }
 .account-stat strong { color: #201d28; font-family: 'Instrument Serif', serif; font-size: 2rem; }

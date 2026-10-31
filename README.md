@@ -6,15 +6,24 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 
 1. Pasang Node.js 22.22.3+, 24.15.0+, atau 26+ dan pnpm 10.33.0.
 2. `pnpm install`
-3. Buat database D1 Cloudflare: `pnpm exec wrangler d1 create kekasih-db`; salin ID hasilnya ke `wrangler.toml`.
+3. Gunakan binding D1 yang sudah tercantum di `wrangler.toml`. `pnpm db:local` membuat/menyiapkan database lokal; jangan menjalankan `wrangler d1 create` atau `pnpm db:remote` untuk pengujian lokal.
 4. Siapkan `.dev.vars` (file lokal ini diabaikan Git). `BETTER_AUTH_SECRET` harus berupa nilai acak minimal 32 karakter; `NUXT_PUBLIC_TURNSTILE_SITE_KEY` dan `TURNSTILE_SECRET_KEY` boleh memakai pasangan test di `.dev.vars.example` hanya untuk localhost. Untuk menyelesaikan pendaftaran dan menerima email verifikasi/reset, isi `RESEND_API_KEY` serta `EMAIL_FROM` dengan akun/domain Resend milikmu. Foto menggunakan kredensial Cloudinary lokal.
-5. Terapkan skema ke D1 lokal: `pnpm db:local`
-6. Jalankan situs dengan binding D1 lokal: `pnpm dev`
-7. Siapkan tabel akun lokal satu kali: `Invoke-RestMethod -Uri http://localhost:8787/api/dev/auth/migrate -Method Post` (atau kirim `POST` ke URL tersebut).
+5. Untuk HTTPS lokal, set `BETTER_AUTH_URL=https://localhost:8787` di `.dev.vars`. Jangan gunakan site key Turnstile production di localhost.
+6. Terapkan skema D1 lokal: `pnpm db:local`.
+7. Jalankan Worker lokal dengan binding D1 dan HTTPS: `pnpm dev`, lalu buka `https://localhost:8787`. Wrangler menggunakan sertifikat development lokal; browser mungkin meminta konfirmasi kepercayaan sertifikat.
+8. Siapkan tabel akun lokal satu kali dengan POST ke `https://localhost:8787/api/dev/auth/migrate`. Jika sertifikat lokal belum dipercaya, gunakan hanya untuk localhost: `curl.exe -k -X POST https://localhost:8787/api/dev/auth/migrate`.
 
-`pnpm dev` membangun Worker lalu menjalankannya melalui Wrangler di `http://localhost:8787` dengan binding D1 lokal, sehingga API cerita berfungsi. Di checkout ini, `.dev.vars` lokal sudah dibuat: secret autentikasi acak dan Turnstile test key telah diisi, serta nilai Cloudinary lokal yang sudah ada dipertahankan. Email Resend dan Cloudflare Access belum dikonfigurasi; pendaftaran email tidak akan selesai mengirim verifikasi sampai Resend disetel. Migrasi tabel akun lokal sudah dijalankan; bila membuat ulang D1 lokal, kirim `POST` ke `/api/dev/auth/migrate` setelah `pnpm dev`.
-Untuk iterasi UI Nuxt dengan HMR saja, jalankan `pnpm dev:ui`; server UI ini tidak menyediakan binding D1 atau API autentikasi. `pnpm preview` adalah alias untuk cara menjalankan lokal yang sama. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
-Jalankan pengujian unit dengan `pnpm test`.
+`pnpm dev` membangun Worker sebelum Wrangler menjalankannya; endpoint API, autentikasi, dan D1 lokal tersedia pada origin HTTPS tersebut. Untuk HTTP, gunakan `pnpm dev:http` dan set `BETTER_AUTH_URL=http://localhost:8787`. Jika mengganti protokol, `BETTER_AUTH_URL` harus cocok dengan URL browser agar callback autentikasi dan cookie benar. `pnpm dev:ui` hanya untuk iterasi UI dengan HMR dan tidak menyediakan binding D1 atau API Worker. `pnpm preview` menjalankan Worker lokal seperti `pnpm dev`.
+
+Jalankan `pnpm typecheck` dan `pnpm test` untuk pemeriksaan tipe serta tes otomatis. Periksa integritas dan relasi D1 lokal tanpa menyentuh database production:
+
+```powershell
+pnpm exec wrangler d1 execute kekasih-db --local --command "PRAGMA foreign_key_check;"
+pnpm exec wrangler d1 execute kekasih-db --local --command "PRAGMA table_info('story_content');"
+pnpm exec wrangler d1 execute kekasih-db --local --command "PRAGMA foreign_key_list('stories');"
+```
+
+`foreign_key_check` semestinya tidak mengembalikan baris. Tes `pnpm test` menjalankan migrasi terhadap database SQLite sementara dan memeriksa pemindahan data, struktur 3NF, foreign key, serta cascade delete. Skema cerita menyimpan atribut cerita di `story_content`, foto dan bab dalam tabel anak berurutan, detail template di tabel satu-ke-satu, serta data publikasi/draft terpisah. Migrasi `0006_normalize_story_content.sql` memindahkan data JSON lama dan menghapus kolom JSON; `0007_cascade_story_content.sql` membersihkan konten ketika metadata cerita/draft dihapus. Backup database sebelum menerapkan migrasi remote.
 
 Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; jika `.env` dan `.dev.vars` sama-sama dipakai, pastikan keduanya berisi kredensial akun yang sama. URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`. Alur pembuatan dimulai dari `/templates`; tiap kartu membuka preview utuh dan meneruskan pilihan ke editor.
 
@@ -29,7 +38,7 @@ Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunak
    - `pnpm exec wrangler secret put CLOUDINARY_API_KEY`
    - `pnpm exec wrangler secret put CLOUDINARY_API_SECRET`
    - Untuk admin, setelah membuat Cloudflare Access application: `pnpm exec wrangler secret put ACCESS_AUD` dan `pnpm exec wrangler secret put ADMIN_EMAILS`.
-4. Periksa nama secret yang terpasang (tanpa membaca nilainya): `pnpm exec wrangler secret list`. Saat panduan ini disiapkan, daftar secret production masih kosong; autentikasi, email, Turnstile, Cloudinary, dan admin belum siap sampai langkah konfigurasi di atas dilakukan.
+4. Periksa nama secret yang terpasang (tanpa membaca nilainya): `pnpm exec wrangler secret list`. Pastikan semua variable/secret yang dibutuhkan sudah tersedia sebelum membuka trafik.
 5. Terapkan migrasi D1 production setelah memeriksa akun dan target: `pnpm db:remote`. Perintah ini mengubah database remote.
 6. Deploy dengan `pnpm run deploy`. Setelah menyiapkan Cloudflare Access untuk `/admin*` dan `/api/admin/*`, buka `/admin` melalui Access lalu tekan **Siapkan tabel akun** satu kali.
 7. Dari browser, verifikasi `/register`, verifikasi email, masuk, pembuatan draft, publish, dan link publik. Atur WAF/Rate Limiting Cloudflare sebelum membuka trafik publik.
@@ -44,6 +53,18 @@ Pastikan sudah login dengan `pnpm exec wrangler login`. Database `kekasih-db` su
 - Setiap cerita baru menyimpan `owner_user_id`. Cerita lama sebelum migrasi kepemilikan tetap dapat dilihat publik dan dikelola admin, tetapi tidak muncul sebagai milik akun pengguna karena pemilik sebelumnya tidak diketahui.
 - Tabel Better Auth dibuat melalui migrasi terprogram yang hanya tersedia lewat endpoint admin Access di produksi. Tombol **Siapkan tabel akun** pada `/admin` menjalankan migrasi idempoten. Di lokal, endpoint migrasi khusus hanya aktif saat `pnpm dev` dan hanya menerima host loopback.
 - Akun pengguna bersifat pendaftaran mandiri; penerbitan cerita tidak memerlukan persetujuan admin. Pasang Cloudflare Rate Limiting/WAF untuk endpoint autentikasi sebelum membuka pendaftaran publik.
+
+Halaman `/login` dan `/register` memakai route serta mode form yang terpisah dengan satu komponen akun bersama; tautan antarhalaman mempertahankan parameter redirect yang tervalidasi. Antarmuka akun, admin, studio, dan autentikasi memakai palet utama situs. Tema khusus hanya diterapkan ke halaman cerita dan preview template.
+
+#### Model data D1
+
+- `story_content` menyimpan atribut skalar satu cerita.
+- `story_gallery_items` dan `story_chapters` menyimpan daftar foto/bab dengan kunci urutan `(content_id, position)`.
+- `story_template_editorial`, `story_template_cinema`, dan `story_template_botanical` menyimpan atribut opsional satu-ke-satu per desain.
+- `stories` menyimpan metadata publikasi, kepemilikan, sandi, slug, dan status; `story_drafts` menyimpan metadata draft dan progres editor.
+- Skema cerita memenuhi 3NF dengan atribut skalar, detail template, daftar galeri/bab, metadata publikasi, dan metadata draft dipisah menurut ketergantungan fungsionalnya. Payload JSON lama dikonversi oleh migrasi `0006`; endpoint aplikasi membaca/menulis model relasional. Migrasi `0007` menjaga cascade delete untuk konten terkait.
+
+Jalankan `pnpm db:local` setelah checkout atau perubahan migrasi. `PRAGMA foreign_key_check` memeriksa integritas relasi; `PRAGMA table_info(...)` dan `PRAGMA foreign_key_list(...)` membantu memeriksa struktur. Untuk perubahan skema di Cloudflare production, backup dahulu dan terapkan hanya dengan `pnpm db:remote` setelah memverifikasi target.
 
 #### Konfigurasi autentikasi, email, dan pemeriksaan manusia
 
