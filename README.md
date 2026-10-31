@@ -12,14 +12,15 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 6. Jalankan situs dengan binding Cloudflare lokal: `pnpm preview`
 
 `pnpm dev` dapat digunakan untuk iterasi UI Nuxt, sedangkan preview berbasis Wrangler menjalankan binding D1 yang dipakai API. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
+Jalankan pengujian unit dengan `pnpm test`.
 
-Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`.
+Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; jika `.env` dan `.dev.vars` sama-sama dipakai, pastikan keduanya berisi kredensial akun yang sama. URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`.
 
 ## Siapkan Cloudflare
 
 1. Jika belum dibuat, buat database D1: `pnpm exec wrangler d1 create kekasih-db`, lalu salin `database_id` hasilnya ke `wrangler.toml`.
 2. Terapkan skema: `pnpm db:remote`.
-3. `wrangler.toml` sudah mengatur Cloudflare account dan binding Hyperdrive `HYPERDRIVE`. Binding ini tersedia untuk Worker, tetapi API cerita saat ini masih menggunakan D1 melalui binding `DB`; migrasi backend ke database Hyperdrive belum dilakukan.
+3. API cerita menggunakan database D1 melalui binding `DB`, yang sudah diatur di `wrangler.toml`.
 4. Isi `CLOUDINARY_CLOUD_NAME` pada `[vars]` di `wrangler.toml`. Simpan kredensial privat dengan `pnpm exec wrangler secret put CLOUDINARY_API_KEY` dan `pnpm exec wrangler secret put CLOUDINARY_API_SECRET`. Wrangler meminta nilainya secara interaktif; jangan commit atau kirim secret lewat chat.
 5. Deploy: `pnpm run deploy`.
 

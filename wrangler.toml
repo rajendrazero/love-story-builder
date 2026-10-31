@@ -14,9 +14,5 @@ database_name = "kekasih-db"
 database_id = "0a185ee6-2e34-42bb-9c13-81a3cbb20b39"
 migrations_dir = "migrations"
 
-[[hyperdrive]]
-binding = "HYPERDRIVE"
-id = "d562047566344e7ab2744003820266ca"
-
 [vars]
 CLOUDINARY_CLOUD_NAME = ""

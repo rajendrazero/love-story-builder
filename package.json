@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
+    "test": "node --experimental-strip-types --test",
     "preview": "pnpm build && wrangler dev",
     "deploy": "pnpm build && wrangler deploy",
     "db:local": "wrangler d1 migrations apply kekasih-db --local",

@@ -14,6 +14,8 @@
 </template>
 
 <script setup lang="ts">
+import { uploadImageToCloudinary } from '#shared/utils/cloudinary-upload'
+
 const urlInputId = useId()
 const fileInputId = `${urlInputId}-file`
 const errorId = `${urlInputId}-error`
@@ -44,28 +46,11 @@ async function upload(event: Event) {
 
   uploading.value = true
   try {
-    const signature = await $fetch<{
-      cloudName: string
-      apiKey: string
-      folder: string
-      timestamp: number
-      signature: string
-    }>('/api/uploads/signature', { method: 'POST' })
-    const body = new FormData()
-    body.append('file', file)
-    body.append('api_key', signature.apiKey)
-    body.append('folder', signature.folder)
-    body.append('timestamp', String(signature.timestamp))
-    body.append('signature', signature.signature)
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`, {
-      method: 'POST',
-      body,
-    })
-    const result = await response.json() as { secure_url?: string, error?: { message?: string } }
-    if (!response.ok || !result.secure_url) {
-      throw new Error(result.error?.message || 'Cloudinary gagal mengunggah foto.')
-    }
-    emit('update:modelValue', result.secure_url)
+    const secureUrl = await uploadImageToCloudinary(
+      file,
+      () => $fetch('/api/uploads/signature', { method: 'POST' }),
+    )
+    emit('update:modelValue', secureUrl)
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Foto belum berhasil diunggah.'
   } finally {
