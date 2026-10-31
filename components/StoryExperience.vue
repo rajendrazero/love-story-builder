@@ -58,7 +58,14 @@
         </div>
         <p class="gallery-hint">Geser untuk melihat →</p>
       </header>
-      <div class="gallery-track" role="region" aria-label="Galeri foto kenangan" tabindex="0">
+      <div
+        class="gallery-track"
+        role="region"
+        aria-label="Galeri foto kenangan"
+        tabindex="0"
+        @keydown.left.prevent="scrollGallery(-1)"
+        @keydown.right.prevent="scrollGallery(1)"
+      >
         <div
           v-for="(photo, index) in story.gallery"
           :key="`${index}-${photo.url}`"
@@ -255,6 +262,12 @@ let turnTimer: ReturnType<typeof setTimeout> | undefined
 
 const leftPage = computed(() => props.story.storyPages[activePage.value - 1] ?? null)
 const rightPage = computed(() => props.story.storyPages[activePage.value] ?? null)
+
+function scrollGallery(direction: -1 | 1) {
+  const track = experience.value?.querySelector<HTMLElement>('.gallery-track')
+  if (!track) return
+  track.scrollBy({ left: direction * track.clientWidth * 0.75, behavior: 'smooth' })
+}
 
 async function toggleMusic() {
   if (!audio.value) return
@@ -703,6 +716,11 @@ onBeforeUnmount(() => {
   flex: 1;
   border-radius: 0.85rem;
   object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.gallery-card:hover .gallery-print img {
+  transform: scale(1.035);
 }
 
 .gallery-print figcaption {
@@ -1560,6 +1578,10 @@ onBeforeUnmount(() => {
   .page-turn-next,
   .page-turn-previous {
     animation-duration: 1ms;
+  }
+
+  .gallery-print img {
+    transition: none;
   }
 }
 </style>
