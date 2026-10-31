@@ -1,19 +1,22 @@
 <template>
-  <label class="block">
-    <span class="editor-label">{{ label }}</span>
+  <div class="block">
+    <label :for="urlInputId" class="editor-label">{{ label }}</label>
     <div class="flex items-center gap-3">
-      <input class="editor-input min-w-0 flex-1" :value="modelValue" type="url" required placeholder="https://... atau unggah foto" @input="updateUrl">
-      <label class="shrink-0 cursor-pointer rounded-xl border border-[#ded5cb] px-4 py-3 text-xs transition hover:border-[#9c6257]">
+      <input :id="urlInputId" class="editor-input min-w-0 flex-1" :value="modelValue" type="url" required placeholder="https://... atau unggah foto" :aria-invalid="Boolean(error)" :aria-describedby="error ? errorId : undefined" @input="updateUrl">
+      <label :for="fileInputId" class="shrink-0 cursor-pointer rounded-xl border border-[#ded5cb] px-4 py-3 text-xs transition hover:border-[#9c6257]">
         {{ uploading ? 'Mengunggah…' : 'Pilih foto' }}
-        <input class="sr-only" type="file" accept="image/*" :disabled="uploading" @change="upload">
       </label>
+      <input :id="fileInputId" class="sr-only" type="file" accept="image/*" :disabled="uploading" @change="upload">
     </div>
     <img v-if="modelValue" :src="modelValue" alt="Pratinjau foto" class="mt-3 h-36 w-full rounded-xl object-cover">
-    <span v-if="error" class="mt-2 block text-xs text-red-700">{{ error }}</span>
-  </label>
+    <span v-if="error" :id="errorId" class="mt-2 block text-xs text-red-700" role="alert">{{ error }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
+const urlInputId = useId()
+const fileInputId = `${urlInputId}-file`
+const errorId = `${urlInputId}-error`
 const props = defineProps<{ modelValue: string, label: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const uploading = ref(false)

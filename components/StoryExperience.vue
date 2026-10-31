@@ -59,20 +59,20 @@
         <p class="gallery-hint">Geser untuk melihat →</p>
       </header>
       <div class="gallery-track" role="region" aria-label="Galeri foto kenangan" tabindex="0">
-        <figure
+        <div
           v-for="(photo, index) in story.gallery"
           :key="`${index}-${photo.url}`"
           class="gallery-card"
         >
-          <div class="gallery-print">
+          <figure class="gallery-print">
             <img
               :src="photo.url"
               :alt="photo.caption || `Kenangan ${index + 1}`"
               :loading="index > 1 ? 'lazy' : 'eager'"
             >
             <figcaption>{{ photo.caption }}</figcaption>
-          </div>
-        </figure>
+          </figure>
+        </div>
       </div>
     </section>
 
@@ -688,6 +688,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   flex-direction: column;
+  margin: 0;
   border: 0.45rem solid white;
   border-bottom-width: clamp(2.5rem, 6svh, 3.5rem);
   border-radius: 1.4rem;
