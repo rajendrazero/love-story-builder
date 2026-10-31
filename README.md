@@ -7,23 +7,32 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 1. Pasang Node.js 22.22.3+, 24.15.0+, atau 26+ dan pnpm 10.33.0.
 2. `pnpm install`
 3. Buat database D1 Cloudflare: `pnpm exec wrangler d1 create kekasih-db`; salin ID hasilnya ke `wrangler.toml`.
-4. Salin `.dev.vars.example` menjadi `.dev.vars`. Isi `BETTER_AUTH_SECRET` dengan nilai acak minimal 32 karakter. Untuk mencoba pendaftaran, verifikasi, dan reset sandi, isi `RESEND_API_KEY` serta `EMAIL_FROM` dengan domain pengirim yang sudah diverifikasi di Resend. Isi kredensial Cloudinary jika ingin mengunggah foto.
+4. Siapkan `.dev.vars` (file lokal ini diabaikan Git). `BETTER_AUTH_SECRET` harus berupa nilai acak minimal 32 karakter; `NUXT_PUBLIC_TURNSTILE_SITE_KEY` dan `TURNSTILE_SECRET_KEY` boleh memakai pasangan test di `.dev.vars.example` hanya untuk localhost. Untuk menyelesaikan pendaftaran dan menerima email verifikasi/reset, isi `RESEND_API_KEY` serta `EMAIL_FROM` dengan akun/domain Resend milikmu. Foto menggunakan kredensial Cloudinary lokal.
 5. Terapkan skema ke D1 lokal: `pnpm db:local`
 6. Jalankan situs dengan binding D1 lokal: `pnpm dev`
 7. Siapkan tabel akun lokal satu kali: `Invoke-RestMethod -Uri http://localhost:8787/api/dev/auth/migrate -Method Post` (atau kirim `POST` ke URL tersebut).
 
-`pnpm dev` membangun Worker lalu menjalankannya melalui Wrangler dengan binding D1 lokal, sehingga API cerita berfungsi. Untuk iterasi UI Nuxt dengan HMR saja, jalankan `pnpm dev:ui`; server UI ini tidak menyediakan binding D1. `pnpm preview` adalah alias untuk cara menjalankan lokal yang sama. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
+`pnpm dev` membangun Worker lalu menjalankannya melalui Wrangler di `http://localhost:8787` dengan binding D1 lokal, sehingga API cerita berfungsi. Di checkout ini, `.dev.vars` lokal sudah dibuat: secret autentikasi acak dan Turnstile test key telah diisi, serta nilai Cloudinary lokal yang sudah ada dipertahankan. Email Resend dan Cloudflare Access belum dikonfigurasi; pendaftaran email tidak akan selesai mengirim verifikasi sampai Resend disetel. Migrasi tabel akun lokal sudah dijalankan; bila membuat ulang D1 lokal, kirim `POST` ke `/api/dev/auth/migrate` setelah `pnpm dev`.
+Untuk iterasi UI Nuxt dengan HMR saja, jalankan `pnpm dev:ui`; server UI ini tidak menyediakan binding D1 atau API autentikasi. `pnpm preview` adalah alias untuk cara menjalankan lokal yang sama. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
 Jalankan pengujian unit dengan `pnpm test`.
 
 Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; jika `.env` dan `.dev.vars` sama-sama dipakai, pastikan keduanya berisi kredensial akun yang sama. URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`. Alur pembuatan dimulai dari `/templates`; tiap kartu membuka preview utuh dan meneruskan pilihan ke editor.
 
 ## Siapkan Cloudflare
 
-1. Jika belum dibuat, buat database D1: `pnpm exec wrangler d1 create kekasih-db`, lalu salin `database_id` hasilnya ke `wrangler.toml`.
-2. Terapkan skema: `pnpm db:remote`.
-3. API cerita menggunakan database D1 melalui binding `DB`, yang sudah diatur di `wrangler.toml`.
-4. Isi `CLOUDINARY_CLOUD_NAME` pada `[vars]` di `wrangler.toml`. Simpan kredensial privat dengan `pnpm exec wrangler secret put CLOUDINARY_API_KEY` dan `pnpm exec wrangler secret put CLOUDINARY_API_SECRET`. Wrangler meminta nilainya secara interaktif; jangan commit atau kirim secret lewat chat.
-5. Deploy: `pnpm run deploy`.
+1. Login ke akun Cloudflare yang benar: `pnpm exec wrangler login`. D1 dan account ID proyek ini sudah terhubung di `wrangler.toml`; jangan membuat database baru kecuali memang ingin memindahkan data.
+2. Dari dashboard Cloudflare/Turnstile, buat widget untuk hostname production. Atur Worker variables `BETTER_AUTH_URL`, `EMAIL_FROM`, `ACCESS_TEAM_DOMAIN`, `CLOUDINARY_CLOUD_NAME`, dan `NUXT_PUBLIC_TURNSTILE_SITE_KEY` dengan nilai dari domain/akun milikmu. Site key Turnstile adalah nilai publik; secret key-nya bukan.
+3. Isi secret Worker secara interaktif (Wrangler meminta nilainya, jadi nilainya tidak perlu dikirim ke chat atau ditulis ke source):
+   - `pnpm exec wrangler secret put BETTER_AUTH_SECRET`
+   - `pnpm exec wrangler secret put TURNSTILE_SECRET_KEY`
+   - `pnpm exec wrangler secret put RESEND_API_KEY`
+   - `pnpm exec wrangler secret put CLOUDINARY_API_KEY`
+   - `pnpm exec wrangler secret put CLOUDINARY_API_SECRET`
+   - Untuk admin, setelah membuat Cloudflare Access application: `pnpm exec wrangler secret put ACCESS_AUD` dan `pnpm exec wrangler secret put ADMIN_EMAILS`.
+4. Periksa nama secret yang terpasang (tanpa membaca nilainya): `pnpm exec wrangler secret list`. Saat panduan ini disiapkan, daftar secret production masih kosong; autentikasi, email, Turnstile, Cloudinary, dan admin belum siap sampai langkah konfigurasi di atas dilakukan.
+5. Terapkan migrasi D1 production setelah memeriksa akun dan target: `pnpm db:remote`. Perintah ini mengubah database remote.
+6. Deploy dengan `pnpm run deploy`. Setelah menyiapkan Cloudflare Access untuk `/admin*` dan `/api/admin/*`, buka `/admin` melalui Access lalu tekan **Siapkan tabel akun** satu kali.
+7. Dari browser, verifikasi `/register`, verifikasi email, masuk, pembuatan draft, publish, dan link publik. Atur WAF/Rate Limiting Cloudflare sebelum membuka trafik publik.
 
 Pastikan sudah login dengan `pnpm exec wrangler login`. Database `kekasih-db` sudah dikaitkan ke proyek ini. Kredensial API Cloudinary tidak pernah dikirim ke browser; hanya API key publik dan tanda tangan upload yang berumur pendek yang digunakan untuk unggahan.
 
@@ -38,13 +47,13 @@ Pastikan sudah login dengan `pnpm exec wrangler login`. Database `kekasih-db` su
 
 #### Konfigurasi autentikasi, email, dan pemeriksaan manusia
 
-1. Verifikasi domain pengirim email di Resend.
+1. Verifikasi domain pengirim email di Resend; `EMAIL_FROM` harus menggunakan alamat pada domain terverifikasi itu.
 2. Set `BETTER_AUTH_URL` ke origin situs yang sebenarnya (contoh `https://cerita.example.com`) sebagai Worker variable.
 3. Simpan secret dengan Wrangler; perintah akan meminta nilainya secara interaktif:
    - `pnpm exec wrangler secret put BETTER_AUTH_SECRET` — secret acak minimal 32 karakter; buat dengan `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`.
    - `pnpm exec wrangler secret put RESEND_API_KEY`.
    - `pnpm exec wrangler secret put TURNSTILE_SECRET_KEY` — secret server dari widget Cloudflare Turnstile.
-4. Atur `EMAIL_FROM`, misalnya `Selamanya <noreply@domain-terverifikasi.example>`, sebagai Worker variable. Isi `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, dan `EMAIL_FROM` di `.dev.vars` untuk lokal; jangan commit `.dev.vars` atau secret.
+4. Atur `EMAIL_FROM`, misalnya `Selamanya <noreply@domain-terverifikasi.example>`, sebagai Worker variable. Untuk lokal, isi `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, dan `EMAIL_FROM` di `.dev.vars`; jangan commit `.dev.vars` atau secret.
 5. Tambahkan `NUXT_PUBLIC_TURNSTILE_SITE_KEY` sebagai Worker variable non-secret dengan site key dari widget yang hostname-nya sesuai dengan `BETTER_AUTH_URL`. Untuk lokal, `.dev.vars.example` menggunakan pasangan test key Cloudflare; gunakan hanya di lokal, bukan production.
 6. Untuk produksi, jalankan `pnpm db:remote`, deploy dengan `pnpm run deploy`, lalu buka `/admin` melalui Cloudflare Access dan tekan **Siapkan tabel akun** satu kali. Setelah berhasil, `/register` dapat menerima pendaftaran. Endpoint autentikasi mengembalikan 503 bila secret Turnstile belum disetel (fail closed).
 7. Lindungi `/admin*` dan `/api/admin/*` dengan aplikasi/policy Cloudflare Access terpisah dari pendaftaran akun biasa. Jangan lindungi seluruh domain dengan policy admin; halaman cerita publik dan endpoint login harus tetap dapat dijangkau pengguna.
