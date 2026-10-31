@@ -9,9 +9,9 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 3. Buat database D1 Cloudflare: `pnpm exec wrangler d1 create kekasih-db`; salin ID hasilnya ke `wrangler.toml`.
 4. Opsional: salin `.dev.vars.example` menjadi `.dev.vars` dan isi kredensial Cloudinary untuk mengaktifkan unggah foto. Tanpa env tersebut, preview dan backend cerita tetap berjalan; foto dapat ditambahkan melalui URL HTTPS.
 5. Terapkan skema ke D1 lokal: `pnpm db:local`
-6. Jalankan situs dengan binding Cloudflare lokal: `pnpm preview`
+6. Jalankan situs dengan binding D1 lokal: `pnpm dev`
 
-`pnpm dev` dapat digunakan untuk iterasi UI Nuxt, sedangkan preview berbasis Wrangler menjalankan binding D1 yang dipakai API. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
+`pnpm dev` membangun Worker lalu menjalankannya melalui Wrangler dengan binding D1 lokal, sehingga API cerita berfungsi. Untuk iterasi UI Nuxt dengan HMR saja, jalankan `pnpm dev:ui`; server UI ini tidak menyediakan binding D1. `pnpm preview` adalah alias untuk cara menjalankan lokal yang sama. Jalankan pemeriksaan tipe dengan `pnpm typecheck`.
 Jalankan pengujian unit dengan `pnpm test`.
 
 Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; jika `.env` dan `.dev.vars` sama-sama dipakai, pastikan keduanya berisi kredensial akun yang sama. URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`.

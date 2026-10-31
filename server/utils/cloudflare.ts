@@ -25,7 +25,10 @@ export function getAppEnv(event: H3Event): AppEnv {
 export function requireDatabase(event: H3Event) {
   const database = getAppEnv(event).DB
   if (!database) {
-    throw createError({ statusCode: 503, statusMessage: 'Database D1 belum dikonfigurasi.' })
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Binding D1 tidak tersedia. Jalankan pnpm dev atau pnpm preview, bukan pnpm dev:ui.',
+    })
   }
   return database
 }

@@ -7,10 +7,11 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "dev": "nuxt dev",
+    "dev": "pnpm build && wrangler dev",
+    "dev:ui": "nuxt dev",
     "build": "nuxt build",
     "test": "node --experimental-strip-types --test",
-    "preview": "pnpm build && wrangler dev",
+    "preview": "pnpm dev",
     "deploy": "pnpm build && wrangler deploy",
     "db:local": "wrangler d1 migrations apply kekasih-db --local",
     "db:remote": "wrangler d1 migrations apply kekasih-db --remote",
