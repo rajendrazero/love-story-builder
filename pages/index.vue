@@ -78,7 +78,10 @@
         </article>
       </div>
       <div class="feature-ticker" aria-label="Foto favorit, inside jokes, lagu kalian, cerita nyata">
-        <span v-for="(item, index) in tickerItems" :key="item">{{ item }} <b>{{ index % 2 ? '♡' : '✳' }}</b></span>
+        <div class="ticker-track">
+          <span v-for="(item, index) in tickerItems" :key="item">{{ item }} <b>{{ index % 2 ? '♡' : '✳' }}</b></span>
+          <span v-for="(item, index) in tickerItems" :key="`repeat-${item}`" aria-hidden="true">{{ item }} <b>{{ index % 2 ? '♡' : '✳' }}</b></span>
+        </div>
       </div>
     </section>
 
@@ -157,6 +160,46 @@ onMounted(() => {
         once: true,
       },
     })
+
+    const cleanupHandlers: Array<() => void> = []
+    const cards = root.querySelectorAll<HTMLElement>('.feature-card')
+    cards.forEach((card) => {
+      const onPointerMove = (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse') return
+        const bounds = card.getBoundingClientRect()
+        const x = (event.clientX - bounds.left) / bounds.width - 0.5
+        const y = (event.clientY - bounds.top) / bounds.height - 0.5
+        gsap.to(card, {
+          rotationY: x * 7,
+          rotationX: y * -7,
+          y: -4,
+          transformPerspective: 900,
+          duration: 0.3,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        })
+      }
+      const onPointerLeave = () => {
+        gsap.to(card, {
+          rotationY: 0,
+          rotationX: 0,
+          y: 0,
+          duration: 0.55,
+          ease: 'elastic.out(1, 0.55)',
+          overwrite: 'auto',
+        })
+      }
+
+      card.addEventListener('pointermove', onPointerMove)
+      card.addEventListener('pointerleave', onPointerLeave)
+      cleanupHandlers.push(() => {
+        card.removeEventListener('pointermove', onPointerMove)
+        card.removeEventListener('pointerleave', onPointerLeave)
+        gsap.killTweensOf(card)
+      })
+    })
+
+    return () => cleanupHandlers.forEach(cleanup => cleanup())
   })
 })
 
@@ -182,6 +225,11 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.65rem var(--page-pad);
+  border-bottom: 1px solid rgb(32 29 40 / 8%);
+  background: rgb(247 244 237 / 88%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 220ms ease, box-shadow 220ms ease;
 }
 
 .home-brand,
@@ -358,7 +406,7 @@ onBeforeUnmount(() => {
   padding: 0.7rem 1rem;
   font-size: clamp(0.62rem, 0.9vw, 0.76rem);
   text-decoration: none;
-  transition: transform 180ms ease, background 180ms ease;
+  transition: transform 220ms cubic-bezier(0.2, 0.75, 0.3, 1), background 180ms ease, box-shadow 180ms ease;
 }
 
 .button-primary {
@@ -375,7 +423,8 @@ onBeforeUnmount(() => {
 
 .button-primary:hover,
 .button-quiet:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 0.6rem 1.5rem rgb(20 14 56 / 18%);
 }
 
 .home-hero-collage {
@@ -537,6 +586,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+  transform-style: preserve-3d;
   border-radius: clamp(0.9rem, 2vw, 1.5rem);
   padding: clamp(0.65rem, 1.8vw, 1.5rem);
 }
@@ -655,11 +705,8 @@ onBeforeUnmount(() => {
 }
 
 .feature-ticker {
-  display: flex;
+  display: block;
   min-height: 1.5rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
   overflow: hidden;
   color: #201d28;
   font-size: clamp(0.45rem, 0.75vw, 0.62rem);
@@ -667,6 +714,18 @@ onBeforeUnmount(() => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.feature-ticker .ticker-track {
+  display: flex;
+  width: max-content;
+  min-height: inherit;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+
+.feature-ticker .ticker-track > span {
+  flex: 0 0 auto;
 }
 
 .feature-ticker b {
@@ -950,6 +1009,10 @@ onBeforeUnmount(() => {
     letter-spacing: 0.05em;
   }
 
+  .feature-ticker .ticker-track {
+    gap: 0.8rem;
+  }
+
   .feature-ticker b {
     margin-left: 0.12rem;
   }
@@ -1036,7 +1099,8 @@ onBeforeUnmount(() => {
     font-size: 0.7rem;
   }
 
-  .feature-ticker > span:last-child {
+  .feature-ticker .ticker-track > span:nth-child(5),
+  .feature-ticker .ticker-track > span:nth-child(10) {
     display: none;
   }
 
