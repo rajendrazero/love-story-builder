@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-paper px-5 py-8 md:px-12">
+  <main ref="studioPage" class="min-h-screen bg-paper px-5 py-8 md:px-12">
     <header class="mx-auto mb-10 flex max-w-5xl items-center justify-between">
       <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
       <div class="flex items-center gap-5">
@@ -130,6 +130,7 @@
             <button class="rounded-full bg-ink px-5 py-3 text-sm text-white" @click="copyLink">Salin tautan</button>
             <NuxtLink :to="`/w/${publishedSlug}`" class="rounded-full border border-ink px-5 py-3 text-sm">Lihat cerita</NuxtLink>
           </div>
+          <p v-if="copyMessage" class="mt-3 text-sm text-muted" role="status">{{ copyMessage }}</p>
           <button class="mt-5 text-xs text-muted" @click="publishedUrl = ''">Tutup</button>
         </div>
       </div>
@@ -139,8 +140,12 @@
 
 <script setup lang="ts">
 import { storyContentSchema, type StoryContent } from '#shared/schema/story'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'))
+const studioPage = ref<HTMLElement | null>(null)
+let studioMotion: gsap.MatchMedia | undefined
 const draft = reactive<StoryContent & { password: string }>({
   title: '',
   coupleNames: '',
@@ -164,6 +169,38 @@ const error = ref('')
 const publishedUrl = ref('')
 const publishedSlug = ref('')
 const previewOpen = ref(false)
+const copyMessage = ref('')
+
+onMounted(() => {
+  const root = studioPage.value
+  if (!root) return
+
+  gsap.registerPlugin(ScrollTrigger)
+  studioMotion = gsap.matchMedia(root)
+  studioMotion.add('(prefers-reduced-motion: no-preference)', () => {
+    gsap.from(root.querySelectorAll('header, .max-w-2xl'), {
+      y: 18,
+      autoAlpha: 0,
+      duration: 0.65,
+      stagger: 0.12,
+      ease: 'power2.out',
+    })
+
+    root.querySelectorAll<HTMLElement>('.editor-card').forEach((card) => {
+      gsap.from(card, {
+        y: 20,
+        autoAlpha: 0,
+        duration: 0.55,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 88%',
+          once: true,
+        },
+      })
+    })
+  })
+})
 
 function openPreview() {
   const parsed = storyContentSchema.safeParse(draft)
@@ -194,8 +231,18 @@ async function publish() {
 }
 
 async function copyLink() {
-  await navigator.clipboard.writeText(publishedUrl.value)
+  copyMessage.value = ''
+  try {
+    await navigator.clipboard.writeText(publishedUrl.value)
+    copyMessage.value = 'Tautan berhasil disalin.'
+  } catch {
+    copyMessage.value = 'Tautan belum bisa disalin. Salin alamat di atas secara manual.'
+  }
 }
+
+onBeforeUnmount(() => {
+  studioMotion?.revert()
+})
 </script>
 
 <style scoped>
@@ -204,6 +251,10 @@ async function copyLink() {
   background: #fffdfa;
   padding: 1.5rem;
   box-shadow: 0 12px 40px rgb(35 25 20 / 4%);
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+.editor-card:hover {
+  box-shadow: 0 18px 48px rgb(35 25 20 / 8%);
 }
 .section-kicker {
   margin-bottom: 1.25rem;
