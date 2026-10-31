@@ -1,0 +1,22 @@
+name = "website-for-kekasih"
+main = ".output/server/index.mjs"
+account_id = "795d6ba8d3c6d69f7f065c5b865a1433"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kekasih-db"
+database_id = "0a185ee6-2e34-42bb-9c13-81a3cbb20b39"
+migrations_dir = "migrations"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "d562047566344e7ab2744003820266ca"
+
+[vars]
+CLOUDINARY_CLOUD_NAME = ""
