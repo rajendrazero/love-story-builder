@@ -36,6 +36,10 @@ pnpm exec wrangler d1 execute kekasih-db --local --command "PRAGMA foreign_key_l
 
 Galeri dan foto yang dipilih di studio diunggah langsung ke Cloudinary menggunakan tanda tangan yang dibuat backend. Untuk unggah foto, isi ketiga variabel Cloudinary; jika `.env` dan `.dev.vars` sama-sama dipakai, pastikan keduanya berisi kredensial akun yang sama. URL gambar HTTPS juga bisa dimasukkan langsung. Contoh hasil bisa dilihat tanpa mengisi form di `/preview`, termasuk mengganti gaya melalui pemilih preview. Ilustrasi contoh disimpan lokal agar pratinjau tetap tampil saat jaringan eksternal diblokir. Alur pembuatan dimulai dari `/templates`; tiap kartu membuka preview utuh yang bisa ditutup dan meneruskan pilihan ke editor.
 
+Kode antarmuka mengikuti struktur Nuxt 4 di `app/`: halaman ada di `app/pages/`, komponen di `app/components/`, middleware aplikasi di `app/middleware/`, dan CSS di `app/assets/`. Kode runtime backend mengikuti struktur Nuxt di `server/`: endpoint API di `server/api/`, helper server di `server/utils/`, route non-API di `server/routes/` bila diperlukan, dan middleware server global di `server/middleware/` bila diperlukan. Skema/data bersama ada di `shared/`, aset publik di `public/`, sedangkan migrasi D1 tetap di root `migrations/` karena `wrangler.toml` menunjuk direktori tersebut melalui `migrations_dir`.
+
+Struktur layout cerita per template berada di `app/components/story-templates/layouts/`. Setiap layout menentukan urutan dan pengelompokan section; isi section memakai data cerita yang sama di `app/components/StoryExperience.vue`. Tambahkan layout baru di folder tersebut dan daftarkan pada pemetaan `storyLayouts` di `StoryExperience.vue`. Preview modal juga menghubungkan animasi scroll ke elemen overlay yang benar agar section berikutnya tetap muncul saat digulir.
+
 ## Siapkan Cloudflare
 
 1. Login ke akun Cloudflare yang benar: `pnpm exec wrangler login`. D1 dan account ID proyek ini sudah terhubung di `wrangler.toml`; jangan membuat database baru kecuali memang ingin memindahkan data.

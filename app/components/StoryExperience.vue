@@ -21,6 +21,8 @@
       </div>
     </div>
 
+    <component :is="storyLayout">
+    <template #hero>
     <section class="story-screen story-hero">
       <div class="story-hero-copy">
         <p class="story-date">{{ story.date }}</p>
@@ -62,7 +64,9 @@
       <span class="hero-sparkle" aria-hidden="true">✳</span>
       <audio v-if="story.musicUrl" ref="audio" :src="story.musicUrl" loop />
     </section>
+    </template>
 
+    <template #greeting>
     <section class="story-screen story-greeting">
       <div class="greeting-copy">
         <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : story.templateId === 'love-letter' ? 'Surat yang kusimpan' : 'Untukmu, selalu ♡' }}</p>
@@ -88,7 +92,9 @@
         <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : story.templateId === 'love-letter' ? 'disimpan di antara halaman ♡' : 'one for the scrapbook ✳' }}</span>
       </div>
     </section>
+    </template>
 
+    <template #gallery>
     <section ref="gallerySection" class="story-screen story-gallery">
       <header class="section-heading">
         <div>
@@ -121,7 +127,9 @@
         </div>
       </div>
     </section>
+    </template>
 
+    <template #detail>
     <section class="story-screen story-detail">
       <div class="detail-photo">
         <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
@@ -133,7 +141,9 @@
         <p>{{ story.detailText }}</p>
       </div>
     </section>
+    </template>
 
+    <template #book>
     <section class="story-screen story-book">
       <header class="book-heading">
         <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : story.templateId === 'love-letter' ? 'surat yang selalu ingin kubaca' : 'the lore, in chapters' }}</p>
@@ -253,7 +263,9 @@
         </template>
       </div>
     </section>
+    </template>
 
+    <template #finale>
     <section class="story-screen story-finale">
       <figure class="final-photo">
         <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
@@ -272,6 +284,8 @@
       </div>
       <span class="final-sparkle" aria-hidden="true">✳</span>
     </section>
+    </template>
+    </component>
     <footer class="story-footer">Disimpan di sini, <span>selamanya.</span></footer>
   </main>
 </template>
@@ -279,6 +293,11 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import type { Component } from 'vue'
+import BotanicalJournalLayout from '~/components/story-templates/layouts/BotanicalJournalLayout.vue'
+import EditorialRoseLayout from '~/components/story-templates/layouts/EditorialRoseLayout.vue'
+import LoveLetterLayout from '~/components/story-templates/layouts/LoveLetterLayout.vue'
+import MidnightCinemaLayout from '~/components/story-templates/layouts/MidnightCinemaLayout.vue'
 import type { StoryContent } from '#shared/schema/story'
 import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
 
@@ -297,12 +316,19 @@ const props = withDefaults(defineProps<{
   templatePicker: false,
   closable: false,
 })
+const storyLayouts: Record<StoryTemplateId, Component> = {
+  'editorial-rose': EditorialRoseLayout,
+  'midnight-cinema': MidnightCinemaLayout,
+  'botanical-journal': BotanicalJournalLayout,
+  'love-letter': LoveLetterLayout,
+}
 const emit = defineEmits<{
   close: []
   selectTemplate: [id: StoryTemplateId]
 }>()
 
 const experience = ref<HTMLElement | null>(null)
+const storyLayout = computed(() => storyLayouts[props.story.templateId ?? 'editorial-rose'])
 const audio = ref<HTMLAudioElement | null>(null)
 const playing = ref(false)
 const musicError = ref('')
@@ -399,18 +425,20 @@ onMounted(() => {
 
   gsap.registerPlugin(ScrollTrigger)
   motionMedia = gsap.matchMedia(root)
+  const scroller = root.closest<HTMLElement>('.template-preview-overlay')
   motionMedia.add('(prefers-reduced-motion: no-preference)', () => {
-    const revealGroups = [
-      '.story-hero-copy, .story-hero-photo',
-      '.greeting-copy, .greeting-photo',
-      '.section-heading, .gallery-card',
-      '.detail-photo, .detail-copy',
-      '.book-heading, .book-stage, .book-controls',
-      '.final-photo, .final-copy',
-    ]
+    const revealGroups: Record<string, string> = {
+      'story-hero': '.story-hero-copy, .story-hero-photo',
+      'story-greeting': '.greeting-copy, .greeting-photo',
+      'story-gallery': '.section-heading, .gallery-card',
+      'story-detail': '.detail-photo, .detail-copy',
+      'story-book': '.book-heading, .book-stage, .book-controls',
+      'story-finale': '.final-photo, .final-copy',
+    }
 
-    root.querySelectorAll<HTMLElement>('.story-screen').forEach((section, index) => {
-      const revealGroup = revealGroups[index]
+    root.querySelectorAll<HTMLElement>('.story-screen').forEach((section) => {
+      const sectionName = [...section.classList].find(name => name in revealGroups)
+      const revealGroup = sectionName ? revealGroups[sectionName] : undefined
       if (!revealGroup) return
 
       const targets = section.querySelectorAll<HTMLElement>(revealGroup)
@@ -424,6 +452,7 @@ onMounted(() => {
         ease: 'power3.out',
         scrollTrigger: {
           trigger: section,
+          ...(scroller ? { scroller } : {}),
           start: 'top 72%',
           once: true,
         },
@@ -445,6 +474,7 @@ onMounted(() => {
         ease: 'none',
         scrollTrigger: {
           trigger: section,
+          ...(scroller ? { scroller } : {}),
           start: 'top bottom',
           end: 'bottom top',
           scrub: 0.7,
