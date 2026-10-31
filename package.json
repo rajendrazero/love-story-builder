@@ -1,0 +1,44 @@
+{
+  "name": "website-for-kekasih",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "pnpm build && wrangler dev",
+    "deploy": "pnpm build && wrangler deploy",
+    "db:local": "wrangler d1 migrations apply kekasih-db --local",
+    "db:remote": "wrangler d1 migrations apply kekasih-db --remote",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "gsap": "^3.14.0",
+    "nuxt": "^4.6.3",
+    "qrcode.vue": "^3.6.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "vue-tsc": "^2.2.10",
+    "wrangler": "^4.20.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ],
+    "overrides": {
+      "glob@<14.0.2": "14.0.3",
+      "minimatch@<11.0.1": "11.0.3"
+    },
+    "patchedDependencies": {
+      "deepmerge@4.3.1": "patches/deepmerge@4.3.1.patch"
+    }
+  }
+}

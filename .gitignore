@@ -1,0 +1,8 @@
+.nuxt
+.output
+.wrangler
+.data
+node_modules
+.env
+.dev.vars
+dist
