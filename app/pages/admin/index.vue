@@ -110,7 +110,7 @@ const adminEmail = ref('')
 const error = ref('')
 const loading = ref(false)
 
-useSeoMeta({ title: 'Admin — Selamanya', robots: 'noindex, nofollow' })
+useSeoMeta({ title: 'Ruang kendali — Selamanya', robots: 'noindex, nofollow' })
 
 async function load() {
   loading.value = true
