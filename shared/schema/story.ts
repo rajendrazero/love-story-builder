@@ -1,9 +1,19 @@
 import { z } from 'zod'
+import { storySlugPattern } from '../story-slug.ts'
 
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048)
 const imageUrl = httpsUrl
 export const storyTemplateSchema = z.enum(['editorial-rose', 'midnight-cinema', 'botanical-journal', 'love-letter', 'memory-atlas'])
 export const storyCursorSchema = z.enum(['ring', 'heart', 'sparkle', 'flower', 'star', 'system'])
+const customSlugSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .max(32)
+  .optional()
+  .transform(value => value || undefined)
+  .refine(value => value === undefined || storySlugPattern.test(value), {
+    message: 'Link khusus harus berisi 3–32 huruf kecil, angka, atau tanda hubung.',
+  })
 const templateDetailsSchema = z.object({
   editorialRose: z.object({
     dedication: z.string().max(180).optional(),
@@ -49,12 +59,14 @@ export const storyContentSchema = z.object({
 
 export const publishStorySchema = storyContentSchema.extend({
   draftId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
+  customSlug: customSlugSchema,
   password: z.string().max(128).optional().transform((value) => value?.trim() || undefined),
   removePassword: z.boolean().optional(),
 })
 
 export const updateStorySchema = storyContentSchema.extend({
   draftId: z.string().regex(/^[a-f0-9]{32}$/).optional(),
+  customSlug: customSlugSchema,
   password: z.string().max(128).optional().transform((value) => value?.trim() || undefined),
   removePassword: z.boolean().optional(),
 })

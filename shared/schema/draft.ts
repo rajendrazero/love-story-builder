@@ -1,12 +1,20 @@
 import { z } from 'zod'
 import { storyCursorSchema, storyTemplateSchema } from './story'
+import { storySlugPattern } from '../story-slug.ts'
 
 const draftText = (limit: number) => z.string().max(limit).optional()
 const draftUrl = z.string().max(2048).optional()
 
 export const storyDraftSchema = z.object({
   activeStep: z.number().int().min(0).max(6).optional(),
-  editingSlug: z.string().regex(/^[a-f0-9]{12}$/).optional(),
+  editingSlug: z.string().regex(storySlugPattern).optional(),
+  customSlug: z.string()
+    .trim()
+    .toLowerCase()
+    .max(32)
+    .optional()
+    .transform(value => value || undefined)
+    .refine(value => value === undefined || storySlugPattern.test(value)),
   templateId: storyTemplateSchema.optional(),
   cursorPreset: storyCursorSchema.optional(),
   templateDetails: z.object({

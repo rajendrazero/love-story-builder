@@ -6,7 +6,7 @@ import { resolveAuthOrigins } from './auth-origin'
 import { seedUserRole } from './admin-role'
 import { getAppEnv, requireDatabase } from './cloudflare'
 import { sendGmailEmail } from './gmail-email'
-import { sendResendEmail } from './resend-email'
+import { logOperationalError } from './observability'
 
 async function sendEmail(
   env: ReturnType<typeof getAppEnv>,
@@ -14,29 +14,14 @@ async function sendEmail(
   subject: string,
   text: string,
 ) {
-  const provider = env.EMAIL_PROVIDER?.trim().toLowerCase() || 'resend'
-  if (provider === 'gmail') {
-    const sender = env.GMAIL_SENDER_EMAIL?.trim()
-    const clientId = env.GOOGLE_OAUTH_CLIENT_ID?.trim()
-    const clientSecret = env.GOOGLE_OAUTH_CLIENT_SECRET?.trim()
-    const refreshToken = env.GOOGLE_OAUTH_REFRESH_TOKEN?.trim()
-    if (!sender || !clientId || !clientSecret || !refreshToken) {
-      throw new Error('Gmail belum dikonfigurasi. Isi GMAIL_SENDER_EMAIL dan kredensial OAuth Gmail.')
-    }
-    await sendGmailEmail({ sender, clientId, clientSecret, refreshToken, to, subject, text })
-    return
+  const sender = env.GMAIL_SENDER_EMAIL?.trim()
+  const clientId = env.GOOGLE_OAUTH_CLIENT_ID?.trim()
+  const clientSecret = env.GOOGLE_OAUTH_CLIENT_SECRET?.trim()
+  const refreshToken = env.GOOGLE_OAUTH_REFRESH_TOKEN?.trim()
+  if (!sender || !clientId || !clientSecret || !refreshToken) {
+    throw new Error('Gmail belum dikonfigurasi. Isi GMAIL_SENDER_EMAIL dan kredensial OAuth Gmail.')
   }
-  if (provider !== 'resend') {
-    throw new Error('EMAIL_PROVIDER harus berupa "resend" atau "gmail".')
-  }
-
-  const apiKey = env.RESEND_API_KEY?.trim()
-  const from = env.EMAIL_FROM?.trim()
-  if (!apiKey || !from) {
-    throw new Error('Email belum dikonfigurasi. Isi RESEND_API_KEY dan EMAIL_FROM.')
-  }
-
-  await sendResendEmail({ apiKey, from, to, subject, text })
+  await sendGmailEmail({ sender, clientId, clientSecret, refreshToken, to, subject, text })
 }
 
 export function createAuth(event: H3Event) {
@@ -55,8 +40,25 @@ export function createAuth(event: H3Event) {
 
   const authOrigins = resolveAuthOrigins(env.BETTER_AUTH_URL?.trim(), getRequestURL(event).origin)
   const { baseURL, allowedHostnames, trustedOrigins } = authOrigins
-  const sendLink = async (email: string, subject: string, url: string) => {
-    await sendEmail(env, email, subject, `Buka tautan berikut untuk melanjutkan:\n\n${url}\n\nJika kamu tidak meminta ini, abaikan email ini.`)
+  const sendLink = async (email: string, subject: string, url: string, event: H3Event) => {
+    try {
+      const isVerification = subject.includes('verifikasi')
+      const text = isVerification
+        ? `Halo,\n\nTerima kasih telah membuat akun Selamanya. Verifikasi alamat emailmu dengan membuka tautan berikut:\n\n${url}\n\nJika tombol atau tautan tidak bisa dibuka, salin dan tempel URL tersebut ke browser.\n\nJika kamu tidak merasa membuat akun Selamanya, abaikan email ini.`
+        : `Halo,\n\nKami menerima permintaan untuk mengatur ulang kata sandi akun Selamanya. Gunakan tautan berikut untuk membuat kata sandi baru:\n\n${url}\n\nJika tombol atau tautan tidak bisa dibuka, salin dan tempel URL tersebut ke browser.\n\nJika kamu tidak meminta pengaturan ulang kata sandi, abaikan email ini. Kata sandimu tidak akan berubah.`
+      await sendEmail(env, email, subject, text)
+    } catch (error) {
+      logOperationalError(event, 'auth.email_delivery_failed', error, {
+        provider: 'gmail',
+        purpose: subject.includes('verifikasi') ? 'verification' : 'password_reset',
+      }, [
+        env.GOOGLE_OAUTH_CLIENT_SECRET,
+        env.GOOGLE_OAUTH_REFRESH_TOKEN,
+        env.BETTER_AUTH_SECRET,
+        env.TURNSTILE_SECRET_KEY,
+      ])
+      throw new Error('Email belum dapat dikirim. Periksa konfigurasi provider email dan coba lagi.')
+    }
   }
 
   return betterAuth({
@@ -104,7 +106,7 @@ export function createAuth(event: H3Event) {
       maxPasswordLength: 128,
       requireEmailVerification: true,
       sendResetPassword: async ({ user, url }) => {
-        await sendLink(user.email, 'Atur ulang sandi Selamanya', url)
+        await sendLink(user.email, 'Atur ulang sandi Selamanya', url, event)
       },
     },
     emailVerification: {
@@ -112,7 +114,7 @@ export function createAuth(event: H3Event) {
       sendOnSignIn: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        await sendLink(user.email, 'Verifikasi akun Selamanya', url)
+        await sendLink(user.email, 'Verifikasi akun Selamanya', url, event)
       },
     },
     databaseHooks: {

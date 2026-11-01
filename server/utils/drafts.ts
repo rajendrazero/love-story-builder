@@ -9,6 +9,7 @@ export interface StoryDraftRow {
   published_slug: string | null
   active_step: number
   editing_slug: string | null
+  custom_slug: string | null
   created_at: string
   updated_at: string
 }
@@ -37,7 +38,7 @@ export async function requireOwnedDraft(event: H3Event, id: string, ownerUserId?
     throw createError({ statusCode: 503, statusMessage: 'Binding D1 tidak tersedia. Jalankan pnpm dev atau pnpm preview.' })
   }
   const row = await database
-    .prepare('SELECT id, key_hash, owner_user_id, published_slug, active_step, editing_slug, created_at, updated_at FROM story_drafts WHERE id = ?')
+    .prepare('SELECT id, key_hash, owner_user_id, published_slug, active_step, editing_slug, custom_slug, created_at, updated_at FROM story_drafts WHERE id = ?')
     .bind(id)
     .first<StoryDraftRow>()
   if (!row || row.owner_user_id !== (ownerUserId ?? user?.id)) {

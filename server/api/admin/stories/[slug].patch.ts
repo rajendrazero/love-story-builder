@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam, readBody, setResponseH
 import { z } from 'zod'
 import { getAppEnv } from '../../../utils/cloudflare'
 import { requireAdmin } from '../../../utils/admin-auth'
+import { isValidStorySlug } from '#shared/story-slug'
 
 const visibilitySchema = z.object({ active: z.boolean() }).strict()
 
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Cache-Control', 'no-store')
   await requireAdmin(event)
   const slug = getRouterParam(event, 'slug') ?? ''
-  if (!/^[a-f0-9]{12}$/.test(slug)) {
+  if (!isValidStorySlug(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
   const parsed = visibilitySchema.safeParse(await readBody(event))

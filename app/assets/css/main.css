@@ -34,18 +34,18 @@ html::-webkit-scrollbar {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(32 29 40 / 4%);
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 0.2rem solid transparent;
+  border: 0.18rem solid transparent;
   border-radius: 999px;
-  background: #ff7968;
+  background: linear-gradient(180deg, var(--brand-lime), var(--brand-cobalt));
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d8f36a;
+  background: linear-gradient(180deg, var(--brand-coral), var(--brand-cobalt));
   background-clip: padding-box;
 }
 
@@ -157,6 +157,31 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--brand-cobalt);
   outline-offset: 3px;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loading-spin 700ms linear infinite;
+}
+
+.loading-panel .loading-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--brand-cobalt);
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner { animation-duration: 1.5s; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

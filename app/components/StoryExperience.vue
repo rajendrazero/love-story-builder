@@ -4,8 +4,17 @@
     class="story-experience bg-paper"
     :class="[`template-${story.templateId ?? 'editorial-rose'}`, { 'is-demo': demo }]"
   >
-    <div v-if="demo" class="preview-bar">
-      <NuxtLink to="/" class="preview-brand">selamanya<span>.</span></NuxtLink>
+    <div v-if="demo" class="preview-bar" :class="{ 'preview-bar-overlay': closable }">
+      <label class="preview-music-input">
+        <span>Musik preview</span>
+        <input
+          v-model="previewMusicUrl"
+          name="previewMusicUrl"
+          type="url"
+          placeholder="Spotify / YouTube Music"
+          autocomplete="url"
+        >
+      </label>
       <span v-if="!templatePicker" class="preview-label">Pratinjau template · konten contoh</span>
       <div class="preview-actions">
         <label v-if="templatePicker" class="preview-template-label">
@@ -47,7 +56,7 @@
           {{ story.templateDetails.botanicalJournal.journalLabel }}
         </p>
         <button
-          v-if="story.musicUrl && !musicEmbed"
+          v-if="activeMusicUrl && !musicEmbed"
           type="button"
           class="music-button"
           :aria-pressed="playing"
@@ -70,7 +79,7 @@
           <a
             v-if="musicEmbed.provider === 'spotify'"
             class="music-embed-link"
-            :href="story.musicUrl"
+            :href="activeMusicUrl"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -84,7 +93,7 @@
         <figcaption>this is so us ♡</figcaption>
       </figure>
       <span class="hero-sparkle" aria-hidden="true">✳</span>
-      <audio v-if="story.musicUrl" ref="audio" :src="story.musicUrl" loop />
+      <audio v-if="activeMusicUrl" ref="audio" :src="activeMusicUrl" loop />
     </section>
     </template>
 
@@ -357,7 +366,9 @@ const storyLayout = computed(() => storyLayouts[props.story.templateId ?? 'edito
 const audio = ref<HTMLAudioElement | null>(null)
 const playing = ref(false)
 const musicError = ref('')
-const musicEmbed = computed(() => getMusicEmbed(props.story.musicUrl))
+const previewMusicUrl = ref(props.story.musicUrl)
+const activeMusicUrl = computed(() => props.demo ? previewMusicUrl.value.trim() : props.story.musicUrl)
+const musicEmbed = computed(() => getMusicEmbed(activeMusicUrl.value))
 const bookOpen = ref(false)
 const showCover = ref(true)
 const activePage = ref(0)
@@ -539,7 +550,7 @@ onBeforeUnmount(() => {
 
 .preview-bar {
   position: fixed;
-  inset: 0 0 auto;
+  inset: 4.25rem 0 auto;
   z-index: 30;
   display: flex;
   height: 3rem;
@@ -549,6 +560,10 @@ onBeforeUnmount(() => {
   color: #fffaf5;
   background: rgb(32 29 40 / 92%);
   backdrop-filter: blur(14px);
+}
+
+.preview-bar-overlay {
+  top: 0;
 }
 
 .preview-brand {
@@ -562,6 +577,25 @@ onBeforeUnmount(() => {
   min-width: 0;
   align-items: center;
   gap: clamp(0.35rem, 1.5vw, 1rem);
+}
+
+.preview-music-input {
+  display: grid;
+  min-width: 10rem;
+  gap: 0.18rem;
+  color: rgb(255 255 255 / 70%);
+  font-size: 0.56rem;
+}
+
+.preview-music-input input {
+  width: min(28vw, 15rem);
+  min-width: 9rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  color: #fffaf5;
+  background: #302b39;
+  font-size: 0.66rem;
 }
 
 .preview-template-select {
@@ -584,10 +618,6 @@ onBeforeUnmount(() => {
   background: transparent;
   font-size: 0.72rem;
   cursor: pointer;
-}
-
-.preview-brand span {
-  color: #ff7968;
 }
 
 .preview-label {
@@ -2345,7 +2375,9 @@ onBeforeUnmount(() => {
     padding-inline: 0.8rem;
   }
 
-  .preview-brand { font-size: 1.08rem; }
+  .preview-bar:not(.preview-bar-overlay) { top: 3.8rem; }
+  .preview-music-input { min-width: 0; }
+  .preview-music-input input { min-width: 6rem; width: 28vw; }
   .preview-actions { gap: 0.35rem; }
   .preview-template-select { max-width: 34vw; padding-inline: 0.55rem 1.4rem; font-size: 0.65rem; }
   .preview-link,

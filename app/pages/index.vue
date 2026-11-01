@@ -1,22 +1,5 @@
 <template>
   <main ref="page" class="home-page">
-    <nav class="home-nav">
-      <NuxtLink to="/" class="home-brand">selamanya<span>®</span></NuxtLink>
-      <div class="home-nav-links">
-        <a href="#fitur">Isi ceritamu</a>
-        <NuxtLink to="/preview">Lihat contoh</NuxtLink>
-        <NuxtLink to="/login">Masuk</NuxtLink>
-        <NuxtLink to="/register">Daftar</NuxtLink>
-        <NuxtLink to="/templates" class="home-nav-cta">Mulai bikin ↗</NuxtLink>
-      </div>
-      <div class="home-nav-mobile">
-        <NuxtLink to="/preview">Preview</NuxtLink>
-        <NuxtLink to="/login">Masuk</NuxtLink>
-        <NuxtLink to="/register">Daftar</NuxtLink>
-        <NuxtLink to="/templates" class="home-nav-cta">Bikin punyaku ↗</NuxtLink>
-      </div>
-    </nav>
-
     <section class="home-screen home-hero">
       <div class="hero-glow hero-glow-one" />
       <div class="hero-glow hero-glow-two" />
@@ -220,23 +203,6 @@ onBeforeUnmount(() => {
   scroll-snap-type: y mandatory;
 }
 
-.home-nav {
-  position: fixed;
-  inset: 0 0 auto;
-  z-index: 30;
-  display: flex;
-  min-height: 4.25rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem var(--page-pad);
-  border-bottom: 1px solid rgb(32 29 40 / 8%);
-  background: rgb(247 244 237 / 88%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: background 220ms ease, box-shadow 220ms ease;
-}
-
-.home-brand,
 .home-footer > span:first-child {
   color: #201d28;
   font-family: 'Space Grotesk', sans-serif;
@@ -245,35 +211,13 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 
-.home-brand span,
 .brand-mark {
   color: #5045f5;
 }
 
-.home-nav-links,
-.home-nav-mobile {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.8rem, 3vw, 2rem);
-  font-size: 0.74rem;
-}
-
-.home-nav-links a,
-.home-nav-mobile a,
 .home-footer a {
   color: inherit;
   text-decoration: none;
-}
-
-.home-nav-mobile {
-  display: none;
-}
-
-.home-nav-cta {
-  border-radius: 999px;
-  padding: 0.72rem 1rem;
-  color: white !important;
-  background: #5045f5;
 }
 
 .home-screen {
@@ -831,25 +775,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 700px) {
-  .home-nav {
-    min-height: 3.7rem;
-    padding-block: 0.4rem;
-  }
-
-  .home-nav-links {
-    display: none;
-  }
-
-  .home-nav-mobile {
-    display: flex;
-    gap: 0.7rem;
-    font-size: 0.65rem;
-  }
-
-  .home-nav-cta {
-    padding: 0.6rem 0.75rem;
-  }
-
   .home-hero {
     padding: 4rem 1rem 1rem;
   }
@@ -1072,15 +997,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 360px) {
-  .home-nav-mobile {
-    gap: 0.4rem;
-    font-size: 0.58rem;
-  }
-
-  .home-nav-cta {
-    padding-inline: 0.55rem;
-  }
-
   .home-hero h1 {
     font-size: 2.25rem;
   }

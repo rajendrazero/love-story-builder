@@ -1,11 +1,12 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { getAppEnv } from '../../../utils/cloudflare'
 import { requireAdmin } from '../../../utils/admin-auth'
+import { isValidStorySlug } from '#shared/story-slug'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
   const slug = getRouterParam(event, 'slug')
-  if (!slug || !/^[a-f0-9]{12}$/.test(slug)) {
+  if (!slug || !isValidStorySlug(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
 

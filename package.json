@@ -13,6 +13,7 @@
     "dev:ui": "nuxt dev",
     "build": "nuxt build",
     "test": "node --experimental-strip-types --test",
+    "gmail:oauth": "node scripts/gmail-oauth.mjs",
     "preview": "pnpm dev",
     "deploy": "pnpm build && wrangler deploy",
     "db:local": "wrangler d1 migrations apply kekasih-db --local",

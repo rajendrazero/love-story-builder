@@ -13,6 +13,7 @@ const migrationPaths = [
   'migrations/0007_cascade_story_content.sql',
   'migrations/0008_create_better_auth_tables.sql',
   'migrations/0009_seed_existing_user_roles.sql',
+  'migrations/0010_add_draft_custom_slug.sql',
 ]
 
 function legacyStory(templateId) {
@@ -102,6 +103,7 @@ test('normalizes legacy stories and drafts without losing content or ownership',
      VALUES (?, ?, ?, ?, ?, ?)`,
   ).run('existing-user', 'Existing', 'existing@example.com', 1, 1, 1)
   database.exec(readFileSync(migrationPaths[8], 'utf8'))
+  database.exec(readFileSync(migrationPaths[9], 'utf8'))
   database.exec(readFileSync(migrationPaths[7], 'utf8'))
   database.exec(readFileSync(migrationPaths[8], 'utf8'))
 
@@ -156,6 +158,7 @@ test('normalizes legacy stories and drafts without losing content or ownership',
     active_step: 4,
     editing_slug: 'cccccccccccc',
   })
+  assert.ok(database.prepare("PRAGMA table_info('story_drafts')").all().some(column => column.name === 'custom_slug'))
 
   for (const table of ['stories', 'story_drafts']) {
     const columns = database.prepare(`PRAGMA table_info('${table}')`).all().map(row => row.name)

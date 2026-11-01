@@ -1,10 +1,5 @@
 <template>
   <main ref="page" class="auth-page min-h-screen">
-    <header class="auth-topbar">
-      <NuxtLink to="/" class="auth-brand">selamanya<span>.</span></NuxtLink>
-      <NuxtLink to="/" class="auth-home-link">← Kembali ke beranda</NuxtLink>
-    </header>
-
     <div class="auth-layout">
       <aside class="auth-story-panel" aria-label="Tentang Selamanya">
         <div class="auth-story-copy">
@@ -76,6 +71,7 @@
           <p v-if="message" class="auth-feedback auth-feedback-success" role="status">{{ message }}</p>
           <p v-if="error" class="auth-feedback auth-feedback-error" role="alert">{{ error }}</p>
           <button class="auth-submit" :disabled="busy || !captchaToken">
+            <span v-if="busy" class="loading-spinner" aria-hidden="true" />
             <span>{{ busy ? 'Mohon tunggu…' : props.mode === 'signup' ? 'Buat akun & verifikasi email' : 'Masuk ke akun' }}</span>
             <span aria-hidden="true">↗</span>
           </button>
@@ -86,12 +82,13 @@
             :disabled="busy || !captchaToken"
             @click="resendVerificationEmail"
           >
-            Kirim ulang email aktivasi
+            <span v-if="busy" class="loading-spinner" aria-hidden="true" />
+            {{ busy ? 'Mengirim…' : 'Kirim ulang email aktivasi' }}
           </button>
         </form>
 
         <button v-if="props.mode === 'signin'" type="button" class="auth-reset" :disabled="busy" @click="sendResetLink">
-          Lupa kata sandi?
+          {{ busy ? 'Mengirim…' : 'Lupa kata sandi?' }}
         </button>
         <p class="auth-privacy">Dengan melanjutkan, kamu menyetujui bahwa email digunakan untuk mengelola dan mengamankan akun.</p>
       </section>
@@ -110,6 +107,7 @@ const props = defineProps<{
 
 const page = ref<HTMLElement | null>(null)
 const authClient = createAuthClient({ plugins: [usernameClient()] })
+const { success, error: notifyError } = useNotifications()
 const route = useRoute()
 const router = useRouter()
 const name = ref('')
@@ -217,6 +215,7 @@ async function submit() {
       })
       if (result.error) throw new Error(result.error.message || 'Pendaftaran belum berhasil.')
       message.value = 'Akun dibuat. Buka email untuk verifikasi sebelum masuk.'
+      success(message.value)
       return
     }
 
@@ -235,9 +234,11 @@ async function submit() {
           fetchOptions,
         })
     if (result.error) throw new Error(result.error.message || 'Email atau sandi tidak benar.')
+    success('Berhasil masuk. Selamat datang kembali.')
     await router.push(destination())
   } catch (caught) {
     error.value = getRequestError(caught, 'Permintaan belum berhasil.')
+    notifyError(error.value)
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -264,8 +265,10 @@ async function sendResetLink() {
     })
     if (result.error) throw new Error(result.error.message || 'Email reset belum berhasil dikirim.')
     message.value = 'Jika email terdaftar, tautan reset sandi akan dikirim.'
+    success(message.value)
   } catch (caught) {
     error.value = getRequestError(caught, 'Permintaan reset belum berhasil.')
+    notifyError(error.value)
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -292,8 +295,10 @@ async function resendVerificationEmail() {
     })
     if (result.error) throw new Error(result.error.message || 'Email aktivasi belum berhasil dikirim.')
     message.value = 'Jika akun tersebut belum aktif, email aktivasi akan dikirim. Periksa Inbox, Spam, dan Promosi.'
+    success(message.value)
   } catch (caught) {
     error.value = getRequestError(caught, 'Email aktivasi belum berhasil dikirim.')
+    notifyError(error.value)
   } finally {
     turnstile.value?.reset()
     busy.value = false

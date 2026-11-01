@@ -1,6 +1,18 @@
 <template>
   <div class="min-h-screen" :class="{ 'cinematic-cursor': cursorPreset !== 'system' }">
+    <SiteNavigation />
+    <div v-if="routeLoading" class="route-loading-track" role="progressbar" aria-label="Memuat halaman">
+      <span />
+    </div>
     <NuxtPage />
+    <footer class="site-footer">
+      <NuxtLink to="/" class="site-footer-brand">selamanya<span>.</span></NuxtLink>
+      <nav aria-label="Informasi hukum">
+        <NuxtLink to="/privacy-policy">Kebijakan Privasi</NuxtLink>
+        <NuxtLink to="/terms">Syarat dan Ketentuan</NuxtLink>
+      </nav>
+    </footer>
+    <AppNotifications />
     <div
       v-show="cursorPreset !== 'system'"
       ref="cursor"
@@ -36,6 +48,8 @@
 import { gsap } from 'gsap'
 
 const cursor = ref<HTMLElement | null>(null)
+const routeLoading = ref(false)
+const router = useRouter()
 const cursorPreset = useState<'ring' | 'heart' | 'sparkle' | 'flower' | 'star' | 'system'>('story-cursor', () => 'system')
 const cursorSymbol = computed(() => ({
   ring: '',
@@ -54,11 +68,12 @@ const maxScroll = ref(0)
 const scrollPosition = ref(0)
 const scrollbarThumbStyle = computed(() => ({
   height: `${scrollbarThumbHeight.value}px`,
-  transform: `translateY(${scrollbarThumbTop.value}px)`,
+  top: `${scrollbarThumbTop.value}px`,
 }))
 let moveCursorX: ((value: number) => void) | undefined
 let moveCursorY: ((value: number) => void) | undefined
 let resizeObserver: ResizeObserver | undefined
+let removeRouterGuards: Array<() => void> = []
 let metricsFrame = 0
 let dragOffset = 0
 let draggingScrollbar = false
@@ -165,6 +180,17 @@ function onScrollbarKeydown(event: KeyboardEvent) {
 }
 
 onMounted(() => {
+  removeRouterGuards = [
+    router.beforeEach((to, from) => {
+      if (to.fullPath !== from.fullPath) routeLoading.value = true
+    }),
+    router.afterEach(() => {
+      routeLoading.value = false
+    }),
+    router.onError(() => {
+      routeLoading.value = false
+    }),
+  ]
   updateScrollbar()
   nextTick(updateScrollbar)
   window.addEventListener('scroll', scheduleScrollbarUpdate, { passive: true })
@@ -185,6 +211,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  routeLoading.value = false
+  for (const removeGuard of removeRouterGuards) removeGuard()
+  removeRouterGuards = []
   window.removeEventListener('pointermove', handlePointerMove)
   window.removeEventListener('scroll', scheduleScrollbarUpdate)
   window.removeEventListener('resize', scheduleScrollbarUpdate)
@@ -199,6 +228,93 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
+.route-loading-track {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 130;
+  height: 3px;
+  overflow: hidden;
+  background: rgb(80 69 245 / 12%);
+}
+
+.site-footer {
+  display: flex;
+  width: min(100% - 2rem, 90rem);
+  min-height: 5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 3rem auto 0;
+  border-top: 1px solid rgb(32 29 40 / 12%);
+  color: #514d57;
+  font-size: 0.8rem;
+}
+
+.site-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  color: #5045f5;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.site-footer-brand {
+  color: #201d28 !important;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.site-footer-brand span {
+  color: #5045f5;
+}
+
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem 1.25rem;
+}
+
+.site-footer a:focus-visible {
+  border-radius: 0.2rem;
+  outline: 2px solid #5045f5;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: 1rem;
+  }
+
+  .site-footer nav {
+    justify-content: flex-start;
+  }
+}
+
+.route-loading-track span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5045f5, #d8f36a);
+  animation: route-loading 1s ease-in-out infinite;
+}
+
+@keyframes route-loading {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(260%); }
+}
+
 .custom-scrollbar-track {
   position: fixed;
   inset: 0 0.25rem 0 0;
@@ -227,8 +343,8 @@ onBeforeUnmount(() => {
   border: 1px solid rgb(255 250 245 / 65%);
   border-radius: 999px;
   padding: 0;
-  background: linear-gradient(180deg, #ff7968, #9c6257);
-  box-shadow: 0 2px 10px rgb(32 29 40 / 25%);
+  background: linear-gradient(180deg, #d8f36a, #5045f5);
+  box-shadow: 0 2px 12px rgb(32 29 40 / 22%);
   cursor: grab;
   transform: translateX(-50%);
   touch-action: none;
@@ -237,7 +353,7 @@ onBeforeUnmount(() => {
 
 .custom-scrollbar-thumb:hover,
 .custom-scrollbar-thumb:focus-visible {
-  background: linear-gradient(180deg, #d8f36a, #a4c73e);
+  background: linear-gradient(180deg, #ff7968, #5045f5);
   box-shadow: 0 2px 14px rgb(32 29 40 / 35%);
 }
 

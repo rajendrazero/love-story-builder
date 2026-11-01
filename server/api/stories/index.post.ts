@@ -20,11 +20,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const database = requireDatabase(event)
-  const { password, draftId, removePassword: _removePassword, ...content } = parsed.data
+  const { password, draftId, customSlug, removePassword: _removePassword, ...content } = parsed.data
   const draft = draftId
     ? await requireOwnedDraft(event, draftId, user.id)
     : undefined
-  const slug = crypto.randomUUID().replaceAll('-', '').slice(0, 12)
+  const slug = customSlug ?? crypto.randomUUID().replaceAll('-', '').slice(0, 12)
+  const conflict = await database.prepare('SELECT slug FROM stories WHERE slug = ?')
+    .bind(slug)
+    .first<{ slug: string }>()
+  if (conflict) {
+    throw createError({ statusCode: 409, statusMessage: 'Link khusus ini sudah dipakai. Pilih link yang lain.' })
+  }
   const id = crypto.randomUUID()
   const publishedAt = new Date().toISOString()
   const passwordFields = password ? await hashStoryPassword(password) : undefined
@@ -51,7 +57,19 @@ export default defineEventHandler(async (event) => {
       'UPDATE story_drafts SET published_slug = ?, updated_at = ? WHERE id = ? AND owner_user_id = ? AND published_slug IS NULL',
     ).bind(slug, publishedAt, draft.id, user.id))
   }
-  await database.batch(statements)
+  try {
+    await database.batch(statements)
+  } catch (error) {
+    if (customSlug) {
+      const conflict = await database.prepare('SELECT slug FROM stories WHERE slug = ?')
+        .bind(slug)
+        .first<{ slug: string }>()
+      if (conflict) {
+        throw createError({ statusCode: 409, statusMessage: 'Link khusus ini sudah dipakai. Pilih link yang lain.' })
+      }
+    }
+    throw error
+  }
 
   return { slug, publishedAt }
 })

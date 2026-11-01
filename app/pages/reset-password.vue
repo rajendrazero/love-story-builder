@@ -5,7 +5,6 @@
     <section class="reset-card">
       <span class="reset-spark reset-spark-one" aria-hidden="true">✦</span>
       <span class="reset-spark reset-spark-two" aria-hidden="true">✳</span>
-      <NuxtLink to="/" class="auth-brand">selamanya<span>.</span></NuxtLink>
       <div class="reset-heading">
         <p class="auth-overline">Keamanan akun</p>
         <h1>Kata sandi baru.</h1>
@@ -32,6 +31,7 @@
         <p v-if="message" class="reset-feedback reset-feedback-success" role="status">{{ message }}</p>
         <p v-if="error" class="reset-feedback reset-feedback-error" role="alert">{{ error }}</p>
         <button class="reset-submit" :disabled="busy || !token || invalidToken">
+          <span v-if="busy" class="loading-spinner" aria-hidden="true" />
           <span>{{ busy ? 'Menyimpan…' : 'Simpan kata sandi baru' }}</span><span aria-hidden="true">↗</span>
         </button>
       </form>
@@ -45,6 +45,7 @@ import { createAuthClient } from 'better-auth/vue'
 import { gsap } from 'gsap'
 
 const authClient = createAuthClient()
+const { success, error: notifyError } = useNotifications()
 const route = useRoute()
 const page = ref<HTMLElement | null>(null)
 const token = computed(() => typeof route.query.token === 'string' ? route.query.token : '')
@@ -107,9 +108,11 @@ async function resetPassword() {
     })
     if (result.error) throw new Error(result.error.message || 'Tautan reset tidak valid atau kedaluwarsa.')
     message.value = 'Sandi berhasil diubah. Silakan masuk dengan sandi baru.'
+    success(message.value)
     password.value = ''
   } catch (caught) {
     error.value = getRequestError(caught)
+    notifyError(error.value)
   } finally {
     busy.value = false
   }

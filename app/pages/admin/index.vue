@@ -1,13 +1,5 @@
 <template>
   <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
-    <header class="mx-auto mb-10 flex max-w-6xl items-center justify-between">
-      <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
-      <div class="flex items-center gap-4">
-        <p v-if="adminEmail" class="hidden text-xs text-[#756a62] sm:block">{{ adminEmail }}</p>
-        <NuxtLink to="/templates" class="rounded-full bg-ink px-5 py-3 text-xs text-white">Pilih template ↗</NuxtLink>
-      </div>
-    </header>
-
     <section class="mx-auto max-w-6xl">
       <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Panel admin</p>
       <div class="mt-3 flex flex-wrap items-end justify-between gap-5">

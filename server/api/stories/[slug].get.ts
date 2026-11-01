@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam, setResponseHeader } from 'h3'
 import { requireDatabase } from '../../utils/cloudflare'
 import { getStoryContent } from '../../utils/story-content'
+import { isValidStorySlug } from '#shared/story-slug'
 
 interface StoryRow {
   title: string
@@ -11,7 +12,7 @@ interface StoryRow {
 export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Cache-Control', 'no-store')
   const slug = getRouterParam(event, 'slug')
-  if (!slug || !/^[a-f0-9]{12}$/.test(slug)) {
+  if (!slug || !isValidStorySlug(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
 

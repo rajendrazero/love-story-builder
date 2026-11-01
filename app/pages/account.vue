@@ -1,15 +1,5 @@
 <template>
   <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
-    <header class="mx-auto mb-10 flex max-w-6xl items-center justify-between gap-4">
-      <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
-      <div class="flex items-center gap-3">
-        <NuxtLink to="/templates" class="rounded-full bg-[#201d28] px-5 py-3 text-xs text-white">Pilih template ↗</NuxtLink>
-        <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-xs" :disabled="signingOut" @click="signOut">
-          {{ signingOut ? 'Keluar…' : 'Keluar' }}
-        </button>
-      </div>
-    </header>
-
     <section class="mx-auto max-w-6xl">
       <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Akun Selamanya</p>
       <div class="mt-3 flex flex-wrap items-end justify-between gap-5">
@@ -18,11 +8,16 @@
           <p class="mt-3 text-sm text-[#756a62]">{{ user?.name }} · {{ user?.email }}</p>
         </div>
         <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-sm" :disabled="loading" @click="load">
+          <span v-if="loading" class="loading-spinner" aria-hidden="true" />
           {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
         </button>
       </div>
 
       <p v-if="error" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ error }}</p>
+      <button type="button" class="my-5 inline-flex items-center gap-2 rounded-full border border-[#cbbcb0] px-5 py-3 text-xs disabled:opacity-50" :disabled="signingOut" @click="signOut">
+        <span v-if="signingOut" class="loading-spinner" aria-hidden="true" />
+        {{ signingOut ? 'Keluar…' : 'Keluar dari akun' }}
+      </button>
       <div v-if="hasLegacyDraft" class="my-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d6c9bf] bg-white/70 p-4">
         <p class="max-w-2xl text-sm leading-6 text-[#756a62]">Ada snapshot draft lama di browser ini. Impor hanya jika draft tersebut memang milikmu; setelah disimpan, draft menjadi milik akun ini.</p>
         <NuxtLink to="/studio?importLocal=1" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-xs">Tinjau & impor draft</NuxtLink>
@@ -37,7 +32,8 @@
           <div><p class="section-kicker mb-1">Milik akunmu</p><h2 class="font-display text-3xl">Cerita yang terbit</h2></div>
           <span class="text-xs text-[#756a62]">Hanya kamu dan admin yang dapat mengelolanya.</span>
         </header>
-        <div v-if="stories.length" class="grid gap-4 md:grid-cols-2">
+        <div v-if="loading" class="loading-panel" role="status"><span class="loading-spinner" />Memuat data akun…</div>
+        <div v-else-if="stories.length" class="grid gap-4 md:grid-cols-2">
           <article v-for="story in stories" :key="story.slug" class="account-card">
             <img v-if="story.story.heroImage" :src="story.story.heroImage" :alt="story.title" class="h-48 w-full rounded-xl object-cover">
             <h3 class="mt-4 font-display text-2xl">{{ story.title }}</h3>
@@ -49,11 +45,15 @@
             <div class="mt-4 flex flex-wrap gap-2">
               <NuxtLink v-if="story.isActive" :to="`/w/${story.slug}`" class="rounded-full bg-[#201d28] px-4 py-2 text-xs text-white">Buka ↗</NuxtLink>
               <NuxtLink :to="`/studio?edit=${story.slug}`" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs">Edit</NuxtLink>
-              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs" @click="toggleStory(story)">
-                {{ story.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
+              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="toggleStory(story)">
+                {{ pendingAction === `toggle-story:${story.slug}` ? 'Memproses…' : story.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
               </button>
-              <button type="button" class="rounded-full border border-red-200 px-4 py-2 text-xs text-red-700" @click="deleteStory(story.slug)">Hapus</button>
-              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs" @click="copyLink(story.slug)">Salin link</button>
+              <button type="button" class="rounded-full border border-red-200 px-4 py-2 text-xs text-red-700 disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="deleteStory(story.slug)">
+                {{ pendingAction === `delete-story:${story.slug}` ? 'Menghapus…' : 'Hapus' }}
+              </button>
+              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="copyLink(story.slug)">
+                {{ pendingAction === `copy-story:${story.slug}` ? 'Menyalin…' : 'Salin link' }}
+              </button>
             </div>
           </article>
         </div>
@@ -64,7 +64,8 @@
         <header class="mb-4 flex items-end justify-between gap-4">
           <div><p class="section-kicker mb-1">Autosave</p><h2 class="font-display text-3xl">Draft yang tersimpan</h2></div>
         </header>
-        <div v-if="drafts.length" class="space-y-3">
+        <div v-if="loading" class="loading-panel" role="status"><span class="loading-spinner" />Memuat draft…</div>
+        <div v-else-if="drafts.length" class="space-y-3">
           <article v-for="draft in drafts" :key="draft.id" class="account-draft">
             <div class="min-w-0">
               <h3 class="truncate font-semibold">{{ draft.title }}</h3>
@@ -75,7 +76,9 @@
               <NuxtLink :to="draft.publishedSlug ? `/studio?edit=${draft.publishedSlug}` : `/studio?draft=${draft.id}`" class="text-xs text-[#9c6257] underline underline-offset-4">
                 {{ draft.publishedSlug ? 'Edit cerita' : 'Lanjutkan' }}
               </NuxtLink>
-              <button type="button" class="text-xs text-red-700 underline underline-offset-4" @click="deleteDraft(draft.id)">Hapus</button>
+              <button type="button" class="text-xs text-red-700 underline underline-offset-4 disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="deleteDraft(draft.id)">
+                {{ pendingAction === `delete-draft:${draft.id}` ? 'Menghapus…' : 'Hapus' }}
+              </button>
             </div>
           </article>
         </div>
@@ -110,12 +113,14 @@ interface AccountDraft {
 }
 
 const authClient = createAuthClient()
+const { success, error: notifyError } = useNotifications()
 const user = ref<{ id: string, name: string, email: string }>()
 const stories = ref<AccountStory[]>([])
 const drafts = ref<AccountDraft[]>([])
 const error = ref('')
 const loading = ref(false)
 const signingOut = ref(false)
+const pendingAction = ref('')
 const hasLegacyDraft = ref(false)
 
 async function load() {
@@ -132,67 +137,95 @@ async function load() {
     drafts.value = draftResult.drafts
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Data akun belum dapat dimuat.'
+    notifyError(error.value)
   } finally {
     loading.value = false
   }
 }
 
 async function deleteStory(slug: string) {
+  if (pendingAction.value) return
   if (!window.confirm('Hapus cerita terbit ini secara permanen?')) return
+  pendingAction.value = `delete-story:${slug}`
   try {
     await $fetch(`/api/account/stories/${slug}`, { method: 'DELETE' })
+    success('Cerita berhasil dihapus.')
     await load()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Cerita belum berhasil dihapus.'
+    notifyError(error.value)
+  } finally {
+    pendingAction.value = ''
   }
 }
 
 async function toggleStory(story: AccountStory) {
+  if (pendingAction.value) return
   const active = !story.isActive
   const prompt = active
     ? 'Aktifkan cerita ini agar link publik dapat dibuka lagi?'
     : 'Nonaktifkan cerita ini? Link publik akan menampilkan halaman tidak ditemukan.'
   if (!window.confirm(prompt)) return
+  pendingAction.value = `toggle-story:${story.slug}`
   try {
     await $fetch(`/api/account/stories/${story.slug}`, {
       method: 'PATCH',
       body: { active },
     })
+    success(active ? 'Cerita berhasil diaktifkan.' : 'Cerita berhasil dinonaktifkan.')
     await load()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Status cerita belum berhasil diubah.'
+    notifyError(error.value)
+  } finally {
+    pendingAction.value = ''
   }
 }
 
 async function deleteDraft(id: string) {
+  if (pendingAction.value) return
   if (!window.confirm('Hapus draft ini secara permanen?')) return
+  pendingAction.value = `delete-draft:${id}`
   try {
     await $fetch(`/api/drafts/${id}`, { method: 'DELETE' })
+    success('Draft berhasil dihapus.')
     await load()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Draft belum berhasil dihapus.'
+    notifyError(error.value)
+  } finally {
+    pendingAction.value = ''
   }
 }
 
 async function copyLink(slug: string) {
+  if (pendingAction.value) return
+  pendingAction.value = `copy-story:${slug}`
   try {
     await navigator.clipboard.writeText(`${window.location.origin}/w/${slug}`)
+    success('Link cerita berhasil disalin.')
   } catch {
     error.value = 'Tautan belum bisa disalin.'
+    notifyError(error.value)
+  } finally {
+    pendingAction.value = ''
   }
 }
 
 async function signOut() {
   signingOut.value = true
   try {
-    await authClient.signOut()
+    const result = await authClient.signOut()
+    if (result.error) throw new Error(result.error.message || 'Belum berhasil keluar dari akun.')
     if (user.value) {
       localStorage.removeItem(`selamanya:${user.value.id}:draft-ref`)
       localStorage.removeItem(`selamanya:${user.value.id}:draft-content`)
     }
+    success('Kamu sudah keluar dari akun.')
     await navigateTo('/login')
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Belum berhasil keluar dari akun.'
+    notifyError(error.value)
   } finally {
     signingOut.value = false
   }
@@ -215,4 +248,5 @@ onMounted(() => {
 .account-stat strong { color: #201d28; font-family: 'Instrument Serif', serif; font-size: 2rem; }
 .account-card { padding: 1rem; }
 .account-draft { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; }
+.loading-panel { display: flex; min-height: 7rem; align-items: center; justify-content: center; gap: 0.7rem; border: 1px dashed #d6c9bf; border-radius: 1.25rem; color: #756a62; font-size: 0.82rem; }
 </style>

@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { getAppEnv } from '../../../utils/cloudflare'
 import { requireUser } from '../../../utils/require-user'
 import { getStoryContent } from '../../../utils/story-content'
+import { isValidStorySlug } from '#shared/story-slug'
 
 interface OwnedStoryRow {
   slug: string
@@ -13,7 +14,7 @@ interface OwnedStoryRow {
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
   const slug = getRouterParam(event, 'slug') ?? ''
-  if (!/^[a-f0-9]{12}$/.test(slug)) {
+  if (!isValidStorySlug(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
   const database = getAppEnv(event).DB

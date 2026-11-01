@@ -1,13 +1,5 @@
 <template>
   <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
-    <header class="mx-auto flex max-w-6xl items-center justify-between gap-4">
-      <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
-      <nav class="flex items-center gap-4 text-sm">
-        <NuxtLink to="/account" class="text-[#9c6257]">Akun saya</NuxtLink>
-        <NuxtLink to="/preview" class="text-[#9c6257]">Contoh umum</NuxtLink>
-      </nav>
-    </header>
-
     <section class="mx-auto max-w-6xl pb-20 pt-16">
       <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Pilih suasana cerita</p>
       <div class="mt-3 grid gap-8 md:grid-cols-[1fr_auto] md:items-end">

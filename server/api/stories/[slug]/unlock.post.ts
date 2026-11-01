@@ -4,6 +4,7 @@ import { requireDatabase } from '../../../utils/cloudflare'
 import { enforceRateLimit } from '../../../utils/rate-limit'
 import { getStoryContent } from '../../../utils/story-content'
 import { verifyStoryPassword } from '../../../utils/story-password'
+import { isValidStorySlug } from '#shared/story-slug'
 
 interface ProtectedStoryRow {
   content_id: string
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Masukkan sandi yang valid.' })
   }
-  if (!slug || !/^[a-f0-9]{12}$/.test(slug)) {
+  if (!slug || !isValidStorySlug(slug)) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
   await enforceRateLimit(event, 'story-unlock', 5, 900, slug)

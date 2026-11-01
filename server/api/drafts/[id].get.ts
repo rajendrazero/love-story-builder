@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     ...content,
     activeStep: row.active_step,
     ...(row.editing_slug ? { editingSlug: row.editing_slug } : {}),
+    ...(row.custom_slug ? { customSlug: row.custom_slug } : {}),
   })
   if (!parsed.success) {
     throw createError({ statusCode: 500, statusMessage: 'Draft tersimpan tidak valid.' })

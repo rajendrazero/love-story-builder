@@ -30,10 +30,11 @@ export default defineEventHandler(async (event) => {
   const result = await database.batch([
     ...storyContentStatements(database, id, parsed.data),
     database.prepare(
-      'UPDATE story_drafts SET active_step = ?, editing_slug = ?, updated_at = ? WHERE id = ? AND owner_user_id = ? AND published_slug IS NULL',
+      'UPDATE story_drafts SET active_step = ?, editing_slug = ?, custom_slug = ?, updated_at = ? WHERE id = ? AND owner_user_id = ? AND published_slug IS NULL',
     ).bind(
       parsed.data.activeStep ?? 0,
       parsed.data.editingSlug ?? null,
+      parsed.data.customSlug ?? null,
       updatedAt,
       id,
       existing.owner_user_id,

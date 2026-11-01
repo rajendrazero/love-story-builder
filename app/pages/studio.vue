@@ -1,13 +1,5 @@
 <template>
   <main ref="studioPage" class="brand-ui min-h-screen bg-paper px-5 py-8 md:px-12">
-    <header class="mx-auto mb-10 flex max-w-5xl items-center justify-between">
-      <NuxtLink to="/" class="font-display text-2xl">selamanya<span class="text-[#9c6257]">.</span></NuxtLink>
-      <div class="flex items-center gap-5">
-        <NuxtLink to="/account" class="text-sm text-[#9c6257] hover:text-ink">Akun saya</NuxtLink>
-        <NuxtLink to="/preview" class="text-sm text-[#9c6257] hover:text-ink">Lihat contoh ↗</NuxtLink>
-        <NuxtLink to="/" class="text-sm text-muted hover:text-ink">← Kembali</NuxtLink>
-      </div>
-    </header>
     <div class="mx-auto max-w-5xl">
       <div class="mb-10 max-w-2xl">
         <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Studio cerita · ruang akunmu</p>
@@ -32,7 +24,8 @@
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e7ddd4] bg-white/70 px-4 py-3 text-sm">
         <p class="text-[#756a62]">Draft akun privat · progres tersimpan otomatis</p>
         <div class="flex items-center gap-3">
-          <span class="text-xs text-[#756a62]" role="status">
+          <span class="inline-flex items-center gap-2 text-xs text-[#756a62]" role="status">
+            <span v-if="saveStatus === 'saving' || saveStatus === 'idle'" class="loading-spinner" aria-hidden="true" />
             {{ saveStatus === 'saving' ? 'Menyimpan…' : saveStatus === 'saved' ? `Tersimpan ${lastSavedLabel}` : saveStatus === 'error' ? 'Belum tersimpan ke server' : 'Menyiapkan penyimpanan…' }}
           </span>
           <button type="button" class="text-xs font-semibold text-[#9c6257] underline underline-offset-4" :disabled="savingDraft" @click="saveDraft">
@@ -162,6 +155,30 @@
               </select>
               <span class="mt-2 block text-xs text-muted">Default mengikuti kursor perangkat. Pilihan lain memakai ikon bawaan yang aman.</span>
             </label>
+            <label class="md:col-span-2">
+              <span class="editor-label">Atur link berbagi singkat (opsional)</span>
+              <span class="share-slug-field">
+                <span>{{ shareOrigin }}/w/</span>
+                <input
+                  id="custom-story-link"
+                  v-model="customSlug"
+                  name="customSlug"
+                  class="editor-input"
+                  type="text"
+                  minlength="3"
+                  maxlength="32"
+                  pattern="[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*"
+                  autocomplete="off"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  placeholder="contoh: kisah-kita"
+                  aria-describedby="custom-story-link-hint"
+                >
+              </span>
+              <span id="custom-story-link-hint" class="mt-2 block text-xs leading-5 text-muted">
+                3–32 huruf, angka, dan tanda hubung. Link yang dipakai berubah setelah cerita diterbitkan atau diperbarui.
+              </span>
+            </label>
             <label>
               <span class="editor-label">{{ editingStorySlug ? 'Ubah sandi cerita (opsional)' : 'Sandi cerita (opsional)' }}</span>
               <input v-model="draft.password" name="storyPassword" class="editor-input" type="password" maxlength="128" :placeholder="editingStorySlug ? 'Kosongkan untuk mempertahankan sandi saat ini' : 'Hanya orang dengan sandi yang bisa membuka'">
@@ -180,7 +197,10 @@
           <p v-if="error" class="text-sm text-red-700" role="alert">{{ error }}</p>
           <div class="flex flex-wrap gap-3">
             <button v-if="activeStep < steps.length - 1" type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</button>
-            <button v-else type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" @click="openPreview">Lihat pratinjau ↗</button>
+            <button v-else type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" :disabled="savingDraft || saving" @click="openPreview">
+              <span v-if="savingDraft || saving" class="loading-spinner mr-2 align-middle" aria-hidden="true" />
+              {{ savingDraft || saving ? 'Menyiapkan…' : 'Lihat pratinjau ↗' }}
+            </button>
           </div>
         </div>
       </div>
@@ -203,11 +223,14 @@
       <div v-if="publishedUrl" class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-5">
         <div class="w-full max-w-md rounded-3xl bg-paper p-7 text-center shadow-2xl">
           <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Cerita sudah terbit</p>
-          <h2 class="mt-2 font-display text-4xl">{{ editingStorySlug ? 'Perubahan sudah terbit.' : 'Saatnya dibagikan.' }}</h2>
+          <h2 class="mt-2 font-display text-4xl">{{ publishedIsUpdate ? 'Perubahan sudah terbit.' : 'Saatnya dibagikan.' }}</h2>
           <p class="mt-2 break-all text-sm text-muted">{{ publishedUrl }}</p>
           <div class="my-5 flex justify-center"><QrcodeVue :value="publishedUrl" :size="180" level="H" background="#f5f0e9" foreground="#171311" /></div>
           <div class="flex justify-center gap-3">
-            <button class="rounded-full bg-ink px-5 py-3 text-sm text-white" @click="copyLink">Salin tautan</button>
+            <button class="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm text-white" :disabled="copyingLink" @click="copyLink">
+              <span v-if="copyingLink" class="loading-spinner" aria-hidden="true" />
+              {{ copyingLink ? 'Menyalin…' : 'Salin tautan' }}
+            </button>
             <NuxtLink :to="`/w/${publishedSlug}`" class="rounded-full border border-ink px-5 py-3 text-sm">Lihat cerita</NuxtLink>
           </div>
           <p v-if="copyMessage" class="mt-3 text-sm text-muted" role="status">{{ copyMessage }}</p>
@@ -269,18 +292,23 @@ const savingDraft = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const activeStep = ref(0)
 const error = ref('')
+const { success, error: notifyError } = useNotifications()
 const publishedUrl = ref('')
 const publishedSlug = ref('')
+const publishedIsUpdate = ref(false)
 const previewOpen = ref(false)
 const copyMessage = ref('')
+const copyingLink = ref(false)
 const draftId = ref('')
 const editingStorySlug = ref('')
+const customSlug = ref('')
 const removePassword = ref(false)
 const lastSavedAt = ref('')
 const previewStory = computed(() => {
   const parsed = storyContentSchema.safeParse(draft)
   return parsed.success ? parsed.data : null
 })
+const shareOrigin = computed(() => import.meta.client ? window.location.origin : '')
 const lastSavedLabel = computed(() => lastSavedAt.value
   ? new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastSavedAt.value))
   : '')
@@ -291,6 +319,7 @@ let saveQueued = false
 let currentSave: Promise<void> | undefined
 let isRestoring = false
 let stopDraftWatch: (() => void) | undefined
+let stopCustomSlugWatch: (() => void) | undefined
 
 function draftPayload() {
   const { password: _password, ...content } = draft
@@ -298,6 +327,7 @@ function draftPayload() {
     ...content,
     activeStep: activeStep.value,
     ...(editingStorySlug.value ? { editingSlug: editingStorySlug.value } : {}),
+    customSlug: customSlug.value.trim().toLowerCase() || undefined,
   }
 }
 
@@ -407,11 +437,12 @@ async function restoreDraft() {
       throw new Error(error.value)
     }
     try {
-      const content = JSON.parse(legacyContent) as { draft?: Partial<StoryContent> & { editingSlug?: string }, activeStep?: number }
+      const content = JSON.parse(legacyContent) as { draft?: Partial<StoryContent> & { editingSlug?: string, customSlug?: string }, activeStep?: number }
       if (!content.draft) throw new Error('Snapshot draft lama tidak memiliki konten.')
-      const { editingSlug: savedEditingSlug, ...savedDraft } = content.draft
+      const { editingSlug: savedEditingSlug, customSlug: savedCustomSlug, ...savedDraft } = content.draft
       applyStoryContent(savedDraft)
       editingStorySlug.value = savedEditingSlug ?? ''
+      customSlug.value = savedCustomSlug ?? savedEditingSlug ?? ''
       activeStep.value = Math.max(0, Math.min(steps.length - 1, Number(content.activeStep) || 0))
       await saveDraft()
       if (saveStatus.value === 'error') throw new Error('Draft belum berhasil diimpor dan disimpan.')
@@ -429,6 +460,7 @@ async function restoreDraft() {
       const result = await $fetch<{ slug: string, story: StoryContent }>(`/api/account/stories/${editSlug}`)
       applyStoryContent(result.story)
       editingStorySlug.value = result.slug
+      customSlug.value = result.slug
       draft.password = ''
       removePassword.value = false
       await saveDraft()
@@ -449,16 +481,17 @@ async function restoreDraft() {
   }
   if (savedDraftId) {
     try {
-      const result = await $fetch<{ id: string, draft: Partial<StoryContent> & { activeStep?: number, editingSlug?: string }, publishedSlug: string | null, updatedAt: string }>(
+      const result = await $fetch<{ id: string, draft: Partial<StoryContent> & { activeStep?: number, editingSlug?: string, customSlug?: string }, publishedSlug: string | null, updatedAt: string }>(
         `/api/drafts/${savedDraftId}`,
       )
       if (result.publishedSlug) {
         await navigateTo(`/studio?edit=${result.publishedSlug}`, { replace: true })
         return
       }
-      const { activeStep: savedStep, editingSlug: savedEditingSlug, ...savedDraft } = result.draft
+      const { activeStep: savedStep, editingSlug: savedEditingSlug, customSlug: savedCustomSlug, ...savedDraft } = result.draft
       applyStoryContent(savedDraft)
       editingStorySlug.value = savedEditingSlug ?? ''
+      customSlug.value = savedCustomSlug ?? savedEditingSlug ?? ''
       draftId.value = result.id
       lastSavedAt.value = result.updatedAt
       saveStatus.value = 'saved'
@@ -475,11 +508,12 @@ async function restoreDraft() {
 
   if (savedContent) {
     try {
-      const content = JSON.parse(savedContent) as { draft?: Partial<StoryContent> & { editingSlug?: string }, activeStep?: number }
+      const content = JSON.parse(savedContent) as { draft?: Partial<StoryContent> & { editingSlug?: string, customSlug?: string }, activeStep?: number }
       if (content.draft) {
-        const { editingSlug: savedEditingSlug, ...savedDraft } = content.draft
+        const { editingSlug: savedEditingSlug, customSlug: savedCustomSlug, ...savedDraft } = content.draft
         applyStoryContent(savedDraft)
         editingStorySlug.value = savedEditingSlug ?? ''
+        customSlug.value = savedCustomSlug ?? savedEditingSlug ?? ''
       }
       activeStep.value = Math.max(0, Math.min(steps.length - 1, Number(content.activeStep) || 0))
     } catch {
@@ -505,10 +539,12 @@ onMounted(() => {
     localDraftRefKey = `selamanya:${user.id}:draft-ref`
     localDraftContentKey = `selamanya:${user.id}:draft-content`
     stopDraftWatch = watch(draft, scheduleSave, { deep: true })
+    stopCustomSlugWatch = watch(customSlug, scheduleSave)
     await restoreDraft()
   })().catch((caught: unknown) => {
     error.value = caught instanceof Error ? caught.message : 'Draft belum berhasil dimuat.'
     saveStatus.value = 'error'
+    notifyError(error.value)
   }).finally(() => {
     isRestoring = false
   })
@@ -557,40 +593,54 @@ async function publish() {
   error.value = ''
   saving.value = true
   try {
+    if (saveTimer) clearTimeout(saveTimer)
     await saveDraft()
     if (!draftId.value || saveStatus.value === 'error') {
       throw new Error('Draft belum tersimpan. Periksa koneksi, lalu coba lagi sebelum menerbitkan.')
     }
+    const wasEditing = Boolean(editingStorySlug.value)
     const result = await $fetch<{ slug: string }>(
       editingStorySlug.value ? `/api/account/stories/${editingStorySlug.value}` : '/api/stories',
       {
       method: editingStorySlug.value ? 'PUT' : 'POST',
       body: {
         ...draft,
+        customSlug: customSlug.value.trim().toLowerCase() || undefined,
         draftId: draftId.value,
         removePassword: removePassword.value,
       },
       },
     )
     publishedSlug.value = result.slug
+    publishedIsUpdate.value = wasEditing
+    editingStorySlug.value = result.slug
     publishedUrl.value = `${window.location.origin}/w/${result.slug}`
+    success('Cerita berhasil diterbitkan dan link berbagi siap digunakan.')
     previewOpen.value = false
     if (localDraftRefKey) localStorage.removeItem(localDraftRefKey)
     if (localDraftContentKey) localStorage.removeItem(localDraftContentKey)
+    draftId.value = ''
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : 'Cerita belum berhasil diterbitkan.'
+    notifyError(error.value)
   } finally {
     saving.value = false
   }
 }
 
 async function copyLink() {
+  if (copyingLink.value) return
+  copyingLink.value = true
   copyMessage.value = ''
   try {
     await navigator.clipboard.writeText(publishedUrl.value)
     copyMessage.value = 'Tautan berhasil disalin.'
+    success(copyMessage.value)
   } catch {
     copyMessage.value = 'Tautan belum bisa disalin. Salin alamat di atas secara manual.'
+    notifyError(copyMessage.value)
+  } finally {
+    copyingLink.value = false
   }
 }
 
@@ -600,6 +650,7 @@ onBeforeUnmount(() => {
     void saveDraft()
   }
   stopDraftWatch?.()
+  stopCustomSlugWatch?.()
   studioMotion?.revert()
 })
 </script>
@@ -621,6 +672,24 @@ onBeforeUnmount(() => {
   font-weight: 700;
   letter-spacing: 0.2em;
   color: #5045f5;
+}
+.share-slug-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #ded5cb;
+  border-radius: 0.75rem;
+  background: #fffdfa;
+  padding-left: 0.75rem;
+  color: #77727d;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.share-slug-field .editor-input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding-left: 0.25rem;
 }
 .step-tab {
   display: flex;

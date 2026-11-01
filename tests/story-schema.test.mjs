@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { storyContentSchema } from '../shared/schema/story.ts'
+import { publishStorySchema, storyContentSchema, updateStorySchema } from '../shared/schema/story.ts'
+import { storySlugPattern } from '../shared/story-slug.ts'
 
 const story = {
   title: 'A story about us',
@@ -68,4 +69,19 @@ test('rejects arbitrary cursor values and oversized template copy', () => {
 
 test('continues to accept older published stories without optional template settings', () => {
   assert.equal(storyContentSchema.safeParse(story).success, true)
+})
+
+test('accepts short custom story links and normalizes their casing', () => {
+  const parsed = publishStorySchema.safeParse({ ...story, customSlug: 'Our-Little-Story' })
+  assert.equal(parsed.success, true)
+  assert.equal(parsed.data.customSlug, 'our-little-story')
+  assert.equal(updateStorySchema.safeParse({ ...story, customSlug: 'first-date' }).success, true)
+  assert.equal(publishStorySchema.safeParse({ ...story, customSlug: '' }).data.customSlug, undefined)
+})
+
+test('rejects unsafe, reserved-shape, and overlong custom story links', () => {
+  for (const customSlug of ['ab', '-start', 'end-', 'double--dash', 'has space', 'hello_world', 'x'.repeat(33), 'https://evil.example']) {
+    assert.equal(publishStorySchema.safeParse({ ...story, customSlug }).success, false, customSlug)
+  }
+  assert.equal(storySlugPattern.test('aaaaaaaaaaaa'), true)
 })
