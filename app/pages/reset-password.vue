@@ -16,7 +16,7 @@
         <label>
           <span class="editor-label">Kata sandi baru</span>
           <span class="reset-password-field">
-            <input v-model="password" class="editor-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" required>
+            <input id="new-password" v-model="password" name="newPassword" class="editor-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" required>
             <button
               type="button"
               class="reset-password-toggle"

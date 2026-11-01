@@ -45,21 +45,21 @@
         <form class="auth-form" @submit.prevent="submit">
           <label v-if="props.mode === 'signup'">
             <span class="editor-label">Nama</span>
-            <input v-model="name" class="editor-input" autocomplete="name" maxlength="80" required placeholder="Nama yang ingin ditampilkan">
+            <input id="account-name" v-model="name" name="name" class="editor-input" autocomplete="name" maxlength="80" required placeholder="Nama yang ingin ditampilkan">
           </label>
           <label v-if="props.mode === 'signup'">
             <span class="editor-label">Username</span>
-            <input v-model="username" class="editor-input" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+" required placeholder="contoh: ceritakita">
+            <input id="account-username" v-model="username" name="username" class="editor-input" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+" required placeholder="contoh: ceritakita">
             <span class="auth-hint">3–30 karakter: huruf, angka, titik, atau garis bawah. Username tidak dapat dipakai ulang.</span>
           </label>
           <label>
             <span class="editor-label">{{ props.mode === 'signup' ? 'Alamat email' : 'Username atau email' }}</span>
-            <input v-model="identifier" class="editor-input" :type="props.mode === 'signup' ? 'email' : 'text'" :autocomplete="props.mode === 'signup' ? 'email' : 'username'" maxlength="254" required :placeholder="props.mode === 'signup' ? 'kamu@email.com' : 'username atau kamu@email.com'">
+            <input id="account-identifier" v-model="identifier" name="email" class="editor-input" :type="props.mode === 'signup' ? 'email' : 'text'" :autocomplete="props.mode === 'signup' ? 'email' : 'username'" maxlength="254" required :placeholder="props.mode === 'signup' ? 'kamu@email.com' : 'username atau kamu@email.com'">
           </label>
           <label class="auth-password-label">
             <span class="editor-label">Kata sandi</span>
             <span class="auth-password-field">
-              <input v-model="password" class="editor-input" :type="showPassword ? 'text' : 'password'" :autocomplete="props.mode === 'signup' ? 'new-password' : 'current-password'" :minlength="props.mode === 'signup' ? 12 : 1" maxlength="128" required placeholder="••••••••••••">
+              <input id="account-password" v-model="password" name="password" class="editor-input" :type="showPassword ? 'text' : 'password'" :autocomplete="props.mode === 'signup' ? 'new-password' : 'current-password'" :minlength="props.mode === 'signup' ? 12 : 1" maxlength="128" required placeholder="••••••••••••">
               <button
                 type="button"
                 class="auth-password-toggle"

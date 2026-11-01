@@ -63,27 +63,27 @@
             </div>
           </div>
           <div class="grid gap-5 md:grid-cols-2">
-            <label><span class="editor-label">Judul cerita</span><input v-model="draft.title" class="editor-input" maxlength="100" required placeholder="Sebuah kisah tentang kita"></label>
-            <label><span class="editor-label">Nama kalian</span><input v-model="draft.coupleNames" class="editor-input" maxlength="100" required placeholder="Alya & Bima"></label>
-            <label><span class="editor-label">Tanggal spesial</span><input v-model="draft.date" class="editor-input" maxlength="80" required placeholder="Sejak 14 Februari 2022"></label>
+            <label><span class="editor-label">Judul cerita</span><input v-model="draft.title" name="storyTitle" class="editor-input" maxlength="100" required placeholder="Sebuah kisah tentang kita"></label>
+            <label><span class="editor-label">Nama kalian</span><input v-model="draft.coupleNames" name="coupleNames" class="editor-input" maxlength="100" required placeholder="Alya & Bima"></label>
+            <label><span class="editor-label">Tanggal spesial</span><input v-model="draft.date" name="storyDate" class="editor-input" maxlength="80" required placeholder="Sejak 14 Februari 2022"></label>
             <ImageField v-model="draft.heroImage" label="Foto sampul" />
           </div>
           <div class="mt-6 grid gap-4 rounded-2xl bg-[#f7f4ed] p-5 md:grid-cols-2">
             <template v-if="draft.templateId === 'editorial-rose'">
-              <label><span class="editor-label">Dedikasi pada sampul majalah</span><input v-model="draft.templateDetails!.editorialRose!.dedication" class="editor-input" maxlength="180" placeholder="Edisi khusus untuk dua hati"></label>
-              <label><span class="editor-label">Tanda tangan penutup</span><input v-model="draft.templateDetails!.editorialRose!.signature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
+              <label><span class="editor-label">Dedikasi pada sampul majalah</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="editorialDedication" class="editor-input" maxlength="180" placeholder="Edisi khusus untuk dua hati"></label>
+              <label><span class="editor-label">Tanda tangan penutup</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="editorialSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
             </template>
             <template v-else-if="draft.templateId === 'love-letter'">
-              <label><span class="editor-label">Salam pembuka surat</span><input v-model="draft.templateDetails!.editorialRose!.dedication" class="editor-input" maxlength="180" placeholder="Untuk orang yang selalu kupilih"></label>
-              <label><span class="editor-label">Tanda tangan surat</span><input v-model="draft.templateDetails!.editorialRose!.signature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
+              <label><span class="editor-label">Salam pembuka surat</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="letterDedication" class="editor-input" maxlength="180" placeholder="Untuk orang yang selalu kupilih"></label>
+              <label><span class="editor-label">Tanda tangan surat</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="letterSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
             </template>
             <template v-else-if="draft.templateId === 'midnight-cinema'">
-              <label><span class="editor-label">Kutipan pembuka film</span><textarea v-model="draft.templateDetails!.midnightCinema!.openingQuote" class="editor-input min-h-24" maxlength="220" placeholder="Setiap kisah punya satu adegan yang ingin diulang."></textarea></label>
-              <label><span class="editor-label">Kredit penutup film</span><input v-model="draft.templateDetails!.midnightCinema!.credits" class="editor-input" maxlength="120" placeholder="Dibintangi kalian · 2021—selamanya"></label>
+              <label><span class="editor-label">Kutipan pembuka film</span><textarea v-model="draft.templateDetails!.midnightCinema!.openingQuote" name="filmOpeningQuote" class="editor-input min-h-24" maxlength="220" placeholder="Setiap kisah punya satu adegan yang ingin diulang."></textarea></label>
+              <label><span class="editor-label">Kredit penutup film</span><input v-model="draft.templateDetails!.midnightCinema!.credits" name="filmCredits" class="editor-input" maxlength="120" placeholder="Dibintangi kalian · 2021—selamanya"></label>
             </template>
             <template v-else-if="draft.templateId === 'botanical-journal'">
-              <label><span class="editor-label">Label jurnal</span><input v-model="draft.templateDetails!.botanicalJournal!.journalLabel" class="editor-input" maxlength="80" placeholder="Catatan perjalanan no. 01"></label>
-              <label><span class="editor-label">Catatan lapangan</span><textarea v-model="draft.templateDetails!.botanicalJournal!.fieldNote" class="editor-input min-h-24" maxlength="220" placeholder="Bahagia tumbuh dari hal-hal kecil yang dirawat bersama."></textarea></label>
+              <label><span class="editor-label">Label jurnal</span><input v-model="draft.templateDetails!.botanicalJournal!.journalLabel" name="journalLabel" class="editor-input" maxlength="80" placeholder="Catatan perjalanan no. 01"></label>
+              <label><span class="editor-label">Catatan lapangan</span><textarea v-model="draft.templateDetails!.botanicalJournal!.fieldNote" name="fieldNote" class="editor-input min-h-24" maxlength="220" placeholder="Bahagia tumbuh dari hal-hal kecil yang dirawat bersama."></textarea></label>
             </template>
           </div>
         </section>
@@ -92,8 +92,8 @@
           <p class="section-kicker">02 — Kartu ucapan</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.greetingImage" label="Latar kartu" />
-            <label><span class="editor-label">Tulisan untuknya</span><textarea v-model="draft.greetingText" class="editor-input min-h-36" maxlength="1000" required placeholder="Untuk kamu, rumah yang selalu ingin kutuju..." /></label>
-            <label class="md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
+            <label><span class="editor-label">Tulisan untuknya</span><textarea v-model="draft.greetingText" name="greetingText" class="editor-input min-h-36" maxlength="1000" required placeholder="Untuk kamu, rumah yang selalu ingin kutuju..." /></label>
+            <label class="md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
           </div>
         </section>
 
@@ -102,7 +102,7 @@
           <div class="space-y-4">
             <div v-for="(photo, index) in draft.gallery" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <ImageField v-model="photo.url" :label="`Foto ${index + 1}`" />
-              <label><span class="editor-label">Cerita singkat</span><input v-model="photo.caption" class="editor-input" maxlength="120" placeholder="Hari pertama kita bertemu"></label>
+              <label><span class="editor-label">Cerita singkat</span><input v-model="photo.caption" :name="`galleryCaption-${index}`" class="editor-input" maxlength="120" placeholder="Hari pertama kita bertemu"></label>
               <button v-if="draft.gallery.length > 1" type="button" class="pb-3 text-sm text-[#9c6257]" @click="draft.gallery.splice(index, 1)">Hapus</button>
             </div>
             <button v-if="draft.gallery.length < 12" type="button" class="text-sm text-[#9c6257]" @click="draft.gallery.push({ url: '', caption: '' })">+ Tambah foto ke galeri</button>
@@ -114,8 +114,8 @@
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.secondImage" label="Foto berdua" />
             <div class="space-y-5">
-              <label><span class="editor-label">Judul momen</span><input v-model="draft.detailTitle" class="editor-input" maxlength="100" required placeholder="Semua berawal dari hari itu"></label>
-              <label><span class="editor-label">Ceritakan momen kalian</span><textarea v-model="draft.detailText" class="editor-input min-h-28" maxlength="1000" required placeholder="Ceritakan bagaimana perjalanan kalian dimulai..." /></label>
+              <label><span class="editor-label">Judul momen</span><input v-model="draft.detailTitle" name="detailTitle" class="editor-input" maxlength="100" required placeholder="Semua berawal dari hari itu"></label>
+              <label><span class="editor-label">Ceritakan momen kalian</span><textarea v-model="draft.detailText" name="detailText" class="editor-input min-h-28" maxlength="1000" required placeholder="Ceritakan bagaimana perjalanan kalian dimulai..." /></label>
             </div>
           </div>
         </section>
@@ -125,9 +125,9 @@
           <p class="mb-4 text-sm text-[#756a62]">Setiap bagian menjadi satu halaman dalam buku kenangan kalian.</p>
           <div class="space-y-4">
             <article v-for="(page, index) in draft.storyPages" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-2">
-              <label><span class="editor-label">Halaman {{ index + 1 }} · Judul</span><input v-model="page.title" class="editor-input" maxlength="100" required placeholder="Pertemuan pertama"></label>
+              <label><span class="editor-label">Halaman {{ index + 1 }} · Judul</span><input v-model="page.title" :name="`storyPageTitle-${index}`" class="editor-input" maxlength="100" required placeholder="Pertemuan pertama"></label>
               <ImageField v-model="page.image" label="Foto halaman" />
-              <label class="md:col-span-2"><span class="editor-label">Kisah di halaman ini</span><textarea v-model="page.text" class="editor-input min-h-28" maxlength="1200" required placeholder="Tulis cerita kalian di sini..." /></label>
+              <label class="md:col-span-2"><span class="editor-label">Kisah di halaman ini</span><textarea v-model="page.text" :name="`storyPageText-${index}`" class="editor-input min-h-28" maxlength="1200" required placeholder="Tulis cerita kalian di sini..." /></label>
               <button v-if="draft.storyPages.length > 1" type="button" class="text-left text-sm text-[#9c6257]" @click="draft.storyPages.splice(index, 1)">Hapus halaman</button>
             </article>
             <button v-if="draft.storyPages.length < 8" type="button" class="text-sm text-[#9c6257]" @click="draft.storyPages.push({ title: '', text: '', image: '' })">+ Tambah halaman</button>
@@ -138,7 +138,7 @@
           <p class="section-kicker">06 — Pesan terakhir</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.finalImage" label="Foto penutup" />
-            <label><span class="editor-label">Pesan untuknya</span><textarea v-model="draft.finalMessage" class="editor-input min-h-36" maxlength="1000" required placeholder="Dan jika aku harus memilih lagi, tetap kamu..." /></label>
+            <label><span class="editor-label">Pesan untuknya</span><textarea v-model="draft.finalMessage" name="finalMessage" class="editor-input min-h-36" maxlength="1000" required placeholder="Dan jika aku harus memilih lagi, tetap kamu..." /></label>
           </div>
         </section>
 
@@ -147,12 +147,12 @@
           <div class="grid gap-5 md:grid-cols-2">
             <label>
               <span class="editor-label">Tautan lagu (opsional)</span>
-              <input v-model="draft.musicUrl" class="editor-input" type="url" placeholder="Tempel tautan Spotify atau YouTube Music">
+              <input v-model="draft.musicUrl" name="musicUrl" class="editor-input" type="url" placeholder="Tempel tautan Spotify atau YouTube Music">
               <span class="mt-2 block text-xs leading-5 text-muted">Tautan Spotify dan YouTube Music akan menampilkan pemutar di cerita. URL HTTPS file audio langsung juga bisa dipakai.</span>
             </label>
             <label>
               <span class="editor-label">Kursor halaman</span>
-              <select v-model="draft.cursorPreset" class="editor-input">
+              <select v-model="draft.cursorPreset" name="cursorPreset" class="editor-input">
                 <option value="ring">Cincin minimal</option>
                 <option value="heart">Hati</option>
                 <option value="sparkle">Kilau</option>
@@ -164,12 +164,12 @@
             </label>
             <label>
               <span class="editor-label">{{ editingStorySlug ? 'Ubah sandi cerita (opsional)' : 'Sandi cerita (opsional)' }}</span>
-              <input v-model="draft.password" class="editor-input" type="password" maxlength="128" :placeholder="editingStorySlug ? 'Kosongkan untuk mempertahankan sandi saat ini' : 'Hanya orang dengan sandi yang bisa membuka'">
+              <input v-model="draft.password" name="storyPassword" class="editor-input" type="password" maxlength="128" :placeholder="editingStorySlug ? 'Kosongkan untuk mempertahankan sandi saat ini' : 'Hanya orang dengan sandi yang bisa membuka'">
               <span v-if="editingStorySlug" class="mt-2 block text-xs text-muted">Sandi yang ada tetap berlaku bila kolom dikosongkan.</span>
             </label>
           </div>
           <label v-if="editingStorySlug" class="mt-4 flex items-center gap-2 text-sm text-[#756a62]">
-            <input v-model="removePassword" type="checkbox">
+            <input v-model="removePassword" name="removeStoryPassword" type="checkbox">
             Hapus perlindungan sandi pada cerita ini
           </label>
           <p class="mt-3 text-xs leading-5 text-muted">Gunakan tautan berbagi Spotify atau YouTube Music (lagu maupun playlist). URL audio langsung harus menunjuk ke file yang bisa diputar browser. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>

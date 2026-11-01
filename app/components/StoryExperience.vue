@@ -10,7 +10,7 @@
       <div class="preview-actions">
         <label v-if="templatePicker" class="preview-template-label">
           <span class="sr-only">Pilih gaya cerita</span>
-          <select :value="story.templateId" class="preview-template-select" @change="selectTemplate">
+          <select id="preview-template" name="template" :value="story.templateId" class="preview-template-select" @change="selectTemplate">
             <option v-for="template in storyTemplates" :key="template.id" :value="template.id">
               {{ template.name }}
             </option>

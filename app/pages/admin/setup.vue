@@ -13,7 +13,9 @@
         <label>
           <span class="editor-label">Token setup sementara</span>
           <input
+            id="admin-bootstrap-token"
             v-model="bootstrapToken"
+            name="bootstrapToken"
             class="editor-input"
             type="password"
             autocomplete="one-time-code"
