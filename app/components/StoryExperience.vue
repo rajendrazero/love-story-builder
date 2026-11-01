@@ -88,13 +88,13 @@
             referrerpolicy="strict-origin-when-cross-origin"
           />
           <a
-            v-if="musicEmbed.provider === 'spotify'"
+            v-if="musicEmbed.provider === 'spotify' || musicEmbed.provider === 'soundcloud'"
             class="music-embed-link"
             :href="activeMusicUrl"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Buka lagu di Spotify ↗
+            {{ musicEmbed.provider === 'spotify' ? 'Buka lagu di Spotify ↗' : 'Buka lagu di SoundCloud ↗' }}
           </a>
         </div>
         <p v-if="musicError" class="music-error" role="status">{{ musicError }}</p>
@@ -384,7 +384,9 @@ const musicEmbed = computed(() => getMusicEmbed(activeMusicUrl.value))
 const embeddedMusicSrc = computed(() => {
   if (!musicEmbed.value) return ''
   const url = new URL(musicEmbed.value.src)
-  url.searchParams.set('autoplay', '1')
+  if (musicEmbed.value.provider !== 'soundcloud') {
+    url.searchParams.set('autoplay', '1')
+  }
   return url.toString()
 })
 const bookOpen = ref(false)
