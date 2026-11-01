@@ -5,3 +5,7 @@ export function getAdminEmailAllowlist(value?: string) {
 export function isAdminEmailAllowed(email: string, allowlist: string[]) {
   return allowlist.includes(email.trim().toLowerCase())
 }
+
+export function getUserRole(email: string, adminEmails?: string): 'admin' | 'user' {
+  return isAdminEmailAllowed(email, getAdminEmailAllowlist(adminEmails)) ? 'admin' : 'user'
+}

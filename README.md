@@ -20,7 +20,7 @@ Template sinematik untuk menyusun dan menerbitkan cerita pasangan. Dibangun deng
 
    Sertifikat dan private key tersimpan lokal di `.certs/` dan tidak masuk Git. `mkcert -install` menambahkan CA lokal ke trust store Windows; mulai ulang browser setelah instalasi bila perlu.
 8. Jalankan Worker lokal dengan binding D1 dan sertifikat tepercaya: `pnpm dev`, lalu buka `https://localhost:8787`. Port dipatok ke 8787 supaya halaman dan API autentikasi tetap di origin yang sama; jika port sedang dipakai, hentikan Worker lama sebelum memulai yang baru. Jika muncul `CertificateUnknown`, pastikan sertifikat `.certs` dibuat oleh `mkcert -install` dan hostname yang dibuka adalah `localhost`.
-9. Siapkan tabel akun lokal satu kali dengan POST ke `https://localhost:8787/api/dev/auth/migrate`. Dengan sertifikat tepercaya, gunakan `curl.exe -X POST https://localhost:8787/api/dev/auth/migrate` tanpa opsi `-k`.
+9. Tidak ada setup autentikasi terpisah: migrasi pada langkah 6 sudah menyiapkan tabel Better Auth dan role.
 
 `pnpm dev` membangun Worker sebelum Wrangler menjalankannya; endpoint API, autentikasi, dan D1 lokal tersedia pada origin HTTPS tersebut. Minifikasi Nitro tetap aktif di dev dan production, dengan jumlah worker Terser dibatasi menjadi dua agar build stabil di Windows dan mesin dengan sumber daya terbatas. `pnpm dev:https:untrusted` menjalankan sertifikat self-signed bawaan Wrangler (browser dapat menolaknya dengan `CertificateUnknown`). Untuk HTTP, gunakan `pnpm dev:http` dan set `BETTER_AUTH_URL=http://localhost:8787`. Skrip dev mematok port 8787; bila port itu sudah dipakai, hentikan proses lama alih-alih membuka port alternatif seperti 8788. Gunakan host, protokol, dan port yang sama untuk halaman dan API. Konfigurasi lokal menerima origin loopback (`localhost` atau `127.0.0.1`) pada port request aktif jika protokolnya sama dengan `BETTER_AUTH_URL`; ini hanya untuk loopback dan tidak menambahkan origin arbitrer di production. Better Auth membaca alamat klien dari header tepercaya `cf-connecting-ip` yang ditetapkan Cloudflare; header forwarding buatan klien tidak dipercaya. `pnpm dev:ui` hanya untuk iterasi UI dengan HMR dan tidak menyediakan binding D1 atau API Worker. `pnpm preview` menjalankan Worker lokal seperti `pnpm dev`.
 
@@ -54,11 +54,9 @@ Struktur layout cerita per template berada di `app/components/story-templates/la
    - `pnpm exec wrangler secret put CLOUDINARY_API_KEY`
    - `pnpm exec wrangler secret put CLOUDINARY_API_SECRET`
    - `pnpm exec wrangler secret put ADMIN_EMAILS` — daftar email admin yang dipisahkan koma.
-   - `pnpm exec wrangler secret put ADMIN_BOOTSTRAP_TOKEN` — token acak minimal 32 karakter, hanya sementara untuk migrasi awal jika Cloudflare Access tidak tersedia.
-   - `pnpm exec wrangler secret put ACCESS_AUD` — hanya jika memakai Cloudflare Access untuk melindungi migrasi awal.
 4. Periksa nama secret yang terpasang (tanpa membaca nilainya): `pnpm exec wrangler secret list`. Pastikan semua variable/secret yang dibutuhkan sudah tersedia sebelum membuka trafik.
-5. Terapkan migrasi D1 production setelah memeriksa akun dan target: `pnpm db:remote`. Perintah ini mengubah database remote.
-6. Deploy dengan `pnpm run deploy`. Untuk bootstrap tanpa Zero Trust, buka `/admin/setup`, masukkan `ADMIN_BOOTSTRAP_TOKEN`, lalu tekan **Siapkan tabel akun**. Hapus token segera setelah tabel siap: `pnpm exec wrangler secret delete ADMIN_BOOTSTRAP_TOKEN`. Alternatifnya, lindungi halaman setup dengan Cloudflare Access. Jangan pasang Access pada seluruh `/admin*` atau `/api/admin/*`; setelah skema siap, pengelolaan admin menggunakan username/email dan password aplikasi.
+5. Setelah memeriksa akun/target dan membuat backup D1, jalankan `pnpm db:remote` untuk menerapkan migrasi yang belum tercatat. Migrasi auth hanya membuat tabel/index dan mengisi role default untuk akun lama; data cerita tidak dihapus.
+6. Deploy dengan `pnpm run deploy`.
 7. Dari browser, verifikasi `/register`, verifikasi email, masuk, pembuatan draft, publish, dan link publik. Atur WAF/Rate Limiting Cloudflare sebelum membuka trafik publik.
 
 Pastikan sudah login dengan `pnpm exec wrangler login`. Database `kekasih-db` sudah dikaitkan ke proyek ini. Kredensial API Cloudinary tidak pernah dikirim ke browser; hanya API key publik dan tanda tangan upload yang berumur pendek yang digunakan untuk unggahan.
@@ -66,10 +64,11 @@ Pastikan sudah login dengan `pnpm exec wrangler login`. Database `kekasih-db` su
 ### Akun pengguna, draft, dan panel admin
 
 - Tidak ada password admin default. Admin mendaftar sendiri di `/register` memakai email yang tercantum di `ADMIN_EMAILS`, memilih username dan password (minimal 12 karakter), lalu login di `/login` dengan username/email dan password pilihannya. Setelah setup skema, pendaftaran, login, permintaan email reset, dan pengiriman ulang aktivasi dilindungi Turnstile. Penggantian sandi dengan token sekali pakai dari email tidak meminta CAPTCHA kedua; token diverifikasi, dikonsumsi sekali, dan endpoint tetap dibatasi rate limit. Akun harus memverifikasi email sebelum login; atur Gmail API atau Resend agar aktivasi dapat diterima.
-- Better Auth menyimpan user, sesi, credential, dan token verifikasi di D1. Sesi memakai cookie aman/HTTP-only pada HTTPS; jangan gunakan `BETTER_AUTH_SECRET` yang berbeda antara deploy/instance karena sesi dan tautan verifikasi bergantung padanya.
+- Better Auth menyimpan user, sesi, credential, dan token verifikasi di D1; role tersimpan di `user_roles`. Sesi memakai cookie aman/HTTP-only pada HTTPS; jangan gunakan `BETTER_AUTH_SECRET` yang berbeda antara deploy/instance karena sesi dan tautan verifikasi bergantung padanya.
 - Setelah masuk, `/account` menampilkan draft dan cerita milik akun. Pengguna dapat melanjutkan draft, mengedit cerita terbit, mengaktifkan/nonaktifkan cerita, menyalin tautan, dan menghapus konten miliknya. Cerita nonaktif tidak bisa dibuka dari route publik maupun endpoint unlock. API memeriksa `user.id` sesi pada setiap operasi; mengetahui slug/id cerita saja tidak cukup untuk mengubah atau menghapusnya.
 - Setiap cerita baru menyimpan `owner_user_id`. Cerita lama sebelum migrasi kepemilikan tetap dapat dilihat publik dan dikelola admin, tetapi tidak muncul sebagai milik akun pengguna karena pemilik sebelumnya tidak diketahui.
-- Tabel Better Auth dibuat melalui migrasi terprogram di halaman `/admin/setup`. Untuk produksi gunakan Cloudflare Access atau token sementara `ADMIN_BOOTSTRAP_TOKEN` (minimal 32 karakter acak, hanya HTTPS); hapus token setelah setup. Di lokal, endpoint migrasi khusus hanya aktif saat `pnpm dev` dan hanya menerima host loopback.
+- Tabel Better Auth dan role dikelola sebagai migrasi D1 biasa di `migrations/0008_create_better_auth_tables.sql` dan `migrations/0009_seed_existing_user_roles.sql`. Jalankan `pnpm db:local` untuk lokal atau backup dahulu lalu `pnpm db:remote` untuk production; tidak ada halaman setup, token bootstrap, maupun migrasi runtime.
+- Role akun memiliki nilai `user` atau `admin`. Email yang dicantumkan di `ADMIN_EMAILS` otomatis mendapat role `admin` saat mendaftar; akun admin lama yang sudah terdaftar dipromosikan oleh seeder idempoten ketika pertama kali membuka panel admin. Pengguna lain tidak dapat mengirim atau mengubah field role sendiri.
 - Akun pengguna bersifat pendaftaran mandiri; penerbitan cerita tidak memerlukan persetujuan admin. Pasang Cloudflare Rate Limiting/WAF untuk endpoint autentikasi sebelum membuka pendaftaran publik.
 
 Halaman `/login` dan `/register` memakai route serta mode form yang terpisah dengan satu komponen akun bersama; tautan antarhalaman mempertahankan parameter redirect yang tervalidasi. Antarmuka akun, admin, studio, dan autentikasi memakai palet utama situs. Tema khusus hanya diterapkan ke halaman cerita dan preview template.
@@ -96,8 +95,8 @@ Jalankan `pnpm db:local` setelah checkout atau perubahan migrasi. `PRAGMA foreig
    - `pnpm exec wrangler secret put TURNSTILE_SECRET_KEY` — secret server dari widget Cloudflare Turnstile.
 6. Untuk Resend, atur `EMAIL_FROM`, misalnya `Selamanya <noreply@domain-terverifikasi.example>`, sebagai Worker variable. Untuk Gmail, atur `GMAIL_SENDER_EMAIL`. Untuk lokal, isi `EMAIL_PROVIDER`, nilai sender yang sesuai provider, dan secret provider di `.dev.vars`; jangan commit `.dev.vars` atau secret.
 7. Tambahkan `NUXT_PUBLIC_TURNSTILE_SITE_KEY` sebagai Worker variable non-secret dengan site key dari widget yang hostname-nya sesuai dengan `BETTER_AUTH_URL`. Untuk lokal, `.dev.vars.example` menggunakan pasangan test key Cloudflare; gunakan hanya di lokal, bukan production.
-8. Untuk produksi, backup dan jalankan `pnpm db:remote`, deploy dengan `pnpm run deploy`, siapkan tabel lewat `/admin/setup` menggunakan Access atau token sementara, lalu hapus secret token. Admin mendaftar/masuk di `/login` menggunakan akun yang emailnya terdaftar dalam `ADMIN_EMAILS`. Endpoint autentikasi mengembalikan 503 bila secret Turnstile belum disetel (fail closed).
-9. Jangan pasang Cloudflare Access pada `/admin*` atau `/api/admin/*` secara menyeluruh. Sesi Better Auth dan allowlist `ADMIN_EMAILS` melindungi panel/API setelah setup. Halaman cerita publik dan endpoint login harus tetap dapat dijangkau pengguna.
+8. Untuk produksi, backup D1, jalankan `pnpm db:remote`, kemudian `pnpm run deploy`. Admin menggunakan alur yang sama seperti pengguna: daftar di `/register` memakai email dalam `ADMIN_EMAILS`, verifikasi email, lalu masuk di `/login`. Akun mendapat role admin otomatis. Endpoint autentikasi mengembalikan 503 bila secret Turnstile belum disetel (fail closed).
+9. Jangan pasang Cloudflare Access pada `/admin*` atau `/api/admin/*` secara menyeluruh. Sesi Better Auth, role, dan allowlist email melindungi panel/API. Halaman cerita publik dan endpoint login harus tetap dapat dijangkau pengguna.
 
 #### Cara memeriksa alur pengguna
 
@@ -109,7 +108,7 @@ Jalankan `pnpm db:local` setelah checkout atau perubahan migrasi. `PRAGMA foreig
 
 - Studio menyimpan perubahan ke D1 secara otomatis. `localStorage` hanya menyimpan cache pemulihan per akun; isi utama draft tetap dapat dibuka dari perangkat lain setelah masuk.
 - Daftarkan email admin pada secret `ADMIN_EMAILS` (email dipisahkan koma). Admin memilih password sendiri saat mendaftar di `/register`; tidak ada kredensial bawaan yang dapat diambil. Login memakai username/email di `/login`; server memeriksa sesi dan allowlist email pada setiap endpoint admin.
-- Untuk setup awal tanpa Zero Trust, buat token kuat dengan `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`, simpan sementara dengan `pnpm exec wrangler secret put ADMIN_BOOTSTRAP_TOKEN`, gunakan di `/admin/setup`, lalu hapus dengan `pnpm exec wrangler secret delete ADMIN_BOOTSTRAP_TOKEN`. Token diterima hanya melalui HTTPS dan jangan disimpan di source/chat. Cloudflare Access tetap dapat digunakan sebagai alternatif.
+- `ADMIN_EMAILS` adalah allowlist sekaligus sumber role admin. Pengguna admin tetap memilih kata sandi sendiri melalui formulir pendaftaran biasa; tidak ada password default atau akun admin rahasia yang disisipkan.
 - Halaman `/admin` menampilkan cerita terbit dan draft serta menyediakan penghapusan. Pengguna yang login tetapi emailnya tidak masuk `ADMIN_EMAILS` tetap ditolak.
 
 ### Proteksi trafik
@@ -130,7 +129,7 @@ Sebelum membuka situs publik, aktifkan juga Cloudflare WAF/Rate Limiting Rules d
 - Akun pengguna dengan email terverifikasi, login, reset sandi, dan pengelolaan privat atas draft serta cerita sendiri.
 - Validasi payload di browser/API menggunakan skema Zod; foto diunggah ke Cloudinary.
 - Publikasi cerita ke D1, tautan berbagi, kode QR, dan proteksi sandi PBKDF2.
-- Panel `/admin` memakai sesi akun dan allowlist email admin; Cloudflare Access hanya diperlukan untuk setup awal `/admin/setup`.
+- Panel `/admin` memakai sesi akun, role `admin`, dan allowlist email admin.
 - Halaman publik responsif dengan kartu, galeri bergerak, buku cerita, dan pemutar lagu opsional.
 - Pratinjau template lengkap tersedia di `/preview` tanpa perlu mengisi atau mengubah form.
 

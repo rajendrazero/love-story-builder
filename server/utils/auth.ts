@@ -3,6 +3,7 @@ import { captcha, username } from 'better-auth/plugins'
 import { createError } from 'h3'
 import { getRequestURL, type H3Event } from 'h3'
 import { resolveAuthOrigins } from './auth-origin'
+import { seedUserRole } from './admin-role'
 import { getAppEnv, requireDatabase } from './cloudflare'
 import { sendGmailEmail } from './gmail-email'
 import { sendResendEmail } from './resend-email'
@@ -112,6 +113,15 @@ export function createAuth(event: H3Event) {
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await sendLink(user.email, 'Verifikasi akun Selamanya', url)
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            await seedUserRole(requireDatabase(event), user.id, user.email, env.ADMIN_EMAILS)
+          },
+        },
       },
     },
     advanced: {

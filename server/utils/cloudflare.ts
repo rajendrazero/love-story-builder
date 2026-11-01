@@ -19,9 +19,6 @@ export interface D1Database {
 
 export interface AppEnv {
   DB?: D1Database
-  ACCESS_TEAM_DOMAIN?: string
-  ACCESS_AUD?: string
-  ADMIN_BOOTSTRAP_TOKEN?: string
   ADMIN_EMAILS?: string
   BETTER_AUTH_SECRET?: string
   BETTER_AUTH_URL?: string
@@ -33,7 +30,6 @@ export interface AppEnv {
   GOOGLE_OAUTH_CLIENT_SECRET?: string
   GOOGLE_OAUTH_REFRESH_TOKEN?: string
   TURNSTILE_SECRET_KEY?: string
-  AUTH_DEV_MIGRATION?: string
   CLOUDINARY_CLOUD_NAME?: string
   CLOUDINARY_API_KEY?: string
   CLOUDINARY_API_SECRET?: string

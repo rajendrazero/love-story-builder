@@ -11,6 +11,8 @@ const migrationPaths = [
   'migrations/0005_create_api_rate_limits.sql',
   'migrations/0006_normalize_story_content.sql',
   'migrations/0007_cascade_story_content.sql',
+  'migrations/0008_create_better_auth_tables.sql',
+  'migrations/0009_seed_existing_user_roles.sql',
 ]
 
 function legacyStory(templateId) {
@@ -92,9 +94,16 @@ test('normalizes legacy stories and drafts without losing content or ownership',
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).run(draftId, 'key-hash', JSON.stringify(draft), 'cccccccccccc', '2026-01-01', '2026-01-02', 'user-1')
 
-  for (const migrationPath of migrationPaths.slice(5)) {
+  for (const migrationPath of migrationPaths.slice(5, 8)) {
     database.exec(readFileSync(migrationPath, 'utf8'))
   }
+  database.prepare(
+    `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run('existing-user', 'Existing', 'existing@example.com', 1, 1, 1)
+  database.exec(readFileSync(migrationPaths[8], 'utf8'))
+  database.exec(readFileSync(migrationPaths[7], 'utf8'))
+  database.exec(readFileSync(migrationPaths[8], 'utf8'))
 
   const storyContent = database.prepare(
     'SELECT template_id, cursor_preset, title, couple_names, date_label FROM story_content WHERE id = ?',
@@ -154,6 +163,24 @@ test('normalizes legacy stories and drafts without losing content or ownership',
   }
   assert.equal(database.prepare("PRAGMA table_info('stories')").all().some(row => row.name === 'title'), false)
   assert.deepEqual(database.prepare('PRAGMA foreign_key_check').all(), [])
+
+  for (const table of ['user', 'session', 'account', 'verification', 'rateLimit']) {
+    assert.ok(
+      database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(table),
+      `${table} should be created by the auth migration`,
+    )
+  }
+  assert.equal(
+    database.prepare("PRAGMA table_info('user_roles')").all().find(column => column.name === 'role').dflt_value,
+    "'user'",
+  )
+  assert.equal(database.prepare('SELECT role FROM user_roles WHERE user_id = ?').get('existing-user').role, 'user')
+  database.prepare(
+    `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run('admin-user', 'Admin', 'admin@example.com', 1, 1, 1)
+  database.prepare('INSERT INTO user_roles (user_id, role) VALUES (?, ?)').run('admin-user', 'admin')
+  assert.equal(database.prepare('SELECT role FROM user_roles WHERE user_id = ?').get('admin-user').role, 'admin')
 
   database.prepare('DELETE FROM stories WHERE id = ?').run('story-cinema')
   assert.equal(database.prepare('SELECT id FROM story_content WHERE id = ?').get('story-cinema'), undefined)
