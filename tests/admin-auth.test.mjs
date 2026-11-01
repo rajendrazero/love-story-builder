@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { before, test } from 'node:test'
 import { verifyAccessToken } from '../server/utils/access-token.ts'
 import { getAdminEmailAllowlist, isAdminEmailAllowed } from '../server/utils/admin-allowlist.ts'
+import { verifyBootstrapToken } from '../server/utils/bootstrap-token.ts'
 
 const issuer = 'selamanya.cloudflareaccess.com'
 const audience = 'story-admin-audience'
@@ -96,4 +97,12 @@ test('allows only normalized email addresses from the admin allowlist', () => {
   assert.deepEqual(allowlist, ['admin@example.com', 'owner@example.com'])
   assert.equal(isAdminEmailAllowed('ADMIN@example.com', allowlist), true)
   assert.equal(isAdminEmailAllowed('user@example.com', allowlist), false)
+})
+
+test('accepts only a matching high-entropy temporary setup token', async () => {
+  const expected = 'a'.repeat(48)
+  assert.equal(await verifyBootstrapToken(expected, expected), true)
+  assert.equal(await verifyBootstrapToken('b'.repeat(48), expected), false)
+  assert.equal(await verifyBootstrapToken(expected, 'short'), false)
+  assert.equal(await verifyBootstrapToken(undefined, expected), false)
 })

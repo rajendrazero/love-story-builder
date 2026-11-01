@@ -47,7 +47,7 @@
           {{ story.templateDetails.botanicalJournal.journalLabel }}
         </p>
         <button
-          v-if="story.musicUrl"
+          v-if="story.musicUrl && !musicEmbed"
           type="button"
           class="music-button"
           :aria-pressed="playing"
@@ -55,6 +55,28 @@
         >
           {{ playing ? 'Jeda lagu Ⅱ' : 'Putar lagu ♫' }}
         </button>
+        <div
+          v-if="musicEmbed"
+          class="music-embed"
+          :class="[`music-embed-${musicEmbed.provider}`, `music-embed-${musicEmbed.contentType}`]"
+        >
+          <iframe
+            :src="musicEmbed.src"
+            :title="musicEmbed.title"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+          />
+          <a
+            v-if="musicEmbed.provider === 'spotify'"
+            class="music-embed-link"
+            :href="story.musicUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Buka lagu di Spotify ↗
+          </a>
+        </div>
         <p v-if="musicError" class="music-error" role="status">{{ musicError }}</p>
       </div>
       <figure class="story-hero-photo">
@@ -69,7 +91,7 @@
     <template #greeting>
     <section class="story-screen story-greeting">
       <div class="greeting-copy">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : story.templateId === 'love-letter' ? 'Surat yang kusimpan' : 'Untukmu, selalu ♡' }}</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'Adegan favorit kita' : story.templateId === 'botanical-journal' ? 'Catatan untukmu' : story.templateId === 'love-letter' ? 'Surat yang kusimpan' : story.templateId === 'memory-atlas' ? 'Catatan perjalanan · 01' : 'Untukmu, selalu ♡' }}</p>
         <p class="greeting-text">{{ story.greetingText }}</p>
         <p
           v-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.fieldNote"
@@ -89,7 +111,7 @@
           aria-label="Video kartu ucapan"
         />
         <img v-else :src="story.greetingImage" alt="Kartu ucapan">
-        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : story.templateId === 'love-letter' ? 'disimpan di antara halaman ♡' : 'one for the scrapbook ✳' }}</span>
+        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'SCENE 01 · US' : story.templateId === 'botanical-journal' ? 'disimpan di jurnal ✳' : story.templateId === 'love-letter' ? 'disimpan di antara halaman ♡' : story.templateId === 'memory-atlas' ? 'arsip perjalanan · 01' : 'one for the scrapbook ✳' }}</span>
       </div>
     </section>
     </template>
@@ -98,10 +120,10 @@
     <section ref="gallerySection" class="story-screen story-gallery">
       <header class="section-heading">
         <div>
-          <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'selected scenes · the feature' : story.templateId === 'botanical-journal' ? 'spesimen kenangan · no. 01' : story.templateId === 'love-letter' ? 'potongan kecil yang kusimpan' : 'The camera roll, but make it forever' }}</p>
-          <h2>{{ story.templateId === 'midnight-cinema' ? 'Adegan yang ingin diulang.' : story.templateId === 'botanical-journal' ? 'Jejak kecil perjalanan kita.' : story.templateId === 'love-letter' ? 'Halaman-halaman kesayanganku.' : 'Kita, dalam bingkai.' }}</h2>
+          <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'selected scenes · the feature' : story.templateId === 'botanical-journal' ? 'spesimen kenangan · no. 01' : story.templateId === 'love-letter' ? 'potongan kecil yang kusimpan' : story.templateId === 'memory-atlas' ? 'arsip lapangan · kumpulan foto' : 'The camera roll, but make it forever' }}</p>
+          <h2>{{ story.templateId === 'midnight-cinema' ? 'Adegan yang ingin diulang.' : story.templateId === 'botanical-journal' ? 'Jejak kecil perjalanan kita.' : story.templateId === 'love-letter' ? 'Halaman-halaman kesayanganku.' : story.templateId === 'memory-atlas' ? 'Foto-foto di sepanjang jalan.' : 'Kita, dalam bingkai.' }}</h2>
         </div>
-        <p class="gallery-hint">{{ story.templateId === 'midnight-cinema' ? 'Bingkai berikutnya →' : story.templateId === 'botanical-journal' ? 'Lembar berikutnya →' : 'Geser untuk melihat →' }}</p>
+        <p class="gallery-hint">{{ story.templateId === 'midnight-cinema' ? 'Bingkai berikutnya →' : story.templateId === 'botanical-journal' ? 'Lembar berikutnya →' : story.templateId === 'memory-atlas' ? 'Geser arsip →' : 'Geser untuk melihat →' }}</p>
       </header>
       <div
         class="gallery-track"
@@ -133,7 +155,7 @@
     <section class="story-screen story-detail">
       <div class="detail-photo">
         <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
-        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'THE LEAD, ALWAYS' : story.templateId === 'botanical-journal' ? 'tumbuh bersama ♡' : 'my favorite person ♡' }}</span>
+        <span class="photo-sticker">{{ story.templateId === 'midnight-cinema' ? 'THE LEAD, ALWAYS' : story.templateId === 'botanical-journal' ? 'tumbuh bersama ♡' : story.templateId === 'memory-atlas' ? 'titik awal perjalanan' : 'my favorite person ♡' }}</span>
       </div>
       <div class="detail-copy">
         <p class="eyebrow">{{ story.date }}</p>
@@ -146,8 +168,8 @@
     <template #book>
     <section class="story-screen story-book">
       <header class="book-heading">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : story.templateId === 'love-letter' ? 'surat yang selalu ingin kubaca' : 'the lore, in chapters' }}</p>
-        <h2>{{ story.templateId === 'midnight-cinema' ? 'Film yang terus kita pilih.' : story.templateId === 'botanical-journal' ? 'Jurnal kecil tentang kita.' : story.templateId === 'love-letter' ? 'Satu cerita, banyak halaman.' : 'Buku kecil tentang kita' }}</h2>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'the story · scene by scene' : story.templateId === 'botanical-journal' ? 'catatan perjalanan · bab demi bab' : story.templateId === 'love-letter' ? 'surat yang selalu ingin kubaca' : story.templateId === 'memory-atlas' ? 'rute kenangan · dari awal hingga kini' : 'the lore, in chapters' }}</p>
+        <h2>{{ story.templateId === 'midnight-cinema' ? 'Film yang terus kita pilih.' : story.templateId === 'botanical-journal' ? 'Jurnal kecil tentang kita.' : story.templateId === 'love-letter' ? 'Satu cerita, banyak halaman.' : story.templateId === 'memory-atlas' ? 'Peta kecil perjalanan kita.' : 'Buku kecil tentang kita' }}</h2>
       </header>
 
       <div class="book-stage" :class="{ 'book-is-open': bookOpen }">
@@ -206,7 +228,7 @@
         >
           <span class="cover-front">
             <span class="cover-ornament" aria-hidden="true">✳</span>
-            <span class="cover-kicker">{{ story.templateId === 'midnight-cinema' ? 'A FILM ABOUT US' : story.templateId === 'botanical-journal' ? 'FIELD NOTES · ' + story.date : story.templateId === 'love-letter' ? 'SURAT KECIL UNTUKMU' : 'OUR LITTLE STORY' }}</span>
+            <span class="cover-kicker">{{ story.templateId === 'midnight-cinema' ? 'A FILM ABOUT US' : story.templateId === 'botanical-journal' ? 'FIELD NOTES · ' + story.date : story.templateId === 'love-letter' ? 'SURAT KECIL UNTUKMU' : story.templateId === 'memory-atlas' ? 'ATLAS KENANGAN · ' + story.date : 'OUR LITTLE STORY' }}</span>
             <strong>{{ story.coupleNames }}</strong>
             <span class="cover-title">{{ story.title }}</span>
             <span class="cover-date">{{ story.date }}</span>
@@ -269,10 +291,10 @@
     <section class="story-screen story-finale">
       <figure class="final-photo">
         <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
-        <figcaption>{{ story.templateId === 'midnight-cinema' ? 'THE END? NEVER.' : story.templateId === 'botanical-journal' ? 'kenangan yang terus tumbuh ♡' : story.templateId === 'love-letter' ? 'PS. aku memilihmu lagi ♡' : 'keep this one forever ♡' }}</figcaption>
+        <figcaption>{{ story.templateId === 'midnight-cinema' ? 'THE END? NEVER.' : story.templateId === 'botanical-journal' ? 'kenangan yang terus tumbuh ♡' : story.templateId === 'love-letter' ? 'PS. aku memilihmu lagi ♡' : story.templateId === 'memory-atlas' ? 'satu koordinat menuju rumah ♡' : 'keep this one forever ♡' }}</figcaption>
       </figure>
       <div class="final-copy">
-        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'roll credits · just the beginning' : story.templateId === 'botanical-journal' ? 'akhir catatan · awal perjalanan' : story.templateId === 'love-letter' ? 'sampai surat berikutnya' : 'sampai halaman terakhir ✳' }}</p>
+        <p class="eyebrow">{{ story.templateId === 'midnight-cinema' ? 'roll credits · just the beginning' : story.templateId === 'botanical-journal' ? 'akhir catatan · awal perjalanan' : story.templateId === 'love-letter' ? 'sampai surat berikutnya' : story.templateId === 'memory-atlas' ? 'peta selesai · perjalanan berlanjut' : 'sampai halaman terakhir ✳' }}</p>
         <p class="final-message">{{ story.finalMessage }}</p>
         <p v-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.credits" class="final-signature">
           {{ story.templateDetails.midnightCinema.credits }}
@@ -297,9 +319,11 @@ import type { Component } from 'vue'
 import BotanicalJournalLayout from '~/components/story-templates/layouts/BotanicalJournalLayout.vue'
 import EditorialRoseLayout from '~/components/story-templates/layouts/EditorialRoseLayout.vue'
 import LoveLetterLayout from '~/components/story-templates/layouts/LoveLetterLayout.vue'
+import MemoryAtlasLayout from '~/components/story-templates/layouts/MemoryAtlasLayout.vue'
 import MidnightCinemaLayout from '~/components/story-templates/layouts/MidnightCinemaLayout.vue'
 import type { StoryContent } from '#shared/schema/story'
 import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
+import { getMusicEmbed } from '#shared/music-embed'
 
 type StoryPage = StoryContent['storyPages'][number]
 type TurnDirection = 'next' | 'previous'
@@ -321,6 +345,7 @@ const storyLayouts: Record<StoryTemplateId, Component> = {
   'midnight-cinema': MidnightCinemaLayout,
   'botanical-journal': BotanicalJournalLayout,
   'love-letter': LoveLetterLayout,
+  'memory-atlas': MemoryAtlasLayout,
 }
 const emit = defineEmits<{
   close: []
@@ -332,6 +357,7 @@ const storyLayout = computed(() => storyLayouts[props.story.templateId ?? 'edito
 const audio = ref<HTMLAudioElement | null>(null)
 const playing = ref(false)
 const musicError = ref('')
+const musicEmbed = computed(() => getMusicEmbed(props.story.musicUrl))
 const bookOpen = ref(false)
 const showCover = ref(true)
 const activePage = ref(0)
@@ -425,7 +451,7 @@ onMounted(() => {
 
   gsap.registerPlugin(ScrollTrigger)
   motionMedia = gsap.matchMedia(root)
-  const scroller = root.closest<HTMLElement>('.template-preview-overlay')
+  const scroller = getScrollContainer(root)
   motionMedia.add('(prefers-reduced-motion: no-preference)', () => {
     const revealGroups: Record<string, string> = {
       'story-hero': '.story-hero-copy, .story-hero-photo',
@@ -481,8 +507,20 @@ onMounted(() => {
         },
       })
     })
+    ScrollTrigger.refresh()
   })
 })
+
+function getScrollContainer(element: HTMLElement): HTMLElement | undefined {
+  let ancestor = element.parentElement
+  while (ancestor) {
+    const { overflowY } = getComputedStyle(ancestor)
+    if (/(auto|scroll|overlay)/.test(overflowY) && ancestor.scrollHeight > ancestor.clientHeight) {
+      return ancestor
+    }
+    ancestor = ancestor.parentElement
+  }
+}
 
 onBeforeUnmount(() => {
   appCursorPreset.value = 'system'
@@ -651,6 +689,54 @@ onBeforeUnmount(() => {
 .music-error {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
+}
+
+.music-embed {
+  width: min(100%, 22rem);
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid rgb(32 29 40 / 18%);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 0.6rem 1.8rem rgb(32 29 40 / 12%);
+}
+
+.music-embed iframe {
+  display: block;
+  width: 100%;
+  height: 9.5rem;
+  border: 0;
+}
+
+.music-embed-album iframe,
+.music-embed-playlist iframe,
+.music-embed-show iframe {
+  height: 22rem;
+}
+
+.music-embed-link {
+  display: block;
+  padding: 0.6rem 0.85rem;
+  color: #fff;
+  background: #1db954;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.music-embed-link:hover {
+  background: #169c46;
+}
+
+.music-embed-youtube-music {
+  width: min(100%, 25rem);
+  aspect-ratio: 16 / 9;
+}
+
+.music-embed-youtube-music iframe {
+  height: 100%;
+  min-height: 14rem;
 }
 
 .story-hero-photo {
@@ -2019,6 +2105,7 @@ onBeforeUnmount(() => {
   background-image: radial-gradient(ellipse at 85% 50%, rgb(150 105 183 / 20%), transparent 52%);
 }
 .template-midnight-cinema .final-copy {
+  color: #f6edf7;
   border: 1px solid rgb(210 167 255 / 30%);
   background: rgb(18 15 23 / 48%);
   backdrop-filter: blur(0.4rem);
@@ -2269,5 +2356,274 @@ onBeforeUnmount(() => {
   .template-love-letter .story-hero-copy { width: 77%; }
   .template-love-letter .story-detail { grid-template-columns: 0.9fr 1.1fr; }
   .template-love-letter .story-finale { grid-template-columns: 0.85fr 1.15fr; }
+}
+
+.template-midnight-cinema .final-message,
+.template-midnight-cinema .final-signature {
+  color: #f6edf7;
+  text-shadow: 0 1px 1.25rem rgb(0 0 0 / 55%);
+}
+
+.template-memory-atlas {
+  --atlas-paper: #e8e2d2;
+  --atlas-ink: #253943;
+  --atlas-accent: #35596b;
+  color: var(--atlas-ink);
+  background: var(--atlas-paper);
+  scroll-snap-type: none;
+}
+
+.template-memory-atlas .story-screen {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding: clamp(2.5rem, 7vw, 6rem) var(--screen-pad);
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
+.template-memory-atlas .story-hero {
+  min-height: 100svh;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(1.5rem, 6vw, 6rem);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 28%), transparent 48%),
+    var(--atlas-paper);
+}
+
+.template-memory-atlas .story-hero-copy {
+  padding-left: clamp(0rem, 4vw, 4rem);
+}
+
+.template-memory-atlas .story-hero h1,
+.template-memory-atlas .detail-copy h2,
+.template-memory-atlas .section-heading h2,
+.template-memory-atlas .book-heading h2,
+.template-memory-atlas .final-message {
+  color: var(--atlas-ink);
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.template-memory-atlas .story-hero h1 { font-size: clamp(3.5rem, 9vw, 8rem); }
+.template-memory-atlas .story-title { color: var(--atlas-accent); }
+.template-memory-atlas .story-date {
+  color: #f6f1e5;
+  background: var(--atlas-accent);
+  transform: none;
+}
+.template-memory-atlas .eyebrow,
+.template-memory-atlas .hero-sparkle,
+.template-memory-atlas .final-sparkle { color: var(--atlas-accent); }
+.template-memory-atlas .story-hero-photo {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: min(72svh, 48rem);
+  border: 0.65rem solid #f6f1e5;
+  border-radius: 0.15rem;
+  padding: 0.35rem;
+  background: #f6f1e5;
+  box-shadow: 1.2rem 1.2rem 0 rgb(53 89 107 / 18%);
+  opacity: 1;
+  transform: rotate(1deg);
+}
+.template-memory-atlas .story-hero-photo img { border-radius: 0; }
+.template-memory-atlas .story-hero-photo figcaption {
+  bottom: -2.6rem;
+  color: var(--atlas-accent);
+}
+
+.template-memory-atlas :deep(.atlas-timeline) {
+  width: min(100%, 78rem);
+  margin-inline: auto;
+  padding-block: 3rem;
+}
+.template-memory-atlas :deep(.atlas-timeline .story-screen) {
+  position: relative;
+  min-height: 30rem;
+  margin: 0 0 3rem 2.5rem;
+  border: 1px solid rgb(37 57 67 / 13%);
+  border-radius: 0.2rem;
+  padding: clamp(1.25rem, 4vw, 3.5rem);
+  background: #f6f1e5;
+  box-shadow: 0 1rem 2rem rgb(37 57 67 / 7%);
+}
+.template-memory-atlas :deep(.atlas-timeline .story-screen)::before {
+  position: absolute;
+  top: 2rem;
+  left: -3.2rem;
+  display: grid;
+  width: 1.2rem;
+  height: 1.2rem;
+  place-items: center;
+  border: 3px solid var(--atlas-paper);
+  border-radius: 50%;
+  background: var(--atlas-accent);
+  box-shadow: 0 0 0 1px var(--atlas-accent);
+  content: '';
+}
+.template-memory-atlas :deep(.atlas-timeline .story-greeting)::after,
+.template-memory-atlas :deep(.atlas-timeline .story-detail)::after,
+.template-memory-atlas :deep(.atlas-timeline .story-gallery)::after {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  color: var(--atlas-accent);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.template-memory-atlas :deep(.atlas-timeline .story-greeting)::after { content: '01 / A NOTE'; }
+.template-memory-atlas :deep(.atlas-timeline .story-detail)::after { content: '02 / THE BEGINNING'; }
+.template-memory-atlas :deep(.atlas-timeline .story-gallery)::after { content: '03 / FIELD PHOTOGRAPHS'; }
+
+.template-memory-atlas .story-greeting {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 2rem;
+  background-image: repeating-linear-gradient(0deg, transparent 0 2.1rem, rgb(53 89 107 / 7%) 2.1rem 2.15rem);
+}
+.template-memory-atlas .greeting-text {
+  color: var(--atlas-ink);
+  font-size: clamp(2rem, 4vw, 4.3rem);
+}
+.template-memory-atlas .greeting-photo,
+.template-memory-atlas .detail-photo {
+  min-height: 22rem;
+  border: 0.45rem solid #fffdf7;
+  background: #fffdf7;
+  box-shadow: 0 0.8rem 1.8rem rgb(37 57 67 / 15%);
+}
+.template-memory-atlas .greeting-photo img,
+.template-memory-atlas .detail-photo img { border-radius: 0; }
+.template-memory-atlas .photo-sticker {
+  color: #f6f1e5;
+  background: var(--atlas-accent);
+  transform: none;
+}
+
+.template-memory-atlas .story-detail {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: 2rem;
+  background-image: linear-gradient(115deg, rgb(53 89 107 / 7%), transparent 55%);
+}
+.template-memory-atlas .detail-copy h2 { font-size: clamp(2.5rem, 5vw, 5rem); }
+.template-memory-atlas .detail-copy > p:last-child { color: rgb(37 57 67 / 76%); }
+
+.template-memory-atlas .story-gallery {
+  min-height: 34rem;
+  gap: 2rem;
+  color: var(--atlas-ink);
+  background:
+    radial-gradient(ellipse at 85% 85%, rgb(53 89 107 / 11%), transparent 48%),
+    #f6f1e5;
+}
+.template-memory-atlas .story-gallery .eyebrow,
+.template-memory-atlas .book-heading .eyebrow { color: var(--atlas-accent); }
+.template-memory-atlas .section-heading { align-items: start; padding-inline: 0; }
+.template-memory-atlas .section-heading h2 { font-size: clamp(2.2rem, 5vw, 4.5rem); }
+.template-memory-atlas .gallery-hint { color: rgb(37 57 67 / 65%); }
+.template-memory-atlas .gallery-track {
+  min-height: 26rem;
+  flex: initial;
+  padding-inline: 0;
+}
+.template-memory-atlas .gallery-card {
+  width: min(66vw, 28rem);
+  height: 25rem;
+}
+.template-memory-atlas .gallery-card:nth-child(n) { transform: none; }
+.template-memory-atlas .gallery-print {
+  border: 0.45rem solid #fffdf7;
+  border-bottom-width: 2.8rem;
+  border-radius: 0;
+  background: #fffdf7;
+  box-shadow: 0 0.8rem 1.8rem rgb(37 57 67 / 13%);
+}
+.template-memory-atlas .gallery-print img { border-radius: 0; }
+.template-memory-atlas .gallery-print figcaption { color: var(--atlas-ink); }
+
+.template-memory-atlas .story-book {
+  min-height: 48rem;
+  background:
+    radial-gradient(ellipse at 50% 70%, rgb(120 156 165 / 24%), transparent 58%),
+    #263c49;
+}
+.template-memory-atlas .story-book,
+.template-memory-atlas .story-book .eyebrow,
+.template-memory-atlas .story-book .book-heading h2 { color: #f6f1e5; }
+.template-memory-atlas .story-book .eyebrow { color: #c7d8d1; }
+.template-memory-atlas .book-stage { height: min(52svh, 31rem); }
+.template-memory-atlas .book-cover { background: #35596b; }
+.template-memory-atlas .cover-front {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 1.8rem, rgb(255 255 255 / 6%) 1.8rem 1.85rem),
+    linear-gradient(145deg, #446d7d, #263c49);
+}
+.template-memory-atlas .cover-ornament,
+.template-memory-atlas .cover-title { color: #d3ddc2; }
+.template-memory-atlas .book-open-control { color: #253943; background: #d3ddc2; }
+
+.template-memory-atlas .story-finale {
+  min-height: 78svh;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  background: #d6dece;
+}
+.template-memory-atlas .final-photo {
+  width: min(100%, 32rem);
+  height: min(58svh, 36rem);
+  border: 0.55rem solid #f6f1e5;
+  border-radius: 0.15rem;
+  padding: 0.35rem;
+  background: #f6f1e5;
+  transform: none;
+}
+.template-memory-atlas .final-copy {
+  border: 1px solid rgb(37 57 67 / 15%);
+  border-radius: 0.2rem;
+  color: var(--atlas-ink);
+  background: #f6f1e5;
+}
+.template-memory-atlas .final-message { font-size: clamp(2.2rem, 5vw, 4.8rem); }
+.template-memory-atlas .final-signature { color: var(--atlas-accent); }
+
+@media (max-width: 700px) {
+  .template-memory-atlas .story-screen {
+    padding: 2.5rem 1rem;
+  }
+  .template-memory-atlas .story-hero {
+    min-height: 88svh;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .template-memory-atlas .story-hero-photo {
+    height: min(42svh, 25rem);
+  }
+  .template-memory-atlas :deep(.atlas-timeline) { padding-block: 1rem; }
+  .template-memory-atlas :deep(.atlas-timeline .story-screen) {
+    min-height: 0;
+    margin: 0 0 1.5rem 1.7rem;
+    padding: 3.5rem 1rem 1.25rem;
+  }
+  .template-memory-atlas :deep(.atlas-timeline .story-greeting),
+  .template-memory-atlas :deep(.atlas-timeline .story-detail) {
+    grid-template-columns: 1fr;
+  }
+  .template-memory-atlas :deep(.atlas-timeline .story-screen)::before { left: -2.35rem; }
+  .template-memory-atlas :deep(.atlas-timeline .story-screen)::after { top: 1.25rem; right: 1rem; }
+  .template-memory-atlas .greeting-photo,
+  .template-memory-atlas .detail-photo { min-height: 15rem; height: 36svh; }
+  .template-memory-atlas .story-gallery { min-height: 28rem; }
+  .template-memory-atlas .section-heading { flex-direction: column; align-items: start; }
+  .template-memory-atlas .gallery-track { min-height: 20rem; }
+  .template-memory-atlas .gallery-card { width: 74vw; height: 19rem; }
+  .template-memory-atlas .story-book { min-height: 38rem; }
+  .template-memory-atlas .story-finale {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+  .template-memory-atlas .final-photo { height: 36svh; }
 }
 </style>

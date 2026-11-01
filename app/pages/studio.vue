@@ -145,7 +145,11 @@
         <section v-show="activeStep === 6" class="editor-card">
           <p class="section-kicker">07 — Lagu & privasi</p>
           <div class="grid gap-5 md:grid-cols-2">
-            <label><span class="editor-label">Tautan lagu (opsional)</span><input v-model="draft.musicUrl" class="editor-input" type="url" placeholder="https://... tautan audio langsung"></label>
+            <label>
+              <span class="editor-label">Tautan lagu (opsional)</span>
+              <input v-model="draft.musicUrl" class="editor-input" type="url" placeholder="Tempel tautan Spotify atau YouTube Music">
+              <span class="mt-2 block text-xs leading-5 text-muted">Tautan Spotify dan YouTube Music akan menampilkan pemutar di cerita. URL HTTPS file audio langsung juga bisa dipakai.</span>
+            </label>
             <label>
               <span class="editor-label">Kursor halaman</span>
               <select v-model="draft.cursorPreset" class="editor-input">
@@ -168,7 +172,7 @@
             <input v-model="removePassword" type="checkbox">
             Hapus perlindungan sandi pada cerita ini
           </label>
-          <p class="mt-3 text-xs leading-5 text-muted">Tautan lagu harus berupa URL audio langsung. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>
+          <p class="mt-3 text-xs leading-5 text-muted">Gunakan tautan berbagi Spotify atau YouTube Music (lagu maupun playlist). URL audio langsung harus menunjuk ke file yang bisa diputar browser. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>
         </section>
 
         <div class="flex flex-col gap-4 pb-14 sm:flex-row sm:items-center sm:justify-between">

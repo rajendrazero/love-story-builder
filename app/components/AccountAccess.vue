@@ -1,5 +1,5 @@
 <template>
-  <main class="auth-page min-h-screen">
+  <main ref="page" class="auth-page min-h-screen">
     <header class="auth-topbar">
       <NuxtLink to="/" class="auth-brand">selamanya<span>.</span></NuxtLink>
       <NuxtLink to="/" class="auth-home-link">← Kembali ke beranda</NuxtLink>
@@ -15,6 +15,9 @@
         <div class="auth-art" aria-hidden="true">
           <span class="auth-art-orbit auth-art-orbit-one" />
           <span class="auth-art-orbit auth-art-orbit-two" />
+          <span class="auth-art-spark auth-art-spark-one">✦</span>
+          <span class="auth-art-spark auth-art-spark-two">✳</span>
+          <span class="auth-art-stamp">SIMPAN<br>KENANGAN</span>
           <span class="auth-art-photo">A &amp; B<span>12 JUNI · SELALU</span></span>
           <span class="auth-art-note">our little story ♡</span>
         </div>
@@ -53,9 +56,20 @@
             <span class="editor-label">{{ props.mode === 'signup' ? 'Alamat email' : 'Username atau email' }}</span>
             <input v-model="identifier" class="editor-input" :type="props.mode === 'signup' ? 'email' : 'text'" :autocomplete="props.mode === 'signup' ? 'email' : 'username'" maxlength="254" required :placeholder="props.mode === 'signup' ? 'kamu@email.com' : 'username atau kamu@email.com'">
           </label>
-          <label>
+          <label class="auth-password-label">
             <span class="editor-label">Kata sandi</span>
-            <input v-model="password" class="editor-input" type="password" :autocomplete="props.mode === 'signup' ? 'new-password' : 'current-password'" :minlength="props.mode === 'signup' ? 12 : 1" maxlength="128" required placeholder="••••••••••••">
+            <span class="auth-password-field">
+              <input v-model="password" class="editor-input" :type="showPassword ? 'text' : 'password'" :autocomplete="props.mode === 'signup' ? 'new-password' : 'current-password'" :minlength="props.mode === 'signup' ? 12 : 1" maxlength="128" required placeholder="••••••••••••">
+              <button
+                type="button"
+                class="auth-password-toggle"
+                :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                {{ showPassword ? 'Sembunyikan' : 'Lihat' }}
+              </button>
+            </span>
             <span v-if="props.mode === 'signup'" class="auth-hint">Gunakan minimal 12 karakter untuk menjaga akunmu.</span>
           </label>
           <TurnstileWidget ref="turnstile" v-model="captchaToken" />
@@ -64,6 +78,15 @@
           <button class="auth-submit" :disabled="busy || !captchaToken">
             <span>{{ busy ? 'Mohon tunggu…' : props.mode === 'signup' ? 'Buat akun & verifikasi email' : 'Masuk ke akun' }}</span>
             <span aria-hidden="true">↗</span>
+          </button>
+          <button
+            v-if="identifier.includes('@')"
+            type="button"
+            class="auth-resend-verification"
+            :disabled="busy || !captchaToken"
+            @click="resendVerificationEmail"
+          >
+            Kirim ulang email aktivasi
           </button>
         </form>
 
@@ -79,11 +102,13 @@
 <script setup lang="ts">
 import { createAuthClient } from 'better-auth/vue'
 import { usernameClient } from 'better-auth/client/plugins'
+import { gsap } from 'gsap'
 
 const props = defineProps<{
   mode: 'signin' | 'signup'
 }>()
 
+const page = ref<HTMLElement | null>(null)
 const authClient = createAuthClient({ plugins: [usernameClient()] })
 const route = useRoute()
 const router = useRouter()
@@ -91,11 +116,13 @@ const name = ref('')
 const username = ref('')
 const identifier = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const captchaToken = ref('')
 const turnstile = ref<{ reset: () => void } | null>(null)
 const busy = ref(false)
 const message = ref('')
 const error = ref('')
+let authMotion: gsap.MatchMedia | undefined
 
 useSeoMeta({
   title: () => props.mode === 'signup' ? 'Daftar — Selamanya' : 'Masuk — Selamanya',
@@ -105,11 +132,69 @@ useSeoMeta({
 watch(() => props.mode, () => {
   message.value = ''
   error.value = ''
+  showPassword.value = false
+})
+
+onMounted(() => {
+  const root = page.value
+  if (!root) return
+
+  authMotion = gsap.matchMedia()
+  authMotion.add('(prefers-reduced-motion: no-preference)', () => {
+    gsap.from(root.querySelectorAll('.auth-story-copy, .auth-art, .auth-card-heading, .auth-tabs, .auth-form'), {
+      y: 22,
+      opacity: 0,
+      duration: 0.75,
+      stagger: 0.1,
+      ease: 'power3.out',
+      clearProps: 'all',
+    })
+    gsap.to(root.querySelector('.auth-art-orbit-one'), {
+      rotate: 336,
+      duration: 32,
+      repeat: -1,
+      ease: 'none',
+    })
+    gsap.to(root.querySelector('.auth-art-orbit-two'), {
+      rotate: 398,
+      duration: 40,
+      repeat: -1,
+      ease: 'none',
+    })
+    gsap.to(root.querySelector('.auth-art-stamp'), {
+      y: -8,
+      rotate: 5,
+      duration: 2.4,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    })
+    gsap.to(root.querySelectorAll('.auth-art-spark'), {
+      scale: 1.24,
+      opacity: 0.55,
+      duration: 1.4,
+      repeat: -1,
+      yoyo: true,
+      stagger: 0.45,
+      ease: 'sine.inOut',
+    })
+  })
+})
+
+onBeforeUnmount(() => {
+  authMotion?.revert()
 })
 
 function destination() {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/account'
   return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/account'
+}
+
+function getRequestError(caught: unknown, fallback: string): string {
+  if (caught instanceof TypeError) {
+    return 'Tidak dapat terhubung ke server. Pastikan Worker berjalan dan buka https://localhost:8787 (bukan port alternatif seperti 8788).'
+  }
+  return caught instanceof Error ? caught.message : fallback
 }
 
 async function submit() {
@@ -152,7 +237,7 @@ async function submit() {
     if (result.error) throw new Error(result.error.message || 'Email atau sandi tidak benar.')
     await router.push(destination())
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Permintaan belum berhasil.'
+    error.value = getRequestError(caught, 'Permintaan belum berhasil.')
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -180,7 +265,35 @@ async function sendResetLink() {
     if (result.error) throw new Error(result.error.message || 'Email reset belum berhasil dikirim.')
     message.value = 'Jika email terdaftar, tautan reset sandi akan dikirim.'
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Permintaan reset belum berhasil.'
+    error.value = getRequestError(caught, 'Permintaan reset belum berhasil.')
+  } finally {
+    turnstile.value?.reset()
+    busy.value = false
+  }
+}
+
+async function resendVerificationEmail() {
+  if (!identifier.value.includes('@')) {
+    error.value = 'Masukkan alamat email akun untuk menerima email aktivasi.'
+    return
+  }
+  if (!captchaToken.value) {
+    error.value = 'Selesaikan pemeriksaan manusia sebelum meminta email aktivasi.'
+    return
+  }
+  busy.value = true
+  error.value = ''
+  message.value = ''
+  try {
+    const result = await authClient.sendVerificationEmail({
+      email: identifier.value.trim(),
+      callbackURL: destination(),
+      fetchOptions: { headers: { 'x-captcha-response': captchaToken.value } },
+    })
+    if (result.error) throw new Error(result.error.message || 'Email aktivasi belum berhasil dikirim.')
+    message.value = 'Jika akun tersebut belum aktif, email aktivasi akan dikirim. Periksa Inbox, Spam, dan Promosi.'
+  } catch (caught) {
+    error.value = getRequestError(caught, 'Email aktivasi belum berhasil dikirim.')
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -282,6 +395,33 @@ async function sendResetLink() {
 }
 .auth-art-orbit-one { transform: rotate(-24deg) scaleX(0.74); }
 .auth-art-orbit-two { transform: rotate(38deg) scaleX(0.74); }
+.auth-art-spark {
+  position: absolute;
+  z-index: 1;
+  color: var(--brand-lime);
+  font-size: 1.5rem;
+}
+.auth-art-spark-one { top: 8%; left: 18%; }
+.auth-art-spark-two { right: 15%; top: 24%; font-size: 1.1rem; }
+.auth-art-stamp {
+  position: absolute;
+  z-index: 2;
+  top: 12%;
+  right: 12%;
+  display: grid;
+  width: 4.7rem;
+  height: 4.7rem;
+  place-content: center;
+  border: 1px solid rgb(247 244 237 / 68%);
+  border-radius: 50%;
+  color: var(--brand-paper);
+  font-size: 0.53rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-align: center;
+  transform: rotate(12deg);
+}
 .auth-art-photo {
   position: relative;
   display: flex;
@@ -382,6 +522,20 @@ async function sendResetLink() {
 .auth-form { display: grid; gap: 1rem; }
 .auth-form .editor-label { color: var(--brand-ink); }
 .auth-form .editor-input { min-height: 3.1rem; }
+.auth-password-field { position: relative; display: block; }
+.auth-password-field .editor-input { padding-right: 5.2rem; }
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.85rem;
+  border: 0;
+  padding: 0.35rem 0;
+  color: var(--brand-cobalt);
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transform: translateY(-50%);
+}
 .auth-hint {
   display: block;
   margin-top: 0.5rem;
@@ -413,6 +567,18 @@ async function sendResetLink() {
 }
 .auth-feedback-success { color: #36573e; background: #edf3e8; }
 .auth-feedback-error { color: #8d2929; background: #fdf0ee; }
+.auth-resend-verification {
+  justify-self: start;
+  border: 0;
+  padding: 0.35rem 0;
+  color: var(--brand-cobalt);
+  background: transparent;
+  font-size: 0.78rem;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+.auth-resend-verification:disabled { cursor: not-allowed; opacity: 0.5; }
 .auth-reset {
   margin-top: 1rem;
   border: 0;
@@ -451,7 +617,7 @@ async function sendResetLink() {
   .auth-art-orbit { width: 7rem; height: 7rem; }
   .auth-art-photo { width: 5.3rem; height: 7rem; border-width: 0.35rem; font-size: 1.6rem; }
   .auth-art-photo span { bottom: 0.2rem; font-size: 0.25rem; }
-  .auth-art-note, .auth-private-note { display: none; }
+  .auth-art-note, .auth-art-stamp, .auth-private-note { display: none; }
   .auth-card { max-width: 34rem; }
 }
 @media (max-width: 420px) {

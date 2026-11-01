@@ -259,6 +259,35 @@ onBeforeUnmount(() => {
   line-height: 1.2;
 }
 .template-card-love-letter img { filter: sepia(0.35) saturate(0.72); }
+.template-card-memory-atlas .template-card-art {
+  justify-content: space-between;
+  border: 1px solid rgb(37 57 67 / 38%);
+  color: #253943;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 1.55rem, rgb(53 89 107 / 12%) 1.55rem 1.6rem),
+    rgb(246 241 229 / 94%);
+  box-shadow: 0.6rem 0.7rem 0 rgb(53 89 107 / 18%);
+}
+.template-card-memory-atlas .template-card-tag {
+  color: #f6f1e5 !important;
+  background: #35596b;
+}
+.template-card-memory-atlas .template-card-layout {
+  color: #35596b;
+  font-size: 0.58rem;
+}
+.template-card-memory-atlas .template-card-art > strong {
+  margin-top: auto;
+  color: #253943;
+  font-size: 2rem;
+}
+.template-card-memory-atlas .template-card-art > span:not(.template-card-tag) {
+  color: #35596b;
+  font-family: 'Instrument Serif', serif;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+.template-card-memory-atlas img { filter: grayscale(0.65) contrast(0.85); }
 .template-highlight-mark { color: #5045f5; font-size: 0.8rem; }
 .template-preview-overlay {
   position: fixed;

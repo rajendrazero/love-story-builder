@@ -43,6 +43,10 @@ test('accepts each template-specific set of copy and safe cursor presets', () =>
       cursorPreset: 'heart',
     },
     {
+      templateId: 'memory-atlas',
+      cursorPreset: 'star',
+    },
+    {
       templateId: 'editorial-rose',
       cursorPreset: 'system',
     },

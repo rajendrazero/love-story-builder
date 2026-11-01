@@ -39,6 +39,16 @@ export const storyTemplates = [
     highlights: ['Pembuka seperti surat', 'Foto bergaya polaroid', 'Buku kenangan bertekstur'],
     colors: ['#f5e8d5', '#995d50', '#342923'],
   },
+  {
+    id: 'memory-atlas',
+    name: 'Memory Atlas',
+    mood: 'Dokumenter perjalanan dengan garis waktu editorial',
+    description: 'Sebuah arsip perjalanan: pembuka seperti sampul peta, momen tersusun di sepanjang garis waktu, lalu bab dan penutup sebagai catatan perjalanan.',
+    previewLabel: 'Arsip perjalanan',
+    layout: 'Atlas kenangan',
+    highlights: ['Garis waktu vertikal', 'Arsip foto horizontal', 'Bab perjalanan berurutan'],
+    colors: ['#e8e2d2', '#35596b', '#253943'],
+  },
 ] as const
 
 export type StoryTemplateId = typeof storyTemplates[number]['id']
