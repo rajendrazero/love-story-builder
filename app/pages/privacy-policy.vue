@@ -1,5 +1,5 @@
 <template>
-  <main class="legal-page">
+  <main id="main-content" tabindex="-1" class="legal-page">
     <NuxtLink to="/" class="legal-back">← Kembali ke Selamanya</NuxtLink>
     <p class="legal-eyebrow">Informasi layanan</p>
     <h1>Kebijakan Privasi</h1>

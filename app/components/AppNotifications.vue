@@ -61,9 +61,9 @@ onBeforeUnmount(() => {
   border: 1px solid rgb(32 29 40 / 10%);
   border-radius: 1rem;
   padding: 0.85rem 0.9rem;
-  color: #201d28;
-  background: #fffdfa;
-  box-shadow: 0 12px 35px rgb(32 29 40 / 14%);
+  color: var(--color-foreground);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-large);
   pointer-events: auto;
 }
 
@@ -74,8 +74,8 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  color: #201d28;
-  background: #d8f36a;
+  color: var(--color-foreground);
+  background: var(--color-accent);
   font-weight: 700;
 }
 
@@ -87,22 +87,26 @@ onBeforeUnmount(() => {
 }
 
 .notification-card > button {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   border: 0;
   padding: 0;
-  color: #77727d;
+  color: var(--color-muted-foreground);
   background: transparent;
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
 }
 
-.notification-error .notification-mark { color: white; background: #b94a42; }
-.notification-info .notification-mark { color: white; background: #5045f5; }
+.notification-error .notification-mark { color: white; background: var(--color-destructive); }
+.notification-info .notification-mark { color: white; background: var(--color-info); }
 
 .notification-enter-active,
 .notification-leave-active,
 .notification-move {
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity var(--motion-duration-normal) var(--motion-ease-standard),
+    transform var(--motion-duration-normal) var(--motion-ease-standard);
 }
 
 .notification-enter-from,

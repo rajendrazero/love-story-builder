@@ -1,5 +1,5 @@
 <template>
-  <main v-if="locked" class="grid min-h-screen place-items-center bg-[#211b18] px-5 text-paper">
+  <main v-if="locked" id="main-content" tabindex="-1" class="grid min-h-screen place-items-center bg-[#211b18] px-5 text-paper">
     <form class="w-full max-w-md text-center" @submit.prevent="unlock">
       <p class="text-xs uppercase tracking-[0.3em] text-rose">Sebuah cerita pribadi</p>
       <h1 class="mt-4 font-display text-5xl">{{ title }}</h1>

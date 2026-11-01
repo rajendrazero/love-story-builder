@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen" :class="{ 'cinematic-cursor': cursorPreset !== 'system' }">
+    <a class="skip-link" href="#main-content">Lewati ke konten utama</a>
     <SiteNavigation />
     <div v-if="routeLoading" class="route-loading-track" role="progressbar" aria-label="Memuat halaman">
       <span />
@@ -235,6 +236,35 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  transform: translateY(calc(-100% - 1rem));
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-medium);
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 3px;
+}
+
+#main-content {
+  scroll-margin-top: 5rem;
+}
+
+#main-content:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 4px;
+}
+
 .route-loading-track {
   position: fixed;
   top: 0;
@@ -371,6 +401,16 @@ onBeforeUnmount(() => {
 .custom-scrollbar-thumb:focus-visible {
   outline: 2px solid #fffaf5;
   outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .custom-scrollbar-track {
+    width: 1.75rem;
+  }
+
+  .custom-scrollbar-thumb {
+    width: 1.5rem;
+  }
 }
 
 @media (pointer: fine) and (min-width: 768px) and (prefers-reduced-motion: no-preference) {

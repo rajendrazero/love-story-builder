@@ -1,5 +1,5 @@
 <template>
-  <main ref="page" class="home-page">
+  <main id="main-content" ref="page" tabindex="-1" class="home-page">
     <section class="home-screen home-hero">
       <div class="hero-glow hero-glow-one" />
       <div class="hero-glow hero-glow-two" />

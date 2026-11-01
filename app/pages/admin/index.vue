@@ -1,5 +1,5 @@
 <template>
-  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main id="main-content" tabindex="-1" class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
     <section class="mx-auto max-w-6xl">
       <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Panel admin</p>
       <div class="mt-3 flex flex-wrap items-end justify-between gap-5">

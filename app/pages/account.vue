@@ -1,5 +1,5 @@
 <template>
-  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main id="main-content" tabindex="-1" class="brand-ui min-h-screen bg-background px-5 py-8 md:px-12">
     <section class="mx-auto max-w-6xl">
       <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Akun Selamanya</p>
       <div class="mt-3 flex flex-wrap items-end justify-between gap-5">
@@ -11,18 +11,16 @@
           <NuxtLink to="/templates" class="rounded-full bg-[#5045f5] px-5 py-3 text-sm font-semibold text-white no-underline transition hover:bg-[#3e35d6]">
             Buat cerita ↗
           </NuxtLink>
-          <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-sm" :disabled="loading" @click="load">
-            <span v-if="loading" class="loading-spinner" aria-hidden="true" />
+          <AppButton variant="secondary" :disabled="loading" :loading="loading" @click="load">
             {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      <p v-if="error" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ error }}</p>
-      <button type="button" class="my-5 inline-flex items-center gap-2 rounded-full border border-[#cbbcb0] px-5 py-3 text-xs disabled:opacity-50" :disabled="signingOut" @click="signOut">
-        <span v-if="signingOut" class="loading-spinner" aria-hidden="true" />
+      <p v-if="error" class="mt-6 rounded-2xl border border-destructive bg-destructive-surface p-4 text-sm text-destructive" role="alert">{{ error }}</p>
+      <AppButton variant="secondary" size="sm" class="my-5" :disabled="signingOut" :loading="signingOut" @click="signOut">
         {{ signingOut ? 'Keluar…' : 'Keluar dari akun' }}
-      </button>
+      </AppButton>
       <div v-if="hasLegacyDraft" class="my-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d6c9bf] bg-white/70 p-4">
         <p class="max-w-2xl text-sm leading-6 text-[#756a62]">Ada snapshot draft lama di browser ini. Impor hanya jika draft tersebut memang milikmu; setelah disimpan, draft menjadi milik akun ini.</p>
         <NuxtLink to="/studio?importLocal=1" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-xs">Tinjau & impor draft</NuxtLink>
@@ -50,15 +48,15 @@
             <div class="mt-4 flex flex-wrap gap-2">
               <NuxtLink v-if="story.isActive" :to="`/w/${story.slug}`" class="rounded-full bg-[#201d28] px-4 py-2 text-xs text-white">Buka ↗</NuxtLink>
               <NuxtLink :to="`/studio?edit=${story.slug}`" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs">Edit</NuxtLink>
-              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="toggleStory(story)">
+              <AppButton variant="secondary" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `toggle-story:${story.slug}`" @click="toggleStory(story)">
                 {{ pendingAction === `toggle-story:${story.slug}` ? 'Memproses…' : story.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
-              </button>
-              <button type="button" class="rounded-full border border-red-200 px-4 py-2 text-xs text-red-700 disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="deleteStory(story.slug)">
+              </AppButton>
+              <AppButton variant="danger" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `delete-story:${story.slug}`" @click="deleteStory(story.slug)">
                 {{ pendingAction === `delete-story:${story.slug}` ? 'Menghapus…' : 'Hapus' }}
-              </button>
-              <button type="button" class="rounded-full border border-[#cbbcb0] px-4 py-2 text-xs disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="copyLink(story.slug)">
+              </AppButton>
+              <AppButton variant="secondary" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `copy-story:${story.slug}`" @click="copyLink(story.slug)">
                 {{ pendingAction === `copy-story:${story.slug}` ? 'Menyalin…' : 'Salin link' }}
-              </button>
+              </AppButton>
             </div>
           </article>
         </div>
@@ -81,9 +79,9 @@
               <NuxtLink :to="draft.publishedSlug ? `/studio?edit=${draft.publishedSlug}` : `/studio?draft=${draft.id}`" class="text-xs text-[#9c6257] underline underline-offset-4">
                 {{ draft.publishedSlug ? 'Edit cerita' : 'Lanjutkan' }}
               </NuxtLink>
-              <button type="button" class="text-xs text-red-700 underline underline-offset-4 disabled:opacity-50" :disabled="Boolean(pendingAction)" @click="deleteDraft(draft.id)">
+              <AppButton variant="ghost" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `delete-draft:${draft.id}`" @click="deleteDraft(draft.id)">
                 {{ pendingAction === `delete-draft:${draft.id}` ? 'Menghapus…' : 'Hapus' }}
-              </button>
+              </AppButton>
             </div>
           </article>
         </div>
@@ -94,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+import AppButton from '../components/AppButton.vue'
 import { createAuthClient } from 'better-auth/vue'
 import type { StoryContent } from '#shared/schema/story'
 

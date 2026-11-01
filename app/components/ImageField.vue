@@ -6,12 +6,12 @@
       <label :for="fileInputId" class="shrink-0 cursor-pointer rounded-xl border border-[#ded5cb] px-4 py-3 text-xs transition hover:border-[#9c6257]">
         {{ uploading ? 'Mengunggah…' : 'Pilih foto' }}
       </label>
-      <input :id="fileInputId" class="sr-only" type="file" accept="image/*" :disabled="uploading" @change="upload">
+      <input :id="fileInputId" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" :disabled="uploading" @change="upload">
     </div>
     <div class="mt-2">
       <button
         type="button"
-        class="text-xs font-semibold text-[#9c6257] underline underline-offset-4"
+        class="inline-flex min-h-11 items-center text-xs font-semibold text-[#9c6257] underline underline-offset-4"
         :aria-expanded="libraryOpen"
         :aria-controls="libraryId"
         :disabled="uploading"
@@ -25,11 +25,11 @@
         <p v-else-if="!photos.length" class="text-xs text-[#756a62]">Belum ada foto tersimpan. Foto yang pernah dipakai di draft atau cerita akan muncul di sini.</p>
         <div v-else class="grid max-h-64 grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
           <button
-            v-for="photo in photos"
+            v-for="(photo, index) in photos"
             :key="photo.url"
             type="button"
             class="overflow-hidden rounded-lg border border-[#ded5cb] text-left transition hover:border-[#9c6257] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9c6257]"
-            :aria-label="`Gunakan foto yang sudah diunggah`"
+            :aria-label="`Gunakan foto ${index + 1} dari koleksi foto`"
             @click="selectPhoto(photo.url)"
           >
             <img :src="photo.url" alt="" loading="lazy" class="h-24 w-full object-cover">
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import { uploadImageToCloudinary } from '#shared/utils/cloudinary-upload'
+import { isAllowedCloudinaryImageMimeType, MAX_CLOUDINARY_IMAGE_SIZE } from '#shared/utils/cloudinary-upload-policy'
 
 const urlInputId = useId()
 const fileInputId = `${urlInputId}-file`
@@ -92,12 +93,12 @@ async function upload(event: Event) {
   const file = input.files?.[0]
   if (!file) return
   error.value = ''
-  if (!file.type.startsWith('image/')) {
-    error.value = 'Pilih file gambar.'
+  if (!isAllowedCloudinaryImageMimeType(file.type)) {
+    error.value = 'Pilih foto berformat JPEG, PNG, atau WebP.'
     input.value = ''
     return
   }
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > MAX_CLOUDINARY_IMAGE_SIZE) {
     error.value = 'Ukuran foto maksimal 10 MB.'
     input.value = ''
     return

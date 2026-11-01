@@ -1,6 +1,10 @@
 import { createError, defineEventHandler } from 'h3'
 import { getAppEnv } from '../../utils/cloudflare'
-import { createCloudinaryUploadSignature, resolveCloudinaryCredentials } from '../../utils/cloudinary-signature'
+import {
+  cloudinaryUploadFolderForOwner,
+  createCloudinaryUploadSignature,
+  resolveCloudinaryCredentials,
+} from '../../utils/cloudinary-signature'
 import { requireUser } from '../../utils/require-user'
 import { enforceRateLimit } from '../../utils/rate-limit'
 
@@ -29,5 +33,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return createCloudinaryUploadSignature(credentials, Math.floor(Date.now() / 1000))
+  const folder = await cloudinaryUploadFolderForOwner(user.id)
+  return createCloudinaryUploadSignature(credentials, Math.floor(Date.now() / 1000), folder)
 })

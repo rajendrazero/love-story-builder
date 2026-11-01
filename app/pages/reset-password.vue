@@ -1,5 +1,5 @@
 <template>
-  <main ref="page" class="brand-ui reset-page">
+  <main id="main-content" ref="page" tabindex="-1" class="brand-ui reset-page">
     <span class="reset-orbit reset-orbit-one" aria-hidden="true" />
     <span class="reset-orbit reset-orbit-two" aria-hidden="true" />
     <section class="reset-card">

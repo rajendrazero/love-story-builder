@@ -1,5 +1,5 @@
 <template>
-  <main ref="page" class="auth-page min-h-screen">
+  <main id="main-content" ref="page" tabindex="-1" class="auth-page min-h-screen">
     <div class="auth-layout">
       <aside class="auth-story-panel" aria-label="Tentang Selamanya">
         <div class="auth-story-copy">
@@ -70,26 +70,31 @@
           <TurnstileWidget ref="turnstile" v-model="captchaToken" />
           <p v-if="message" class="auth-feedback auth-feedback-success" role="status">{{ message }}</p>
           <p v-if="error" class="auth-feedback auth-feedback-error" role="alert">{{ error }}</p>
-          <button class="auth-submit" :disabled="busy || !captchaToken">
-            <span v-if="busy" class="loading-spinner" aria-hidden="true" />
+          <AppButton
+            type="submit"
+            class="auth-submit"
+            :disabled="busy || !captchaToken"
+            :loading="busy"
+          >
             <span>{{ busy ? 'Mohon tunggu…' : props.mode === 'signup' ? 'Buat akun & verifikasi email' : 'Masuk ke akun' }}</span>
             <span aria-hidden="true">↗</span>
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             v-if="identifier.includes('@')"
-            type="button"
+            variant="ghost"
+            size="sm"
             class="auth-resend-verification"
             :disabled="busy || !captchaToken"
+            :loading="busy"
             @click="resendVerificationEmail"
           >
-            <span v-if="busy" class="loading-spinner" aria-hidden="true" />
             {{ busy ? 'Mengirim…' : 'Kirim ulang email aktivasi' }}
-          </button>
+          </AppButton>
         </form>
 
-        <button v-if="props.mode === 'signin'" type="button" class="auth-reset" :disabled="busy" @click="sendResetLink">
+        <AppButton v-if="props.mode === 'signin'" variant="ghost" size="sm" class="auth-reset" :disabled="busy" :loading="busy" @click="sendResetLink">
           {{ busy ? 'Mengirim…' : 'Lupa kata sandi?' }}
-        </button>
+        </AppButton>
         <p class="auth-privacy">Dengan melanjutkan, kamu menyetujui bahwa email digunakan untuk mengelola dan mengamankan akun.</p>
       </section>
     </div>
@@ -97,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import AppButton from './AppButton.vue'
 import { createAuthClient } from 'better-auth/vue'
 import { usernameClient } from 'better-auth/client/plugins'
 import { gsap } from 'gsap'
@@ -507,25 +513,28 @@ async function resendVerificationEmail() {
   margin: 1.6rem 0 1.35rem;
   border-radius: 999px;
   padding: 0.3rem;
-  background: #eeecf9;
+  background: var(--color-secondary);
 }
 .auth-tabs a {
   border-radius: 999px;
   padding: 0.7rem;
-  color: var(--brand-muted);
+  color: var(--color-muted-foreground);
   font-size: 0.8rem;
   text-align: center;
   text-decoration: none;
-  transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  transition:
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .auth-tabs a[aria-current='page'] {
-  color: var(--brand-ink);
-  background: #fffdfa;
-  box-shadow: 0 2px 8px rgb(32 29 40 / 8%);
+  color: var(--color-foreground);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-small);
   font-weight: 700;
 }
 .auth-form { display: grid; gap: 1rem; }
-.auth-form .editor-label { color: var(--brand-ink); }
+.auth-form .editor-label { color: var(--color-foreground); }
 .auth-form .editor-input { min-height: 3.1rem; }
 .auth-password-field { position: relative; display: block; }
 .auth-password-field .editor-input { padding-right: 5.2rem; }
@@ -535,7 +544,7 @@ async function resendVerificationEmail() {
   right: 0.85rem;
   border: 0;
   padding: 0.35rem 0;
-  color: var(--brand-cobalt);
+  color: var(--color-primary);
   background: transparent;
   font-size: 0.7rem;
   font-weight: 600;
@@ -544,25 +553,13 @@ async function resendVerificationEmail() {
 .auth-hint {
   display: block;
   margin-top: 0.5rem;
-  color: var(--brand-muted);
+  color: var(--color-muted-foreground);
   font-size: 0.7rem;
 }
 .auth-submit {
-  display: flex;
-  min-height: 3.3rem;
-  align-items: center;
+  width: 100%;
   justify-content: space-between;
-  border: 0;
-  border-radius: 999px;
-  padding: 0.8rem 1.25rem;
-  color: white;
-  background: var(--brand-cobalt);
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: background 180ms ease, transform 180ms ease, opacity 180ms ease;
 }
-.auth-submit:hover:not(:disabled) { background: #4038cc; transform: translateY(-1px); }
-.auth-submit:disabled { cursor: not-allowed; opacity: 0.5; }
 .auth-feedback {
   margin: 0;
   border-radius: 0.9rem;
@@ -570,36 +567,28 @@ async function resendVerificationEmail() {
   font-size: 0.78rem;
   line-height: 1.55;
 }
-.auth-feedback-success { color: #36573e; background: #edf3e8; }
-.auth-feedback-error { color: #8d2929; background: #fdf0ee; }
+.auth-feedback-success { color: var(--color-success); background: var(--color-success-surface); }
+.auth-feedback-error { color: var(--color-destructive); background: var(--color-destructive-surface); }
 .auth-resend-verification {
   justify-self: start;
-  border: 0;
-  padding: 0.35rem 0;
-  color: var(--brand-cobalt);
-  background: transparent;
-  font-size: 0.78rem;
+  padding-inline: 0;
+  color: var(--color-primary);
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 0.2rem;
 }
-.auth-resend-verification:disabled { cursor: not-allowed; opacity: 0.5; }
 .auth-reset {
   margin-top: 1rem;
-  border: 0;
-  padding: 0;
-  color: var(--brand-cobalt);
-  background: transparent;
-  font-size: 0.76rem;
+  padding-inline: 0;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 0.2rem;
 }
-.auth-reset:disabled { opacity: 0.5; }
 .auth-privacy {
   margin: 1.5rem 0 0;
   border-top: 1px solid #eee6de;
   padding-top: 1rem;
-  color: #897e76;
+  color: var(--color-muted-foreground);
   font-size: 0.66rem;
   line-height: 1.6;
 }

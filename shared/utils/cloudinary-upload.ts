@@ -1,8 +1,15 @@
+import {
+  isAllowedCloudinaryImageMimeType,
+  isOwnedCloudinaryImageUrl,
+  MAX_CLOUDINARY_IMAGE_SIZE,
+} from './cloudinary-upload-policy.ts'
+
 export interface CloudinaryUploadSignatureResponse {
   cloudName: string
   apiKey: string
   folder: string
   timestamp: number
+  uploadPreset: string
   signature: string
 }
 
@@ -16,12 +23,20 @@ export async function uploadImageToCloudinary(
   requestSignature: () => Promise<CloudinaryUploadSignatureResponse>,
   send: typeof fetch = fetch,
 ): Promise<string> {
+  if (!isAllowedCloudinaryImageMimeType(file.type)) {
+    throw new Error('Pilih foto berformat JPEG, PNG, atau WebP.')
+  }
+  if (file.size > MAX_CLOUDINARY_IMAGE_SIZE) {
+    throw new Error('Ukuran foto maksimal 10 MB.')
+  }
+
   const signature = await requestSignature()
   const body = new FormData()
   body.append('file', file)
   body.append('api_key', signature.apiKey)
   body.append('folder', signature.folder)
   body.append('timestamp', String(signature.timestamp))
+  body.append('upload_preset', signature.uploadPreset)
   body.append('signature', signature.signature)
 
   const response = await send(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signature.cloudName)}/image/upload`, {
@@ -57,7 +72,7 @@ export async function uploadImageToCloudinary(
   } catch {
     throw new Error('Cloudinary mengembalikan URL foto yang tidak valid.')
   }
-  if (secureUrl.protocol !== 'https:') {
+  if (!isOwnedCloudinaryImageUrl(secureUrl.toString(), signature.cloudName, signature.folder)) {
     throw new Error('Cloudinary mengembalikan URL foto yang tidak aman.')
   }
 

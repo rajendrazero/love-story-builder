@@ -13,6 +13,7 @@ interface D1Result {
 }
 
 export interface D1Database {
+  exec(query: string): Promise<{ count: number; duration: number }>
   prepare(query: string): D1Statement
   batch(statements: D1Statement[]): Promise<D1Result[]>
 }
@@ -39,12 +40,22 @@ export function getAppEnv(event: H3Event): AppEnv {
   return context.cloudflare?.env ?? {}
 }
 
+function isD1Database(database: unknown): database is D1Database {
+  if (typeof database !== 'object' || database === null) return false
+  return 'exec' in database
+    && typeof database.exec === 'function'
+    && 'prepare' in database
+    && typeof database.prepare === 'function'
+    && 'batch' in database
+    && typeof database.batch === 'function'
+}
+
 export function requireDatabase(event: H3Event) {
-  const database = getAppEnv(event).DB
-  if (!database) {
+  const database: unknown = getAppEnv(event).DB
+  if (!isD1Database(database)) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'Binding D1 tidak tersedia. Jalankan pnpm dev atau pnpm preview, bukan pnpm dev:ui.',
+      statusMessage: 'Binding D1 tidak tersedia atau tidak kompatibel. Jalankan pnpm dev atau pnpm preview, bukan pnpm dev:ui.',
     })
   }
   return database

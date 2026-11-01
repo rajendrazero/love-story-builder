@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { storySlugPattern } from '../story-slug.ts'
+import { getTemplateDefinition, storyTemplateSchema, templateDetailsSchema } from '../story-templates.ts'
+
+export { storyTemplateSchema }
 
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2048)
 const imageUrl = httpsUrl
-export const storyTemplateSchema = z.enum(['editorial-rose', 'midnight-cinema', 'botanical-journal', 'love-letter', 'memory-atlas'])
 export const storyCursorSchema = z.enum(['ring', 'heart', 'sparkle', 'flower', 'star', 'system'])
 const customSlugSchema = z.string()
   .trim()
@@ -14,21 +16,6 @@ const customSlugSchema = z.string()
   .refine(value => value === undefined || storySlugPattern.test(value), {
     message: 'Link khusus harus berisi 3–32 huruf kecil, angka, atau tanda hubung.',
   })
-const templateDetailsSchema = z.object({
-  editorialRose: z.object({
-    dedication: z.string().max(180).optional(),
-    signature: z.string().max(80).optional(),
-  }).strict().optional(),
-  midnightCinema: z.object({
-    openingQuote: z.string().max(220).optional(),
-    credits: z.string().max(120).optional(),
-  }).strict().optional(),
-  botanicalJournal: z.object({
-    journalLabel: z.string().max(80).optional(),
-    fieldNote: z.string().max(220).optional(),
-  }).strict().optional(),
-}).strict()
-
 export const storyContentSchema = z.object({
   templateId: storyTemplateSchema.optional(),
   cursorPreset: storyCursorSchema.optional(),
@@ -55,6 +42,22 @@ export const storyContentSchema = z.object({
   finalImage: imageUrl,
   finalMessage: z.string().trim().min(1).max(1000),
   musicUrl: z.union([z.literal(''), httpsUrl]),
+}).superRefine((story, context) => {
+  const template = getTemplateDefinition(story.templateId ?? 'editorial-rose')
+  if (!template || !template.customizationKey || !story.templateDetails) return
+
+  const value = story.templateDetails[template.customizationKey]
+  if (value === undefined) return
+
+  const parsed = template.schema.safeParse(value)
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      context.addIssue({
+        ...issue,
+        path: ['templateDetails', template.customizationKey, ...issue.path],
+      })
+    }
+  }
 })
 
 export const publishStorySchema = storyContentSchema.extend({

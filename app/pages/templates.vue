@@ -1,24 +1,53 @@
 <template>
-  <main class="brand-ui min-h-screen bg-[#f7f4ed] px-5 py-8 md:px-12">
+  <main id="main-content" tabindex="-1" class="brand-ui min-h-screen overflow-x-clip bg-background px-4 py-8 sm:px-5 md:px-12">
     <section class="mx-auto max-w-6xl pb-20 pt-16">
-      <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Pilih suasana cerita</p>
+      <p class="text-xs uppercase tracking-[0.25em] text-primary">Pilih suasana cerita</p>
       <div class="mt-3 grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
         <div>
-          <h1 class="font-display text-5xl md:text-7xl">Mulai dari tampilan<br>yang terasa <em>kalian.</em></h1>
-          <p class="mt-4 max-w-2xl text-sm leading-7 text-[#756a62]">Setiap template punya komposisi, nuansa, dan kolom cerita khasnya sendiri. Lihat preview utuh sebelum memilih; draft baru langsung tersimpan saat editor dibuka.</p>
+          <h1 class="max-w-[18ch] text-balance font-display text-5xl md:text-7xl">Mulai dari tampilan<br>yang terasa <em>kalian.</em></h1>
+          <p class="mt-4 max-w-2xl text-sm leading-7 text-muted">Setiap template punya komposisi, nuansa, dan kolom cerita khasnya sendiri. Lihat preview utuh sebelum memilih; draft baru langsung tersimpan saat editor dibuka.</p>
         </div>
-        <NuxtLink to="/login" class="text-sm text-[#9c6257] underline underline-offset-4">Sudah punya akun? Masuk</NuxtLink>
+        <NuxtLink to="/login" class="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Sudah punya akun? Masuk</NuxtLink>
       </div>
 
-      <div class="mt-10 grid gap-6 sm:grid-cols-2 2xl:grid-cols-4">
+      <section class="mt-10" aria-label="Cari template">
+        <label for="template-search" class="text-sm font-semibold">Cari berdasarkan nama atau suasana</label>
+        <input
+          id="template-search"
+          v-model="searchQuery"
+          type="search"
+          maxlength="80"
+          autocomplete="off"
+          placeholder="Contoh: surat, perjalanan, sinematik"
+          class="editor-input mt-2 max-w-xl"
+        >
+        <div class="mt-5 flex flex-wrap gap-2" role="group" aria-label="Kategori template">
+          <AppButton
+            v-for="category in templateCategories"
+            :key="category.id"
+            :variant="activeCategory === category.id ? 'primary' : 'secondary'"
+            :aria-pressed="activeCategory === category.id"
+            @click="selectCategory(category.id)"
+          >
+            {{ category.label }}
+          </AppButton>
+        </div>
+      </section>
+
+      <p class="mt-6 text-sm text-[#756a62]" role="status" aria-live="polite">
+        {{ filteredTemplates.length }} template ditemukan
+        <span v-if="activeCategory">di kategori {{ activeCategoryLabel }}</span>
+      </p>
+
+      <div v-if="paginatedTemplates.length" class="mt-4 grid min-w-0 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <article
-          v-for="template in storyTemplates"
+          v-for="template in paginatedTemplates"
           :key="template.id"
           class="template-card"
           :style="{ '--template-paper': template.colors[0], '--template-accent': template.colors[1], '--template-ink': template.colors[2] }"
         >
           <div class="template-card-preview" :class="`template-card-${template.id}`">
-            <img :src="demoStory.heroImage" :alt="`Contoh sampul ${template.name}`" loading="lazy">
+            <img :src="template.thumbnail" :alt="`Contoh sampul ${template.name}`" loading="lazy" decoding="async">
             <div class="template-card-art">
               <span class="template-card-tag">{{ template.previewLabel }}</span>
               <span class="template-card-layout">{{ template.layout }}</span>
@@ -28,70 +57,251 @@
             </div>
           </div>
           <div class="p-6">
-            <p class="text-xs uppercase tracking-[0.18em] text-[#9c6257]">{{ template.mood }}</p>
-            <h2 class="mt-2 font-display text-3xl">{{ template.name }}</h2>
-            <p class="mt-2 min-h-14 text-sm leading-6 text-[#756a62]">{{ template.description }}</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.15em] text-muted">{{ categoryLabel(template.category) }}</p>
+              <p class="text-xs uppercase tracking-[0.18em] text-primary">{{ template.mood }}</p>
+            <h2 class="mt-2 line-clamp-2 font-display text-3xl">{{ template.name }}</h2>
+            <p class="mt-2 min-h-14 text-pretty text-sm leading-6 text-[#756a62]">{{ template.description }}</p>
             <ul class="mt-4 grid gap-2 text-xs text-[#756a62]">
               <li v-for="highlight in template.highlights" :key="highlight" class="flex items-center gap-2">
                 <span class="template-highlight-mark" aria-hidden="true">✳</span>{{ highlight }}
               </li>
             </ul>
             <div class="mt-5 flex gap-3">
-              <button type="button" class="flex-1 rounded-full border border-[#cbbcb0] px-4 py-3 text-xs" @click="previewTemplate(template.id)">
+              <AppButton variant="secondary" class="min-w-0 flex-1" @click="previewTemplate(template.id)">
                 Lihat preview
-              </button>
-              <button type="button" class="flex-1 rounded-full bg-[#201d28] px-4 py-3 text-xs text-white" @click="chooseTemplate(template.id)">
+              </AppButton>
+              <AppButton variant="primary" class="min-w-0 flex-1" @click="chooseTemplate(template.id)">
                 Pilih template ↗
-              </button>
+              </AppButton>
             </div>
           </div>
         </article>
       </div>
+      <div v-else class="mt-4 rounded-3xl border border-[#e7ddd4] bg-white/70 px-6 py-10 text-center">
+        <h2 class="font-display text-3xl">Belum ada template di kategori ini.</h2>
+        <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#756a62]">
+          Template kartu ucapan dan undangan akan ditambahkan setelah editor khususnya tersedia.
+        </p>
+        <AppButton class="mt-5" @click="selectCategory('')">
+          Lihat semua template
+        </AppButton>
+      </div>
+
+      <nav v-if="pageCount > 1" class="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Navigasi halaman template">
+        <AppButton
+          variant="secondary"
+          size="sm"
+          :disabled="currentPage <= 1"
+          @click="selectPage(currentPage - 1)"
+        >Sebelumnya</AppButton>
+        <AppButton
+          v-for="pageNumber in pageCount"
+          :key="pageNumber"
+          :variant="currentPage === pageNumber ? 'primary' : 'secondary'"
+          size="sm"
+          class="min-w-11 px-3"
+          :aria-label="`Halaman ${pageNumber}`"
+          :aria-current="currentPage === pageNumber ? 'page' : undefined"
+          @click="selectPage(pageNumber)"
+        >{{ pageNumber }}</AppButton>
+        <AppButton
+          variant="secondary"
+          size="sm"
+          :disabled="currentPage >= pageCount"
+          @click="selectPage(currentPage + 1)"
+        >Berikutnya</AppButton>
+      </nav>
     </section>
 
-    <div
-      v-if="previewId"
-      class="template-preview-overlay"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="`Preview ${activePreviewTemplate.name}`"
-      @keydown.esc.prevent.stop="closePreview"
-    >
-      <div class="mx-auto max-w-7xl">
-        <StoryExperience
-          :key="previewId"
-          :story="previewStory"
-          demo
-          closable
-          :create-to="createPath"
-          @close="closePreview"
-        />
+    <Teleport to="body">
+      <div
+        v-if="previewId"
+        ref="previewOverlay"
+        class="template-preview-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="template-preview-title"
+        tabindex="-1"
+        @keydown="onPreviewKeydown"
+      >
+        <h2 id="template-preview-title" class="sr-only">
+          Preview {{ activePreviewTemplate?.name ?? 'cerita' }}
+        </h2>
+        <div class="mx-auto max-w-7xl">
+          <StoryExperience
+            :key="previewId"
+            :story="previewStory"
+            demo
+            closable
+            :create-to="createPath"
+            @close="closePreview"
+          />
+        </div>
       </div>
-    </div>
+    </Teleport>
   </main>
 </template>
 
 <script setup lang="ts">
+import AppButton from '../components/AppButton.vue'
 import { demoStory } from '#shared/demo-story'
-import { storyTemplates, type StoryTemplateId } from '#shared/story-templates'
+import { categoryLabel, resolveTemplateCategory, templateCategories, type TemplateCategoryId } from '#shared/template-categories'
+import { availableStoryTemplates, type StoryTemplateId } from '#shared/story-templates'
 
+const route = useRoute()
+const router = useRouter()
+const previewOverlay = useTemplateRef<HTMLDivElement>('previewOverlay')
+const pageSize = 4
 const previewId = ref<StoryTemplateId | ''>('')
-const activePreviewTemplate = computed(() => storyTemplates.find(template => template.id === previewId.value) ?? storyTemplates[0])
-const previewStory = computed(() => ({ ...demoStory, templateId: activePreviewTemplate.value.id }))
-const createPath = computed(() => `/studio?template=${activePreviewTemplate.value.id}&new=1`)
+const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q.slice(0, 80) : '')
+const activeCategory = computed<TemplateCategoryId | ''>(() => {
+  return resolveTemplateCategory(route.query.category)
+})
+const activePreviewTemplate = computed(() => availableStoryTemplates.find(template => template.id === previewId.value) ?? availableStoryTemplates[0])
+const previewStory = computed(() => ({
+  ...demoStory,
+  ...(activePreviewTemplate.value ? { templateId: activePreviewTemplate.value.id } : {}),
+}))
+const createPath = computed(() => activePreviewTemplate.value
+  ? `/studio?template=${activePreviewTemplate.value.id}&new=1`
+  : '/studio')
+const activeCategoryLabel = computed(() => categoryLabel(activeCategory.value))
+const filteredTemplates = computed(() => {
+  const query = searchQuery.value.trim().toLocaleLowerCase('id')
+  return availableStoryTemplates.filter((template) => {
+    const matchesCategory = !activeCategory.value || template.category === activeCategory.value
+    const matchesQuery = !query || [
+      template.name,
+      template.mood,
+      template.description,
+      template.layout,
+      ...template.highlights,
+    ].some(value => value.toLocaleLowerCase('id').includes(query))
+    return matchesCategory && matchesQuery
+  })
+})
+const pageCount = computed(() => Math.ceil(filteredTemplates.value.length / pageSize))
+const currentPage = computed(() => {
+  const requestedPage = Number(route.query.page)
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+  return Math.min(page, Math.max(1, pageCount.value))
+})
+const paginatedTemplates = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredTemplates.value.slice(start, start + pageSize)
+})
 let previousBodyOverflow = ''
+let previewFocusTarget: HTMLElement | null = null
+const backgroundInertStates = new Map<HTMLElement, boolean>()
 
 useSeoMeta({
   title: 'Pilih template cerita — Selamanya',
-  description: 'Pilih komposisi cerita, bukan hanya warna: majalah editorial, film pendek, atau jurnal perjalanan.',
+  description: 'Cari dan jelajahi template cerita berdasarkan kategori, suasana, atau komposisinya.',
 })
 
+function updateCatalogQuery(options: { category?: TemplateCategoryId | ''; page?: number; query?: string }) {
+  const query = options.query?.trim().slice(0, 80) ?? searchQuery.value.trim().slice(0, 80)
+  const nextQuery: Record<string, string> = {}
+  if (query) nextQuery.q = query
+  if (options.category) nextQuery.category = options.category
+  if (options.page && options.page > 1) nextQuery.page = String(options.page)
+
+  const currentQuery = route.query
+  if (
+    currentQuery.q === nextQuery.q
+    && currentQuery.category === nextQuery.category
+    && currentQuery.page === nextQuery.page
+  ) return
+
+  void router.replace({ query: nextQuery })
+}
+
+function selectCategory(category: TemplateCategoryId | '') {
+  updateCatalogQuery({ category, page: 1 })
+}
+
+function selectPage(page: number) {
+  if (page < 1 || page > pageCount.value) return
+  updateCatalogQuery({ category: activeCategory.value, page })
+}
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+let syncingSearchFromRoute = false
+watch(() => route.query.q, (query) => {
+  const normalizedQuery = typeof query === 'string' ? query.slice(0, 80) : ''
+  if (searchQuery.value === normalizedQuery) return
+  syncingSearchFromRoute = true
+  searchQuery.value = normalizedQuery
+  syncingSearchFromRoute = false
+})
+
+watch(searchQuery, (query) => {
+  if (syncingSearchFromRoute) return
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    updateCatalogQuery({ category: activeCategory.value, page: 1, query })
+  }, 200)
+}, { flush: 'sync' })
+
 function previewTemplate(id: StoryTemplateId) {
+  previewFocusTarget = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null
   previewId.value = id
 }
 
 function closePreview() {
   previewId.value = ''
+}
+
+function setPreviewBackgroundInert() {
+  const overlay = previewOverlay.value
+  if (!overlay || backgroundInertStates.size) return
+
+  for (const child of document.body.children) {
+    if (!(child instanceof HTMLElement) || child === overlay) continue
+    backgroundInertStates.set(child, child.inert)
+    child.inert = true
+  }
+}
+
+function restorePreviewBackground() {
+  for (const [element, wasInert] of backgroundInertStates) {
+    element.inert = wasInert
+  }
+  backgroundInertStates.clear()
+}
+
+function onPreviewKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closePreview()
+    return
+  }
+  if (event.key !== 'Tab') return
+
+  const focusableElements = [...(previewOverlay.value?.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ) ?? [])].filter(element =>
+    element.getClientRects().length > 0
+    && !element.matches(':disabled')
+    && !element.closest('[inert]'),
+  )
+  const first = focusableElements[0]
+  const last = focusableElements.at(-1)
+  if (!first || !last) {
+    event.preventDefault()
+    previewOverlay.value?.focus()
+    return
+  }
+
+  if (event.shiftKey && (document.activeElement === first || !previewOverlay.value?.contains(document.activeElement))) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && (document.activeElement === last || !previewOverlay.value?.contains(document.activeElement))) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 async function chooseTemplate(id: StoryTemplateId) {
@@ -103,18 +313,34 @@ watch(previewId, (id) => {
   if (id) {
     previousBodyOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    void nextTick(() => {
+      if (!previewId.value) return
+      setPreviewBackgroundInert()
+      previewOverlay.value?.focus()
+    })
   } else {
     document.body.style.overflow = previousBodyOverflow
+    restorePreviewBackground()
+    const focusTarget = previewFocusTarget
+    previewFocusTarget = null
+    void nextTick(() => {
+      if (focusTarget?.isConnected) focusTarget.focus()
+    })
   }
 })
 
 onBeforeUnmount(() => {
-  if (import.meta.client) document.body.style.overflow = previousBodyOverflow
+  if (searchTimer) clearTimeout(searchTimer)
+  if (import.meta.client) {
+    document.body.style.overflow = previousBodyOverflow
+    restorePreviewBackground()
+  }
 })
 </script>
 
 <style scoped>
 .template-card {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #e7ddd4;
   border-radius: 1.75rem;
@@ -141,6 +367,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0.5;
@@ -289,5 +516,17 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
   background: rgb(32 29 40 / 92%);
   scrollbar-gutter: stable;
+}
+
+@media (max-width: 374px) {
+  .template-card-preview {
+    min-height: 17rem;
+    padding: 1rem;
+  }
+
+  .template-card-art {
+    min-height: 14rem;
+    padding: 1rem;
+  }
 }
 </style>

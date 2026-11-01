@@ -178,6 +178,13 @@ test('normalizes legacy stories and drafts without losing content or ownership',
     "'user'",
   )
   assert.equal(database.prepare('SELECT role FROM user_roles WHERE user_id = ?').get('existing-user').role, 'user')
+  database.prepare('INSERT INTO story_content (id) VALUES (?)').run('duplicate-slug-content')
+  assert.throws(() => database.prepare(
+    `INSERT INTO stories (id, slug, content_id, published_at, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run('duplicate-slug-story', 'bbbbbbbbbbbb', 'duplicate-slug-content', '2026-01-03', '2026-01-03'))
+  assert.equal(database.prepare('SELECT id FROM stories WHERE slug = ?').all('bbbbbbbbbbbb').length, 1)
+  database.prepare('DELETE FROM story_content WHERE id = ?').run('duplicate-slug-content')
   database.prepare(
     `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
      VALUES (?, ?, ?, ?, ?, ?)`,

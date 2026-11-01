@@ -2,11 +2,16 @@ import assert from 'node:assert/strict'
 import { createHash, webcrypto } from 'node:crypto'
 import test from 'node:test'
 import {
+  cloudinaryUploadFolderForOwner,
   cloudinaryUploadFolder,
   createCloudinaryUploadSignature,
   resolveCloudinaryCredentials,
 } from '../server/utils/cloudinary-signature.ts'
 import { uploadImageToCloudinary } from '../shared/utils/cloudinary-upload.ts'
+import {
+  CLOUDINARY_UPLOAD_PRESET,
+  MAX_CLOUDINARY_IMAGE_SIZE,
+} from '../shared/utils/cloudinary-upload-policy.ts'
 
 globalThis.crypto ??= webcrypto
 
@@ -67,16 +72,26 @@ test('creates a Cloudinary-compatible signature and upload response', async () =
     apiSecret: 'test-secret',
   }
   const timestamp = 1_700_000_000
-  const source = `folder=${cloudinaryUploadFolder}&timestamp=${timestamp}${credentials.apiSecret}`
+  const folder = `${cloudinaryUploadFolder}/owner-folder`
+  const source = `folder=${folder}&timestamp=${timestamp}&upload_preset=${CLOUDINARY_UPLOAD_PRESET}${credentials.apiSecret}`
   const expectedSignature = createHash('sha1').update(source).digest('hex')
 
-  assert.deepEqual(await createCloudinaryUploadSignature(credentials, timestamp), {
+  assert.deepEqual(await createCloudinaryUploadSignature(credentials, timestamp, folder), {
     cloudName: 'test-cloud',
     apiKey: 'test-key',
-    folder: 'kekasih',
+    folder,
     timestamp,
+    uploadPreset: CLOUDINARY_UPLOAD_PRESET,
     signature: expectedSignature,
   })
+})
+
+test('creates distinct non-reversible upload folders for each owner', async () => {
+  const firstOwnerFolder = await cloudinaryUploadFolderForOwner('owner-1')
+  const secondOwnerFolder = await cloudinaryUploadFolderForOwner('owner-2')
+
+  assert.match(firstOwnerFolder, /^kekasih\/[a-f0-9]{64}$/)
+  assert.notEqual(firstOwnerFolder, secondOwnerFolder)
 })
 
 test('uploads the file with all signed parameters and returns only an HTTPS URL', async () => {
@@ -84,8 +99,9 @@ test('uploads the file with all signed parameters and returns only an HTTPS URL'
   const signature = {
     cloudName: 'test-cloud',
     apiKey: 'test-key',
-    folder: 'kekasih',
+    folder: 'kekasih/owner-folder',
     timestamp: 1_700_000_000,
+    uploadPreset: CLOUDINARY_UPLOAD_PRESET,
     signature: 'signed-value',
   }
   let requestUrl
@@ -97,7 +113,7 @@ test('uploads the file with all signed parameters and returns only an HTTPS URL'
     async (url, options) => {
       requestUrl = url
       requestOptions = options
-      return Response.json({ secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/photo.jpg' })
+      return Response.json({ secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v123/kekasih/owner-folder/photo.jpg' })
     },
   )
 
@@ -105,10 +121,11 @@ test('uploads the file with all signed parameters and returns only an HTTPS URL'
   assert.equal(requestOptions.method, 'POST')
   assert.equal(requestOptions.body.get('file').name, 'photo.jpg')
   assert.equal(requestOptions.body.get('api_key'), 'test-key')
-  assert.equal(requestOptions.body.get('folder'), 'kekasih')
+  assert.equal(requestOptions.body.get('folder'), 'kekasih/owner-folder')
   assert.equal(requestOptions.body.get('timestamp'), '1700000000')
+  assert.equal(requestOptions.body.get('upload_preset'), CLOUDINARY_UPLOAD_PRESET)
   assert.equal(requestOptions.body.get('signature'), 'signed-value')
-  assert.equal(secureUrl, 'https://res.cloudinary.com/test-cloud/image/upload/photo.jpg')
+  assert.equal(secureUrl, 'https://res.cloudinary.com/test-cloud/image/upload/v123/kekasih/owner-folder/photo.jpg')
 })
 
 test('surfaces Cloudinary errors instead of accepting an unsuccessful upload', async () => {
@@ -119,8 +136,9 @@ test('surfaces Cloudinary errors instead of accepting an unsuccessful upload', a
       async () => ({
         cloudName: 'test-cloud',
         apiKey: 'test-key',
-        folder: 'kekasih',
+        folder: 'kekasih/owner-folder',
         timestamp: 1_700_000_000,
+        uploadPreset: CLOUDINARY_UPLOAD_PRESET,
         signature: 'signed-value',
       }),
       async () => Response.json({ error: { message: 'Invalid signature' } }, { status: 401 }),
@@ -134,8 +152,9 @@ test('rejects malformed or insecure URLs from a successful upload response', asy
   const requestSignature = async () => ({
     cloudName: 'test-cloud',
     apiKey: 'test-key',
-    folder: 'kekasih',
+    folder: 'kekasih/owner-folder',
     timestamp: 1_700_000_000,
+    uploadPreset: CLOUDINARY_UPLOAD_PRESET,
     signature: 'signed-value',
   })
 
@@ -147,4 +166,54 @@ test('rejects malformed or insecure URLs from a successful upload response', asy
     uploadImageToCloudinary(file, requestSignature, async () => new Response('not json', { status: 200 })),
     /respons yang tidak valid/,
   )
+  await assert.rejects(
+    uploadImageToCloudinary(file, requestSignature, async () => Response.json({
+      secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v123/kekasih/another-owner/photo.jpg',
+    })),
+    /URL foto yang tidak aman/,
+  )
+})
+
+test('rejects oversized and unsupported images before requesting an upload signature', async () => {
+  let signatureRequested = false
+  const requestSignature = async () => {
+    signatureRequested = true
+    throw new Error('Signature should not be requested')
+  }
+  const oversizedFile = new File([new Uint8Array(MAX_CLOUDINARY_IMAGE_SIZE + 1)], 'large.jpg', { type: 'image/jpeg' })
+  const unsupportedFile = new File(['not an image'], 'photo.svg', { type: 'image/svg+xml' })
+
+  await assert.rejects(
+    uploadImageToCloudinary(oversizedFile, requestSignature),
+    /maksimal 10 MB/,
+  )
+  await assert.rejects(
+    uploadImageToCloudinary(unsupportedFile, requestSignature),
+    /JPEG, PNG, atau WebP/,
+  )
+  assert.equal(signatureRequested, false)
+})
+
+test('allows an image exactly at the 10 MB limit', async () => {
+  const file = new File([new Uint8Array(MAX_CLOUDINARY_IMAGE_SIZE)], 'limit.png', { type: 'image/png' })
+  let signatureRequested = false
+  await uploadImageToCloudinary(
+    file,
+    async () => {
+      signatureRequested = true
+      return {
+        cloudName: 'test-cloud',
+        apiKey: 'test-key',
+        folder: 'kekasih/owner-folder',
+        timestamp: 1_700_000_000,
+        uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+        signature: 'signed-value',
+      }
+    },
+    async () => Response.json({
+      secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v123/kekasih/owner-folder/limit.png',
+    }),
+  )
+
+  assert.equal(signatureRequested, true)
 })

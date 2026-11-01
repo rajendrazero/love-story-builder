@@ -14,14 +14,17 @@ export default defineEventHandler(async (event) => {
   if (!database) {
     throw createError({ statusCode: 503, statusMessage: 'Binding D1 tidak tersedia.' })
   }
-  const result = await database.prepare('DELETE FROM stories WHERE slug = ?').bind(slug).run()
-  if (result.meta?.changes === 0) {
+  const results = await database.batch([
+    database.prepare(
+      `DELETE FROM story_drafts
+       WHERE (published_slug = ? OR editing_slug = ?)
+         AND EXISTS (SELECT 1 FROM stories WHERE slug = ?)`,
+    ).bind(slug, slug, slug),
+    database.prepare('DELETE FROM stories WHERE slug = ?').bind(slug),
+  ])
+  if (results[1]?.meta?.changes === 0) {
     throw createError({ statusCode: 404, statusMessage: 'Cerita tidak ditemukan.' })
   }
-  await database.prepare(
-    `DELETE FROM story_drafts
-     WHERE published_slug = ? OR editing_slug = ?`,
-  ).bind(slug, slug).run()
 
   return { deleted: true }
 })

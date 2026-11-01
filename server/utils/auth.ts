@@ -24,11 +24,26 @@ async function sendEmail(
   await sendGmailEmail({ sender, clientId, clientSecret, refreshToken, to, subject, text })
 }
 
+function isValidAuthURL(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return (url.protocol === 'https:' || url.protocol === 'http:')
+      && Boolean(url.hostname)
+      && !url.username
+      && !url.password
+  } catch {
+    return false
+  }
+}
+
 export function createAuth(event: H3Event) {
   const env = getAppEnv(event)
   const secret = env.BETTER_AUTH_SECRET?.trim()
   if (!secret || secret.length < 32) {
-    throw new Error('BETTER_AUTH_SECRET harus diatur dengan nilai acak minimal 32 karakter.')
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Autentikasi belum dikonfigurasi. Atur BETTER_AUTH_SECRET dengan nilai acak minimal 32 karakter.',
+    })
   }
   const turnstileSecret = env.TURNSTILE_SECRET_KEY?.trim()
   if (!turnstileSecret) {
@@ -37,8 +52,15 @@ export function createAuth(event: H3Event) {
       statusMessage: 'Pemeriksaan keamanan login belum dikonfigurasi. Atur TURNSTILE_SECRET_KEY.',
     })
   }
+  const configuredAuthURL = env.BETTER_AUTH_URL?.trim()
+  if (configuredAuthURL && !isValidAuthURL(configuredAuthURL)) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'BETTER_AUTH_URL harus berupa alamat HTTP atau HTTPS yang valid.',
+    })
+  }
 
-  const authOrigins = resolveAuthOrigins(env.BETTER_AUTH_URL?.trim(), getRequestURL(event).origin)
+  const authOrigins = resolveAuthOrigins(configuredAuthURL, getRequestURL(event).origin)
   const { baseURL, allowedHostnames, trustedOrigins } = authOrigins
   const sendLink = async (email: string, subject: string, url: string, event: H3Event) => {
     try {

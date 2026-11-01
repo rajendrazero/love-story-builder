@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     .bind(slug)
     .first<{ slug: string }>()
   if (conflict) {
-    throw createError({ statusCode: 409, statusMessage: 'Link khusus ini sudah dipakai. Pilih link yang lain.' })
+    throw createError({ statusCode: 409, statusMessage: 'Link ini sudah dipakai. Coba terbitkan ulang atau pilih link yang lain.' })
   }
   const id = crypto.randomUUID()
   const publishedAt = new Date().toISOString()
@@ -60,13 +60,11 @@ export default defineEventHandler(async (event) => {
   try {
     await database.batch(statements)
   } catch (error) {
-    if (customSlug) {
-      const conflict = await database.prepare('SELECT slug FROM stories WHERE slug = ?')
-        .bind(slug)
-        .first<{ slug: string }>()
-      if (conflict) {
-        throw createError({ statusCode: 409, statusMessage: 'Link khusus ini sudah dipakai. Pilih link yang lain.' })
-      }
+    const slugConflict = await database.prepare('SELECT slug FROM stories WHERE slug = ?')
+      .bind(slug)
+      .first<{ slug: string }>()
+    if (slugConflict) {
+      throw createError({ statusCode: 409, statusMessage: 'Link ini sudah dipakai. Coba terbitkan ulang atau pilih link yang lain.' })
     }
     throw error
   }

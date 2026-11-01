@@ -47,6 +47,8 @@ export default defineNuxtConfig({
   hooks: {
     'nitro:init'(nitro) {
       nitro.hooks.hook('rollup:before', (_nitro, rollupConfig) => {
+        if (_nitro.options.dev) return
+
         const plugins = rollupConfig.plugins
 
         if (!plugins) {

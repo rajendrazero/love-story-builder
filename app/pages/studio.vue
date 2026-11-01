@@ -1,5 +1,5 @@
 <template>
-  <main ref="studioPage" class="brand-ui min-h-screen bg-paper px-5 py-8 md:px-12">
+  <main id="main-content" ref="studioPage" tabindex="-1" class="brand-ui min-h-screen bg-paper px-5 py-8 md:px-12">
     <div class="mx-auto max-w-5xl">
       <div class="mb-10 max-w-2xl">
         <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Studio cerita · ruang akunmu</p>
@@ -28,9 +28,9 @@
             <span v-if="saveStatus === 'saving' || saveStatus === 'idle'" class="loading-spinner" aria-hidden="true" />
             {{ saveStatus === 'saving' ? 'Menyimpan…' : saveStatus === 'saved' ? `Tersimpan ${lastSavedLabel}` : saveStatus === 'error' ? 'Belum tersimpan ke server' : 'Menyiapkan penyimpanan…' }}
           </span>
-          <button type="button" class="text-xs font-semibold text-[#9c6257] underline underline-offset-4" :disabled="savingDraft" @click="saveDraft">
+          <AppButton variant="ghost" size="sm" :disabled="savingDraft" :loading="savingDraft" @click="saveDraft">
             Simpan sekarang
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -193,14 +193,13 @@
         </section>
 
         <div class="flex flex-col gap-4 pb-14 sm:flex-row sm:items-center sm:justify-between">
-          <button type="button" class="rounded-full border border-[#cbbcb0] px-6 py-3 text-sm disabled:opacity-40" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)">← Sebelumnya</button>
+          <AppButton variant="secondary" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)">← Sebelumnya</AppButton>
           <p v-if="error" class="text-sm text-red-700" role="alert">{{ error }}</p>
           <div class="flex flex-wrap gap-3">
-            <button v-if="activeStep < steps.length - 1" type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</button>
-            <button v-else type="button" class="rounded-full bg-ink px-7 py-3 text-sm text-white transition hover:bg-[#5045f5]" :disabled="savingDraft || saving" @click="openPreview">
-              <span v-if="savingDraft || saving" class="loading-spinner mr-2 align-middle" aria-hidden="true" />
+            <AppButton v-if="activeStep < steps.length - 1" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</AppButton>
+            <AppButton v-else :disabled="savingDraft || saving" :loading="savingDraft || saving" @click="openPreview">
               {{ savingDraft || saving ? 'Menyiapkan…' : 'Lihat pratinjau ↗' }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -209,8 +208,8 @@
         <div class="fixed inset-x-4 top-4 z-50 flex items-center justify-between rounded-full bg-paper px-4 py-2 shadow-lg md:inset-x-10">
           <span class="text-xs font-semibold uppercase tracking-widest text-[#9c6257]">Pratinjau cerita utuh</span>
           <div class="flex items-center gap-3">
-            <button type="button" class="text-sm text-muted" @click="previewOpen = false">Kembali ke editor ×</button>
-            <button type="button" :disabled="saving" class="rounded-full bg-ink px-5 py-2 text-xs text-white disabled:opacity-50" @click="publish">{{ saving ? 'Menerbitkan…' : 'Konfirmasi & terbitkan ↗' }}</button>
+            <AppButton variant="ghost" size="sm" @click="previewOpen = false">Kembali ke editor ×</AppButton>
+            <AppButton size="sm" :disabled="saving" :loading="saving" @click="publish">{{ saving ? 'Menerbitkan…' : 'Konfirmasi & terbitkan ↗' }}</AppButton>
           </div>
         </div>
         <div class="mx-auto max-w-7xl pt-14">
@@ -227,14 +226,13 @@
           <p class="mt-2 break-all text-sm text-muted">{{ publishedUrl }}</p>
           <div class="my-5 flex justify-center"><QrcodeVue :value="publishedUrl" :size="180" level="H" background="#f5f0e9" foreground="#171311" /></div>
           <div class="flex justify-center gap-3">
-            <button class="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm text-white" :disabled="copyingLink" @click="copyLink">
-              <span v-if="copyingLink" class="loading-spinner" aria-hidden="true" />
+            <AppButton :disabled="copyingLink" :loading="copyingLink" @click="copyLink">
               {{ copyingLink ? 'Menyalin…' : 'Salin tautan' }}
-            </button>
+            </AppButton>
             <NuxtLink :to="`/w/${publishedSlug}`" class="rounded-full border border-ink px-5 py-3 text-sm">Lihat cerita</NuxtLink>
           </div>
           <p v-if="copyMessage" class="mt-3 text-sm text-muted" role="status">{{ copyMessage }}</p>
-          <button class="mt-5 text-xs text-muted" @click="publishedUrl = ''">Tutup</button>
+          <AppButton variant="ghost" size="sm" class="mt-5" @click="publishedUrl = ''">Tutup</AppButton>
         </div>
       </div>
     </div>
@@ -242,8 +240,9 @@
 </template>
 
 <script setup lang="ts">
+import AppButton from '../components/AppButton.vue'
 import { storyContentSchema, type StoryContent } from '#shared/schema/story'
-import { storyTemplates } from '#shared/story-templates'
+import { createTemplateCustomization, getTemplateDefinition, storyTemplateSchema, storyTemplates } from '#shared/story-templates'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -264,11 +263,7 @@ const steps = [
 const draft = reactive<StoryContent & { password: string }>({
   templateId: 'editorial-rose',
   cursorPreset: 'system',
-  templateDetails: {
-    editorialRose: { dedication: '', signature: '' },
-    midnightCinema: { openingQuote: '', credits: '' },
-    botanicalJournal: { journalLabel: '', fieldNote: '' },
-  },
+  templateDetails: createTemplateCustomization('editorial-rose'),
   title: '',
   coupleNames: '',
   date: '',
@@ -286,7 +281,7 @@ const draft = reactive<StoryContent & { password: string }>({
   musicUrl: '',
   password: '',
 })
-const selectedTemplate = computed(() => storyTemplates.find(template => template.id === draft.templateId) ?? storyTemplates[0])
+const selectedTemplate = computed(() => getTemplateDefinition(draft.templateId) ?? storyTemplates[0])
 const saving = ref(false)
 const savingDraft = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -333,21 +328,12 @@ function draftPayload() {
 
 function applyStoryContent(content: Partial<StoryContent>) {
   Object.assign(draft, content)
-  draft.templateId = content.templateId ?? 'editorial-rose'
+  const templateId = content.templateId ?? 'editorial-rose'
+  draft.templateId = templateId
   draft.cursorPreset = content.cursorPreset ?? 'system'
   draft.templateDetails = {
-    editorialRose: {
-      dedication: content.templateDetails?.editorialRose?.dedication ?? '',
-      signature: content.templateDetails?.editorialRose?.signature ?? '',
-    },
-    midnightCinema: {
-      openingQuote: content.templateDetails?.midnightCinema?.openingQuote ?? '',
-      credits: content.templateDetails?.midnightCinema?.credits ?? '',
-    },
-    botanicalJournal: {
-      journalLabel: content.templateDetails?.botanicalJournal?.journalLabel ?? '',
-      fieldNote: content.templateDetails?.botanicalJournal?.fieldNote ?? '',
-    },
+    ...createTemplateCustomization(templateId),
+    ...content.templateDetails,
   }
 }
 
@@ -413,13 +399,17 @@ function scheduleSave() {
 async function restoreDraft() {
   if (route.query.new === '1') {
     const rawTemplateId = typeof route.query.template === 'string' ? route.query.template : ''
-    const templateId = storyContentSchema.shape.templateId.safeParse(rawTemplateId)
+    const templateId = storyTemplateSchema.safeParse(rawTemplateId)
     if (!templateId.success) {
       error.value = 'Pilih template yang valid sebelum mulai membuat cerita.'
       await navigateTo('/templates', { replace: true })
       return
     }
     draft.templateId = templateId.data
+    draft.templateDetails = {
+      ...draft.templateDetails,
+      ...createTemplateCustomization(templateId.data),
+    }
     await saveDraft()
     if (saveStatus.value === 'error') throw new Error('Draft baru belum tersimpan.')
     await navigateTo(`/studio?draft=${draftId.value}`, { replace: true })
@@ -657,31 +647,31 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .editor-card {
-  border-radius: 1.5rem;
-  background: #fffdfa;
-  padding: 1.5rem;
-  box-shadow: 0 12px 40px rgb(35 25 20 / 4%);
-  transition: box-shadow 220ms ease, transform 220ms ease;
+  border-radius: var(--radius-extra-large);
+  background: var(--color-surface);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-small);
+  transition: box-shadow var(--motion-duration-slow) var(--motion-ease-standard);
 }
 .editor-card:hover {
-  box-shadow: 0 18px 48px rgb(35 25 20 / 8%);
+  box-shadow: var(--shadow-medium);
 }
 .section-kicker {
   margin-bottom: 1.25rem;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: #5045f5;
+  color: var(--color-primary);
 }
 .share-slug-field {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid #ded5cb;
-  border-radius: 0.75rem;
-  background: #fffdfa;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
   padding-left: 0.75rem;
-  color: #77727d;
+  color: var(--color-muted-foreground);
   font-size: 0.85rem;
   white-space: nowrap;
 }
@@ -696,37 +686,37 @@ onBeforeUnmount(() => {
   min-height: 3.4rem;
   align-items: center;
   gap: 0.6rem;
-  border: 1px solid #e3dbd2;
-  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
   padding: 0.7rem 0.85rem;
-  background: rgb(255 253 250 / 75%);
-  color: #756a62;
+  background: var(--color-surface-glass);
+  color: var(--color-muted-foreground);
   font-size: 0.75rem;
   text-align: left;
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 .step-tab span:first-child {
-  color: #5045f5;
+  color: var(--color-primary);
   font-size: 0.65rem;
   font-weight: 700;
 }
 .step-tab:hover { transform: translateY(-2px); }
 .step-tab-active {
-  border-color: #5045f5;
-  background: #fffdfa;
-  color: #201d28;
-  box-shadow: 0 8px 24px rgb(75 44 36 / 9%);
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-medium);
 }
-.step-tab-complete { border-color: #c8d0b6; }
+.step-tab-complete { border-color: var(--color-success); }
 .template-option {
   display: grid;
   justify-items: start;
   gap: 0.55rem;
-  border: 1px solid #e3dbd2;
-  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
   padding: 1rem;
-  background: #fffdfa;
-  color: #201d28;
+  background: var(--color-surface);
+  color: var(--color-foreground);
   text-align: left;
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
@@ -736,7 +726,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 2px var(--template-accent), 0 12px 28px rgb(35 25 20 / 8%);
 }
 .template-option strong { font-family: 'Instrument Serif', serif; font-size: 1.35rem; }
-.template-option > span:not(.template-swatch) { color: #756a62; font-size: 0.7rem; }
+.template-option > span:not(.template-swatch) { color: var(--color-muted-foreground); font-size: 0.7rem; }
 .template-swatch { display: flex; width: 100%; gap: 0.4rem; }
 .template-swatch i { height: 2rem; flex: 1; border-radius: 0.55rem; background: var(--template-paper); }
 .template-swatch i:nth-child(2) { background: var(--template-accent); }

@@ -1,3 +1,5 @@
+import { CLOUDINARY_UPLOAD_PRESET } from '../../shared/utils/cloudinary-upload-policy.ts'
+
 export interface CloudinaryCredentials {
   cloudName: string
   apiKey: string
@@ -7,6 +9,7 @@ export interface CloudinaryCredentials {
 export interface CloudinaryUploadSignature extends Omit<CloudinaryCredentials, 'apiSecret'> {
   folder: string
   timestamp: number
+  uploadPreset: string
   signature: string
 }
 
@@ -18,6 +21,12 @@ interface CloudinaryConfigValues {
 
 export const cloudinaryUploadFolder = 'kekasih'
 
+export async function cloudinaryUploadFolderForOwner(ownerId: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ownerId))
+  const ownerFolder = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
+  return `${cloudinaryUploadFolder}/${ownerFolder}`
+}
+
 function normalizeConfiguredValue(value: unknown): string | undefined {
   if (typeof value !== 'string' && typeof value !== 'number') return undefined
   const normalized = String(value).trim()
@@ -28,17 +37,27 @@ function configuredValue(primary?: unknown, fallback?: unknown): string | undefi
   return normalizeConfiguredValue(primary) || normalizeConfiguredValue(fallback)
 }
 
+export function resolveCloudinaryCloudName(
+  environment: CloudinaryConfigValues,
+  runtimeConfig: CloudinaryConfigValues,
+): string | null {
+  const environmentValue = normalizeConfiguredValue(environment.cloudName)
+  const runtimeValue = normalizeConfiguredValue(runtimeConfig.cloudName)
+  if (environmentValue && runtimeValue && environmentValue !== runtimeValue) return null
+  return configuredValue(environmentValue, runtimeValue) ?? null
+}
+
 export function resolveCloudinaryCredentials(
   environment: CloudinaryConfigValues,
   runtimeConfig: CloudinaryConfigValues,
 ): CloudinaryCredentials | null {
-  for (const key of ['cloudName', 'apiKey', 'apiSecret'] as const) {
+  for (const key of ['apiKey', 'apiSecret'] as const) {
     const environmentValue = normalizeConfiguredValue(environment[key])
     const runtimeValue = normalizeConfiguredValue(runtimeConfig[key])
     if (environmentValue && runtimeValue && environmentValue !== runtimeValue) return null
   }
 
-  const cloudName = configuredValue(environment.cloudName, runtimeConfig.cloudName)
+  const cloudName = resolveCloudinaryCloudName(environment, runtimeConfig)
   const apiKey = configuredValue(environment.apiKey, runtimeConfig.apiKey)
   const apiSecret = configuredValue(environment.apiSecret, runtimeConfig.apiSecret)
 
@@ -49,9 +68,10 @@ export function resolveCloudinaryCredentials(
 export async function createCloudinaryUploadSignature(
   credentials: CloudinaryCredentials,
   timestamp: number,
+  folder: string,
 ): Promise<CloudinaryUploadSignature> {
-  const folder = cloudinaryUploadFolder
-  const source = `folder=${folder}&timestamp=${timestamp}${credentials.apiSecret}`
+  const uploadPreset = CLOUDINARY_UPLOAD_PRESET
+  const source = `folder=${folder}&timestamp=${timestamp}&upload_preset=${uploadPreset}${credentials.apiSecret}`
   const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(source))
   const signature = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
 
@@ -60,6 +80,7 @@ export async function createCloudinaryUploadSignature(
     apiKey: credentials.apiKey,
     folder,
     timestamp,
+    uploadPreset,
     signature,
   }
 }
