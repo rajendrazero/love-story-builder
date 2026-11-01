@@ -1,4 +1,8 @@
-import { toHex } from './cloudflare'
+const STORY_PASSWORD_ITERATIONS = 100_000
+
+function toHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, '0')).join('')
+}
 
 export async function hashStoryPassword(password: string): Promise<{ salt: string, hash: string }> {
   const saltBytes = crypto.getRandomValues(new Uint8Array(16))
@@ -10,7 +14,7 @@ export async function hashStoryPassword(password: string): Promise<{ salt: strin
     ['deriveBits'],
   )
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: 120_000 },
+    { name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations: STORY_PASSWORD_ITERATIONS },
     key,
     256,
   )
@@ -48,7 +52,7 @@ export async function verifyStoryPassword(
     ['deriveBits'],
   )
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: fromHex(salt), iterations: 120_000 },
+    { name: 'PBKDF2', hash: 'SHA-256', salt: fromHex(salt), iterations: STORY_PASSWORD_ITERATIONS },
     key,
     256,
   )

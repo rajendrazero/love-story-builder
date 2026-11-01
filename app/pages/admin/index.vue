@@ -101,6 +101,7 @@ const drafts = ref<AdminDraft[]>([])
 const adminEmail = ref('')
 const error = ref('')
 const loading = ref(false)
+const confirm = useAppConfirmation()
 
 useSeoMeta({ title: 'Ruang kendali — Selamanya', robots: 'noindex, nofollow' })
 
@@ -125,7 +126,12 @@ async function load() {
 }
 
 async function deleteStory(slug: string) {
-  if (!window.confirm('Hapus cerita terbit ini secara permanen?')) return
+  if (!await confirm({
+    title: 'Hapus cerita ini?',
+    message: 'Cerita dan tautan publiknya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+    confirmLabel: 'Hapus cerita',
+    tone: 'danger',
+  })) return
   try {
     await $fetch(`/api/admin/stories/${slug}`, { method: 'DELETE' })
     await load()
@@ -136,9 +142,13 @@ async function deleteStory(slug: string) {
 
 async function toggleStory(story: AdminStory) {
   const active = !story.isActive
-  if (!window.confirm(active
-    ? 'Aktifkan cerita ini agar dapat dibuka publik?'
-    : 'Nonaktifkan cerita ini dari semua link publik?')) return
+  if (!await confirm({
+    title: active ? 'Aktifkan cerita?' : 'Nonaktifkan cerita?',
+    message: active
+      ? 'Cerita ini akan dapat dibuka kembali melalui tautan publik.'
+      : 'Cerita ini tidak lagi dapat dibuka melalui tautan publik sampai diaktifkan kembali.',
+    confirmLabel: active ? 'Aktifkan cerita' : 'Nonaktifkan',
+  })) return
   try {
     await $fetch(`/api/admin/stories/${story.slug}`, {
       method: 'PATCH',
@@ -151,7 +161,12 @@ async function toggleStory(story: AdminStory) {
 }
 
 async function deleteDraft(id: string) {
-  if (!window.confirm('Hapus draft ini secara permanen?')) return
+  if (!await confirm({
+    title: 'Hapus draft ini?',
+    message: 'Isi draft ini akan dihapus permanen dan tidak bisa dipulihkan.',
+    confirmLabel: 'Hapus draft',
+    tone: 'danger',
+  })) return
   try {
     await $fetch(`/api/admin/drafts/${id}`, { method: 'DELETE' })
     await load()

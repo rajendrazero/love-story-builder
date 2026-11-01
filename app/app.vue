@@ -5,6 +5,7 @@
       <span />
     </div>
     <NuxtPage />
+    <AppConfirmDialog ref="confirmDialog" />
     <footer class="site-footer">
       <NuxtLink to="/" class="site-footer-brand">selamanya<span>.</span></NuxtLink>
       <nav aria-label="Informasi hukum">
@@ -46,10 +47,16 @@
 
 <script setup lang="ts">
 import { gsap } from 'gsap'
+import { appConfirmationKey, type AppConfirmationOptions } from './composables/useAppConfirmation'
 
 const cursor = ref<HTMLElement | null>(null)
+const confirmDialog = ref<{ open: (options: AppConfirmationOptions) => Promise<boolean> } | null>(null)
 const routeLoading = ref(false)
 const router = useRouter()
+provide(appConfirmationKey, (options: AppConfirmationOptions) => {
+  if (!confirmDialog.value) return Promise.resolve(false)
+  return confirmDialog.value.open(options)
+})
 const cursorPreset = useState<'ring' | 'heart' | 'sparkle' | 'flower' | 'star' | 'system'>('story-cursor', () => 'system')
 const cursorSymbol = computed(() => ({
   ring: '',

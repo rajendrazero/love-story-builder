@@ -7,10 +7,15 @@
           <h1 class="font-display text-5xl md:text-6xl">Halaman kalian.</h1>
           <p class="mt-3 text-sm text-[#756a62]">{{ user?.name }} · {{ user?.email }}</p>
         </div>
-        <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-sm" :disabled="loading" @click="load">
-          <span v-if="loading" class="loading-spinner" aria-hidden="true" />
-          {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <NuxtLink to="/templates" class="rounded-full bg-[#5045f5] px-5 py-3 text-sm font-semibold text-white no-underline transition hover:bg-[#3e35d6]">
+            Buat cerita ↗
+          </NuxtLink>
+          <button type="button" class="rounded-full border border-[#cbbcb0] px-5 py-3 text-sm" :disabled="loading" @click="load">
+            <span v-if="loading" class="loading-spinner" aria-hidden="true" />
+            {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
+          </button>
+        </div>
       </div>
 
       <p v-if="error" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ error }}</p>
@@ -113,6 +118,7 @@ interface AccountDraft {
 }
 
 const authClient = createAuthClient()
+const confirm = useAppConfirmation()
 const { success, error: notifyError } = useNotifications()
 const user = ref<{ id: string, name: string, email: string }>()
 const stories = ref<AccountStory[]>([])
@@ -145,7 +151,12 @@ async function load() {
 
 async function deleteStory(slug: string) {
   if (pendingAction.value) return
-  if (!window.confirm('Hapus cerita terbit ini secara permanen?')) return
+  if (!await confirm({
+    title: 'Hapus cerita ini?',
+    message: 'Cerita dan tautan publiknya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+    confirmLabel: 'Hapus cerita',
+    tone: 'danger',
+  })) return
   pendingAction.value = `delete-story:${slug}`
   try {
     await $fetch(`/api/account/stories/${slug}`, { method: 'DELETE' })
@@ -162,10 +173,13 @@ async function deleteStory(slug: string) {
 async function toggleStory(story: AccountStory) {
   if (pendingAction.value) return
   const active = !story.isActive
-  const prompt = active
-    ? 'Aktifkan cerita ini agar link publik dapat dibuka lagi?'
-    : 'Nonaktifkan cerita ini? Link publik akan menampilkan halaman tidak ditemukan.'
-  if (!window.confirm(prompt)) return
+  if (!await confirm({
+    title: active ? 'Aktifkan cerita?' : 'Nonaktifkan cerita?',
+    message: active
+      ? 'Tautan publik cerita ini akan dapat dibuka kembali.'
+      : 'Tautan publik cerita ini tidak lagi dapat dibuka sampai kamu mengaktifkannya kembali.',
+    confirmLabel: active ? 'Aktifkan cerita' : 'Nonaktifkan',
+  })) return
   pendingAction.value = `toggle-story:${story.slug}`
   try {
     await $fetch(`/api/account/stories/${story.slug}`, {
@@ -184,7 +198,12 @@ async function toggleStory(story: AccountStory) {
 
 async function deleteDraft(id: string) {
   if (pendingAction.value) return
-  if (!window.confirm('Hapus draft ini secara permanen?')) return
+  if (!await confirm({
+    title: 'Hapus draft ini?',
+    message: 'Isi draft ini akan dihapus permanen dan tidak bisa dipulihkan.',
+    confirmLabel: 'Hapus draft',
+    tone: 'danger',
+  })) return
   pendingAction.value = `delete-draft:${id}`
   try {
     await $fetch(`/api/drafts/${id}`, { method: 'DELETE' })
