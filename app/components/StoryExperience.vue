@@ -64,16 +64,27 @@
         >
           {{ playing ? 'Jeda lagu Ⅱ' : 'Putar lagu ♫' }}
         </button>
+        <button
+          v-if="musicEmbed && !embeddedMusicStarted"
+          type="button"
+          class="music-button"
+          @click="startEmbeddedMusic"
+        >
+          Putar lagu penuh ♫
+        </button>
+        <p v-if="musicEmbed && !embeddedMusicStarted" class="music-data-hint">
+          Pemutar hanya dimuat setelah dipilih agar hemat data.
+        </p>
         <div
-          v-if="musicEmbed"
+          v-if="musicEmbed && embeddedMusicStarted"
           class="music-embed"
           :class="[`music-embed-${musicEmbed.provider}`, `music-embed-${musicEmbed.contentType}`]"
         >
           <iframe
-            :src="musicEmbed.src"
+            :src="embeddedMusicSrc"
             :title="musicEmbed.title"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
+            loading="eager"
             referrerpolicy="strict-origin-when-cross-origin"
           />
           <a
@@ -93,7 +104,7 @@
         <figcaption>this is so us ♡</figcaption>
       </figure>
       <span class="hero-sparkle" aria-hidden="true">✳</span>
-      <audio v-if="activeMusicUrl" ref="audio" :src="activeMusicUrl" loop />
+      <audio v-if="activeMusicUrl && !musicEmbed" ref="audio" :src="activeMusicUrl" preload="none" loop />
     </section>
     </template>
 
@@ -366,9 +377,16 @@ const storyLayout = computed(() => storyLayouts[props.story.templateId ?? 'edito
 const audio = ref<HTMLAudioElement | null>(null)
 const playing = ref(false)
 const musicError = ref('')
+const embeddedMusicStarted = ref(false)
 const previewMusicUrl = ref(props.story.musicUrl)
 const activeMusicUrl = computed(() => props.demo ? previewMusicUrl.value.trim() : props.story.musicUrl)
 const musicEmbed = computed(() => getMusicEmbed(activeMusicUrl.value))
+const embeddedMusicSrc = computed(() => {
+  if (!musicEmbed.value) return ''
+  const url = new URL(musicEmbed.value.src)
+  url.searchParams.set('autoplay', '1')
+  return url.toString()
+})
 const bookOpen = ref(false)
 const showCover = ref(true)
 const activePage = ref(0)
@@ -379,6 +397,12 @@ const flipBackPage = ref<StoryPage | null>(null)
 let motionMedia: gsap.MatchMedia | undefined
 let turnTimer: ReturnType<typeof setTimeout> | undefined
 const appCursorPreset = useState<NonNullable<StoryContent['cursorPreset']>>('story-cursor', () => 'system')
+
+watch(activeMusicUrl, () => {
+  embeddedMusicStarted.value = false
+  playing.value = false
+  musicError.value = ''
+})
 
 watch(() => props.story.cursorPreset, (preset) => {
   appCursorPreset.value = preset ?? 'system'
@@ -396,6 +420,10 @@ function scrollGallery(direction: -1 | 1) {
   const track = experience.value?.querySelector<HTMLElement>('.gallery-track')
   if (!track) return
   track.scrollBy({ left: direction * track.clientWidth * 0.75, behavior: 'smooth' })
+}
+
+function startEmbeddedMusic() {
+  embeddedMusicStarted.value = true
 }
 
 async function toggleMusic() {
@@ -714,6 +742,12 @@ onBeforeUnmount(() => {
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.music-data-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.75;
 }
 
 .music-error {
