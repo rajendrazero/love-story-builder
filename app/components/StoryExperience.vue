@@ -243,7 +243,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
+<style>
 .story-experience {
   --screen-pad: clamp(1rem, 5vw, 5rem);
   position: relative;
@@ -282,11 +282,11 @@ onBeforeUnmount(() => {
   transform: scale(1.035);
 }
 
-.story-entrance-leave-active:deep(.entrance-cover-content) {
+.story-entrance-leave-active .entrance-cover-content {
   transition: transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 650ms ease;
 }
 
-.story-entrance-leave-to:deep(.entrance-cover-content) {
+.story-entrance-leave-to .entrance-cover-content {
   opacity: 0;
   transform: translateY(-0.75rem);
 }
@@ -707,12 +707,63 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<style scoped src="../assets/css/templates/editorial-rose.css"></style>
+<style src="../assets/css/templates/editorial-rose.css"></style>
 
-<style scoped src="../assets/css/templates/midnight-cinema.css"></style>
+<style src="../assets/css/templates/midnight-cinema.css"></style>
 
-<style scoped src="../assets/css/templates/botanical-journal.css"></style>
+<style src="../assets/css/templates/botanical-journal.css"></style>
 
-<style scoped src="../assets/css/templates/love-letter.css"></style>
+<style src="../assets/css/templates/love-letter.css"></style>
 
-<style scoped src="../assets/css/templates/memory-atlas.css"></style>
+<style src="../assets/css/templates/memory-atlas.css"></style>
+
+<style>
+@media (max-width: 760px) {
+  .preview-bar {
+    gap: 0.35rem;
+    padding-inline: 0.5rem;
+  }
+
+  .preview-music-input {
+    position: relative;
+    flex: 0 1 7rem;
+    width: min(28vw, 8rem);
+  }
+
+  .preview-music-input > .editor-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .preview-music-input input {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    font-size: 0.7rem;
+  }
+
+  .preview-template-select,
+  .preview-link,
+  .preview-close {
+    min-height: 2.75rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .story-experience .story-detail,
+  .story-experience .story-finale {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: clamp(0.75rem, 2.5svh, 1.25rem);
+    padding-block: clamp(4rem, 8svh, 5rem) 1rem;
+  }
+}
+</style>

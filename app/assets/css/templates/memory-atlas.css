@@ -63,12 +63,12 @@
   color: var(--atlas-accent);
 }
 
-.template-memory-atlas :deep(.atlas-timeline) {
+.template-memory-atlas .atlas-timeline {
   width: min(100%, 78rem);
   margin-inline: auto;
   padding-block: 3rem;
 }
-.template-memory-atlas :deep(.atlas-timeline .story-screen) {
+.template-memory-atlas .atlas-timeline .story-screen {
   position: relative;
   min-height: 30rem;
   margin: 0 0 3rem 2.5rem;
@@ -78,7 +78,7 @@
   background: #f6f1e5;
   box-shadow: 0 1rem 2rem rgb(37 57 67 / 7%);
 }
-.template-memory-atlas :deep(.atlas-timeline .story-screen)::before {
+.template-memory-atlas .atlas-timeline .story-screen::before {
   position: absolute;
   top: 2rem;
   left: -3.2rem;
@@ -92,7 +92,7 @@
   box-shadow: 0 0 0 1px var(--atlas-accent);
   content: '';
 }
-.template-memory-atlas :deep(.atlas-timeline .story-greeting)::after, .template-memory-atlas :deep(.atlas-timeline .story-detail)::after {
+.template-memory-atlas .atlas-timeline .story-greeting::after, .template-memory-atlas .atlas-timeline .story-detail::after {
   position: absolute;
   top: 2rem;
   right: 2rem;
@@ -102,8 +102,8 @@
   font-weight: 700;
   letter-spacing: 0.16em;
 }
-.template-memory-atlas :deep(.atlas-timeline .story-greeting)::after { content: '01 / A NOTE'; }
-.template-memory-atlas :deep(.atlas-timeline .story-detail)::after { content: '02 / THE BEGINNING'; }
+.template-memory-atlas .atlas-timeline .story-greeting::after { content: '01 / A NOTE'; }
+.template-memory-atlas .atlas-timeline .story-detail::after { content: '02 / THE BEGINNING'; }
 
 .template-memory-atlas .story-greeting {
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
@@ -133,17 +133,17 @@
   .template-memory-atlas .story-hero-photo {
     height: min(42svh, 25rem);
   }
-  .template-memory-atlas :deep(.atlas-timeline) { padding-block: 1rem; }
-  .template-memory-atlas :deep(.atlas-timeline .story-screen) {
+  .template-memory-atlas .atlas-timeline { padding-block: 1rem; }
+  .template-memory-atlas .atlas-timeline .story-screen {
     min-height: 0;
     margin: 0 0 1.5rem 1.7rem;
     padding: 3.5rem 1rem 1.25rem;
   }
-  .template-memory-atlas :deep(.atlas-timeline .story-greeting), .template-memory-atlas :deep(.atlas-timeline .story-detail) {
+  .template-memory-atlas .atlas-timeline .story-greeting, .template-memory-atlas .atlas-timeline .story-detail {
     grid-template-columns: 1fr;
   }
-  .template-memory-atlas :deep(.atlas-timeline .story-screen)::before { left: -2.35rem; }
-  .template-memory-atlas :deep(.atlas-timeline .story-screen)::after { top: 1.25rem; right: 1rem; }
+  .template-memory-atlas .atlas-timeline .story-screen::before { left: -2.35rem; }
+  .template-memory-atlas .atlas-timeline .story-screen::after { top: 1.25rem; right: 1rem; }
   .template-memory-atlas .story-finale {
     min-height: 0;
     grid-template-columns: 1fr;

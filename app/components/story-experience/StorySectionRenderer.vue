@@ -640,6 +640,45 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
   }
 }
 
+@media (max-width: 600px) {
+  .story-detail .detail-photo,
+  .story-finale .final-photo {
+    width: min(100%, 28rem);
+    height: clamp(13rem, 34svh, 22rem);
+    justify-self: center;
+  }
+
+  .story-detail .detail-copy,
+  .story-finale .final-copy {
+    width: min(100%, 42rem);
+    margin-inline: auto;
+    padding: 0.5rem clamp(0.25rem, 2vw, 0.75rem);
+  }
+
+  .story-detail .detail-copy h2 {
+    margin-block: 0.5rem;
+    font-size: clamp(1.55rem, 8vw, 3rem);
+  }
+
+  .story-detail .detail-copy > p:last-child {
+    font-size: clamp(0.9rem, 3.8vw, 1.05rem);
+    line-height: 1.6;
+  }
+
+  .story-finale .final-copy {
+    padding: clamp(1rem, 4vw, 1.35rem);
+  }
+
+  .story-finale .final-message {
+    font-size: clamp(1.65rem, 8vw, 3rem);
+    line-height: 1.05;
+  }
+
+  .story-detail.template-memory-atlas .detail-copy h2 {
+    font-size: clamp(1.55rem, 8vw, 3rem);
+  }
+}
+
 @media (min-width: 901px) and (max-height: 820px) {
   .detail-photo {
     height: min(60svh, 38rem);

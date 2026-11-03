@@ -155,9 +155,13 @@ test('Tailwind maps semantic and legacy utilities to CSS design tokens', () => {
   assert.match(tailwindConfig, /paper: 'var\(--color-background\)'/)
 })
 
-test('template variants remain isolated beneath their scoped root namespaces', () => {
+test('template variants use isolated namespaces and reach nested section content', () => {
   for (const [templateId, stylesheet] of templateStyles) {
     assert.ok(storyExperience.includes(`src="../assets/css/templates/${templateId}.css"`))
+    assert.ok(
+      storyExperience.includes(`<style src="../assets/css/templates/${templateId}.css"`),
+      `${templateId} stylesheet should not be scoped to the layout component`,
+    )
     assert.ok(stylesheet.includes(`.template-${templateId}`), `${templateId} styles should define their root namespace`)
     for (const otherId of templateStyles.keys()) {
       if (otherId === templateId) continue
@@ -168,7 +172,11 @@ test('template variants remain isolated beneath their scoped root namespaces', (
       )
     }
   }
-  assert.match(storyExperience, /<style scoped>/)
+  assert.doesNotMatch(storyExperience, /<style scoped/)
+  assert.doesNotMatch(storyExperience, /:deep\(/)
+  assert.doesNotMatch(templateStyles.get('memory-atlas'), /:deep\(/)
+  assert.match(storyExperience, /@media \(max-width: 600px\)[\s\S]*\.story-detail[\s\S]*grid-template-columns: minmax\(0, 1fr\)/)
+  assert.match(storyExperience, /min-height: 2\.75rem/)
   assert.match(storyExperience, /:class="\[`template-\$\{story\.templateId/)
 })
 
