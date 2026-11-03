@@ -9,19 +9,38 @@
     </header>
 
     <div class="section-picker" aria-label="Pilih section cerita">
-      <label v-for="type in STORY_SECTION_TYPES" :key="type" class="section-picker-option">
-        <input
-          type="checkbox"
-          :checked="sectionByType(type)?.enabled ?? false"
-          @change="toggleSection(type, $event)"
+      <article
+        v-for="type in STORY_SECTION_TYPES"
+        :key="type"
+        class="section-choice"
+        :class="{ 'section-choice-active': sectionByType(type)?.enabled ?? false }"
+      >
+        <button
+          type="button"
+          class="section-choice-select"
+          :aria-pressed="sectionByType(type)?.enabled ?? false"
+          @click="toggleSection(type)"
         >
-        <span>{{ sectionLabels[type] }}</span>
-      </label>
+          <img :src="sectionImages[type]" alt="" loading="lazy">
+          <span class="section-choice-copy">
+            <strong>{{ sectionLabels[type] }}</strong>
+            <span>{{ sectionDescriptions[type] }}</span>
+          </span>
+          <span class="section-choice-state">{{ sectionByType(type)?.enabled ? 'Aktif' : 'Tambah' }}</span>
+        </button>
+        <button
+          type="button"
+          class="section-choice-preview"
+          :aria-label="`Buka pratinjau besar ${sectionLabels[type]}`"
+          @click="openPreview(previewConfig(type))"
+        ><AppIcon name="eye" :size="17" /></button>
+      </article>
     </div>
 
     <ol class="section-order-list" aria-label="Urutan section aktif">
       <li v-for="(section, index) in enabledSections" :key="section.id" class="section-order-item">
         <span class="section-order-number">{{ String(index + 1).padStart(2, '0') }}</span>
+        <img :src="sectionImages[section.type]" alt="" loading="lazy">
         <div class="section-order-content">
           <strong>{{ sectionLabels[section.type] }}</strong>
           <div class="section-order-options">
@@ -56,22 +75,37 @@
             type="button"
             :disabled="index === 0"
             :aria-label="`Naikkan ${sectionLabels[section.type]}`"
+            :title="`Naikkan ${sectionLabels[section.type]}`"
             @click="moveSection(index, -1)"
-          ><AppIcon name="chevron-up" :size="17" /></button>
+          ><AppIcon name="arrow-up" :size="21" /></button>
           <button
             type="button"
             :disabled="index === enabledSections.length - 1"
             :aria-label="`Turunkan ${sectionLabels[section.type]}`"
+            :title="`Turunkan ${sectionLabels[section.type]}`"
             @click="moveSection(index, 1)"
-          ><AppIcon name="chevron-down" :size="17" /></button>
+          ><AppIcon name="arrow-down" :size="21" /></button>
+          <button
+            type="button"
+            class="section-order-preview"
+            :aria-label="`Pratinjau besar ${sectionLabels[section.type]}`"
+            @click="openPreview(section)"
+          ><AppIcon name="eye" :size="17" /></button>
         </div>
       </li>
     </ol>
+
+    <StorySectionPreviewDialog
+      v-model:open="previewOpen"
+      :story="story"
+      :section="previewSection"
+      :section-label="previewSection ? sectionLabels[previewSection.type] : ''"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   STORY_SECTION_TYPES,
   createDefaultSectionConfig,
@@ -82,10 +116,14 @@ import {
   type StorySectionScrollEffect,
   type StorySectionType,
 } from '#shared/story-sections'
+import type { StoryContent } from '#shared/schema/story'
+import type { StoryTemplateId } from '#shared/story-templates'
+import StorySectionPreviewDialog from '~/components/story-editor/StorySectionPreviewDialog.vue'
 
 const props = defineProps<{
   modelValue: StorySectionConfig[]
-  templateId: string
+  templateId: StoryTemplateId
+  story: StoryContent
 }>()
 const emit = defineEmits<{
   'update:modelValue': [sections: StorySectionConfig[]]
@@ -167,6 +205,40 @@ const variantLabels: Record<string, string> = {
   'sealed-note': 'Catatan tersegel',
   'closing-coordinates': 'Koordinat penutup',
 }
+const sectionDescriptions: Record<StorySectionType, string> = {
+  hero: 'Kenalkan cerita dan foto sampul.',
+  greeting: 'Pesan personal untuk pasangan.',
+  'first-encounter': 'Ceritakan awal pertemuan.',
+  gallery: 'Pilih dan susun foto kenangan.',
+  'moments-in-motion': 'Tambahkan video kenangan.',
+  music: 'Pilih lagu yang mewakili kalian.',
+  timeline: 'Rangkai momen berdasarkan waktu.',
+  'love-notes': 'Kumpulan pesan singkat.',
+  constellation: 'Kenangan seperti rasi bintang.',
+  'distance-map': 'Tampilkan rute perjalanan.',
+  'future-dreams': 'Daftar rencana bersama.',
+  countdown: 'Hitung hari menuju momen spesial.',
+  'memory-capsule': 'Pesan untuk dibuka nanti.',
+  book: 'Buku interaktif berisi bab cerita.',
+  finale: 'Tutup cerita dengan pesan.',
+}
+const sectionImages: Record<StorySectionType, string> = {
+  hero: '/previews/cover.svg',
+  greeting: '/previews/greeting.svg',
+  'first-encounter': '/previews/first-meeting.svg',
+  gallery: '/previews/city.svg',
+  'moments-in-motion': '/previews/journey.svg',
+  music: '/previews/sunset.svg',
+  timeline: '/previews/journey.svg',
+  'love-notes': '/previews/finale.svg',
+  constellation: '/previews/garden.svg',
+  'distance-map': '/previews/city.svg',
+  'future-dreams': '/previews/garden.svg',
+  countdown: '/previews/sunset.svg',
+  'memory-capsule': '/previews/cover.svg',
+  book: '/previews/cover.svg',
+  finale: '/previews/finale.svg',
+}
 const entranceLabels: Record<StorySectionEntrance, string> = {
   'fade-up': 'Muncul lembut',
   'slide-left': 'Geser dari kiri',
@@ -180,9 +252,20 @@ const scrollLabels: Record<StorySectionScrollEffect, string> = {
 }
 
 const enabledSections = computed(() => sortStorySections(props.modelValue))
+const previewSection = ref<StorySectionConfig | null>(null)
+const previewOpen = ref(false)
 
 function sectionByType(type: StorySectionType): StorySectionConfig | undefined {
   return props.modelValue.find(section => section.type === type)
+}
+
+function previewConfig(type: StorySectionType): StorySectionConfig {
+  return sectionByType(type) ?? createDefaultSectionConfig(type, 0)
+}
+
+function openPreview(section: StorySectionConfig): void {
+  previewSection.value = section
+  previewOpen.value = true
 }
 
 function publish(sections: StorySectionConfig[]): void {
@@ -193,10 +276,8 @@ function publish(sections: StorySectionConfig[]): void {
   }))
 }
 
-function toggleSection(type: StorySectionType, event: Event): void {
-  const input = event.currentTarget
-  if (!(input instanceof HTMLInputElement)) return
-  const enabled = input.checked
+function toggleSection(type: StorySectionType): void {
+  const enabled = !(sectionByType(type)?.enabled ?? false)
   const existing = sectionByType(type)
   const activeCount = enabledSections.value.length
   const next = existing
@@ -291,30 +372,91 @@ function moveSection(index: number, direction: -1 | 1): void {
 
 .section-picker {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.7rem;
 }
 
-.section-picker-option {
-  display: flex;
-  min-height: 2.75rem;
-  align-items: center;
-  gap: 0.55rem;
+.section-choice {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  padding: 0.55rem 0.7rem;
+  background: var(--color-surface);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.section-choice-active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.section-choice-select {
+  display: grid;
+  width: 100%;
+  min-height: 6rem;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 0;
+  padding: 0.65rem 2.8rem 0.65rem 0.65rem;
   color: var(--color-foreground);
-  font-size: 0.75rem;
+  background: transparent;
+  text-align: left;
   cursor: pointer;
 }
 
-.section-picker-option:has(input:checked) {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 7%, white);
+.section-choice-select:focus-visible,
+.section-choice-preview:focus-visible,
+.section-order-actions button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
 }
 
-.section-picker-option input {
-  accent-color: var(--color-primary);
+.section-choice-select img,
+.section-order-item > img {
+  display: block;
+  width: 100%;
+  height: 3.8rem;
+  border-radius: var(--radius-small);
+  object-fit: cover;
+}
+
+.section-choice-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.section-choice-copy strong {
+  font-size: 0.8rem;
+}
+
+.section-choice-copy > span {
+  color: var(--color-muted-foreground);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.section-choice-state {
+  color: var(--color-primary);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.section-choice-preview {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  cursor: pointer;
 }
 
 .section-order-list {
@@ -326,15 +468,26 @@ function moveSection(index: number, direction: -1 | 1): void {
 }
 
 .section-order-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2rem 4rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.7rem;
   border-bottom: 1px solid var(--color-border);
   padding: 0.75rem 0;
 }
 
+.section-order-item > img {
+  height: 3rem;
+}
+
 .section-order-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
   color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, white);
   font-size: 0.68rem;
   font-weight: 700;
 }
@@ -366,18 +519,26 @@ function moveSection(index: number, direction: -1 | 1): void {
 
 .section-order-actions {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .section-order-actions button {
   display: grid;
-  width: 2.3rem;
-  height: 2.3rem;
+  width: 2.85rem;
+  height: 2.85rem;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  border-radius: 0.85rem;
   color: var(--color-primary);
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.section-order-actions button:not(:disabled):hover {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+  transform: translateY(-1px);
 }
 
 .section-order-actions button:disabled {
@@ -385,10 +546,43 @@ function moveSection(index: number, direction: -1 | 1): void {
   cursor: not-allowed;
 }
 
-.section-order-actions button:focus-visible,
+.section-order-preview {
+  margin-top: 0.25rem;
+}
+
 .section-order-options select:focus-visible,
-.section-picker-option:focus-within {
+.section-choice-preview:focus-visible,
+.section-order-actions button:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+@media (max-width: 540px) {
+  .section-order-item {
+    grid-template-columns: 1.75rem 3.5rem minmax(0, 1fr) auto;
+    gap: 0.45rem;
+  }
+
+  .section-order-item > img {
+    height: 2.7rem;
+  }
+
+  .section-order-actions {
+    grid-template-columns: repeat(3, 2.45rem);
+    gap: 0.2rem;
+  }
+
+  .section-order-actions button {
+    width: 2.65rem;
+    height: 2.65rem;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-choice,
+  .section-order-actions button {
+    transition: none;
+  }
 }
 </style>

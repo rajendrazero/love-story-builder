@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
 import type { StorySectionConfig } from '#shared/story-sections'
-import DecorativeLayer from './DecorativeLayer.vue'
 
 interface SectionCopy {
   greetingEyebrow: string
@@ -42,11 +41,6 @@ onBeforeUnmount(() => {
 
 const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
 const sectionType = computed(() => props.config.type)
-const decorativeScene = computed<'greeting' | 'detail' | 'finale'>(() =>
-  sectionType.value === 'greeting'
-    ? 'greeting'
-    : sectionType.value === 'first-encounter' ? 'detail' : 'finale',
-)
 const sectionCopyByTemplate: Record<StoryTemplateId, SectionCopy> = {
   'editorial-rose': {
     greetingEyebrow: 'Untukmu, selalu ♡',
@@ -97,7 +91,6 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <div class="greeting-copy">
       <p class="eyebrow">{{ sectionCopy.greetingEyebrow }}</p>
       <p class="greeting-text">{{ story.greetingText }}</p>
@@ -133,7 +126,6 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <div class="detail-photo">
       <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
       <span class="photo-sticker">{{ sectionCopy.detailSticker }}</span>
@@ -153,7 +145,6 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <figure class="final-photo">
       <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
       <figcaption>{{ sectionCopy.finaleCaption }}</figcaption>

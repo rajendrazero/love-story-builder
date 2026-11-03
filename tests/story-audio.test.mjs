@@ -36,8 +36,9 @@ test('the floating controls expose playback and volume accessibly', () => {
 })
 
 test('the entrance starts playback only when music exists and only from the open action', () => {
+  assert.match(entrance, /const music = props\.preview \? undefined : useStoryMusicEngine\(\)/)
   assert.match(entrance, /@click="openStory"/)
-  assert.match(entrance, /if \(music\.hasTrack\.value\) void music\.toggle\(\)/)
+  assert.match(entrance, /if \(music\?\.hasTrack\.value\) void music\.toggle\(\)/)
   assert.doesNotMatch(entrance, /onMounted\([^)]*toggle/s)
 })
 

@@ -44,7 +44,47 @@ export type TemplateFeature =
   | 'music'
   | 'video-greeting'
 export type TemplateStatus = 'available' | 'planned'
-export type TemplateEntranceStyle = 'editorial' | 'cinema' | 'botanical' | 'letter' | 'atlas'
+export const templateEntranceStyles = [
+  {
+    style: 'editorial',
+    label: 'Editorial',
+    description: 'Sampul majalah yang hangat dan lapang.',
+    actionLabel: 'Buka cerita kami',
+  },
+  {
+    style: 'cinema',
+    label: 'Sinematik',
+    description: 'Suasana gelap seperti awal sebuah film.',
+    actionLabel: 'Mulai cerita',
+  },
+  {
+    style: 'botanical',
+    label: 'Botanical',
+    description: 'Pembuka alami dengan sentuhan jurnal.',
+    actionLabel: 'Buka jurnal',
+  },
+  {
+    style: 'letter',
+    label: 'Surat cinta',
+    description: 'Kesan personal seperti membuka surat.',
+    actionLabel: 'Buka surat',
+  },
+  {
+    style: 'atlas',
+    label: 'Atlas kenangan',
+    description: 'Pembuka dokumenter untuk perjalanan kalian.',
+    actionLabel: 'Jelajahi cerita',
+  },
+] as const
+
+export const templateEntranceStyleSchema = z.enum([
+  'editorial',
+  'cinema',
+  'botanical',
+  'letter',
+  'atlas',
+])
+export type TemplateEntranceStyle = z.infer<typeof templateEntranceStyleSchema>
 
 export interface TemplateEntranceConfig {
   style: TemplateEntranceStyle
@@ -69,6 +109,7 @@ interface TemplateDefinition {
   status: TemplateStatus
   highlights: readonly string[]
   colors: readonly [string, string, string]
+  fontPair: string
   entrance: TemplateEntranceConfig
 }
 
@@ -108,6 +149,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Sampul editorial', 'Foto bergaya cetak', 'Dedikasi & tanda tangan'],
     colors: ['#f8e6e3', '#a94d58', '#fffaf5'],
+    fontPair: 'Instrument Serif · DM Sans',
     entrance: { style: 'editorial', actionLabel: 'Buka cerita kami' },
   },
   {
@@ -136,6 +178,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Sampul sinematik', 'Galeri seperti film', 'Kutipan & kredit penutup'],
     colors: ['#18151d', '#d2a7ff', '#f2eaf7'],
+    fontPair: 'Instrument Serif · Space Grotesk',
     entrance: { style: 'cinema', actionLabel: 'Mulai cerita' },
   },
   {
@@ -164,6 +207,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Foto cetak jurnal', 'Catatan lapangan', 'Halaman bernuansa kertas'],
     colors: ['#e7ebd8', '#53684b', '#fcf8ed'],
+    fontPair: 'Instrument Serif · Space Grotesk',
     entrance: { style: 'botanical', actionLabel: 'Buka jurnal' },
   },
   {
@@ -192,6 +236,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Pembuka seperti surat', 'Foto bergaya polaroid', 'Buku kenangan bertekstur'],
     colors: ['#f5e8d5', '#995d50', '#342923'],
+    fontPair: 'Instrument Serif · DM Sans',
     entrance: { style: 'letter', actionLabel: 'Buka surat' },
   },
   {
@@ -220,6 +265,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Garis waktu vertikal', 'Arsip foto horizontal', 'Bab perjalanan berurutan'],
     colors: ['#e8e2d2', '#35596b', '#253943'],
+    fontPair: 'Instrument Serif · Space Grotesk',
     entrance: { style: 'atlas', actionLabel: 'Jelajahi cerita' },
   },
 ] as const satisfies readonly TemplateDefinition[]
@@ -236,6 +282,14 @@ export const storyTemplateSchema = z.custom<StoryTemplateId>(
 
 export function getTemplateDefinition(id: string | undefined): StoryTemplateDefinition | undefined {
   return storyTemplates.find(template => template.id === id)
+}
+
+export function getTemplateEntrance(style: TemplateEntranceStyle | undefined, templateId: string | undefined): TemplateEntranceConfig {
+  if (style) {
+    const option = templateEntranceStyles.find(entrance => entrance.style === style)
+    if (option) return { style: option.style, actionLabel: option.actionLabel }
+  }
+  return getTemplateDefinition(templateId)?.entrance ?? storyTemplates[0].entrance
 }
 
 export function createDefaultSectionLayout(id: StoryTemplateId): StorySectionConfig[] {

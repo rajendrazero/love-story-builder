@@ -7,6 +7,7 @@
       ref="experience"
       class="story-experience bg-paper"
       :class="[`template-${story.templateId ?? 'editorial-rose'}`, { 'is-demo': demo }]"
+      :style="appearanceStyle"
     >
       <div v-if="demo" class="preview-bar" :class="{ 'preview-bar-overlay': closable }">
         <label class="preview-music-input floating-field">
@@ -42,6 +43,7 @@
             :key="section.id"
             :story="story"
             :section="section"
+            :preview="demo || closable"
             :story-slug="storySlug"
             :story-password="storyPassword"
           />
@@ -72,6 +74,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { StoryContent } from '#shared/schema/story'
 import { availableStoryTemplates, getTemplateDefinition, storyTemplateSchema, type StoryTemplateId } from '#shared/story-templates'
 import { sortStorySections, type StorySectionEntrance } from '#shared/story-sections'
+import { createDefaultStoryAppearance, getStoryAppearanceCssVariables } from '#shared/story-appearance'
 import { templateRenderers } from '~/components/story-templates/registry'
 import MusicEngine from '~/components/story-experience/MusicEngine.vue'
 import EntranceCover from '~/components/story-experience/EntranceCover.vue'
@@ -111,6 +114,9 @@ const orderedSections = computed(() => {
 })
 const previewMusicUrl = ref(props.story.musicUrl)
 const activeMusicUrl = computed(() => props.demo ? previewMusicUrl.value.trim() : props.story.musicUrl)
+const appearanceStyle = computed(() => getStoryAppearanceCssVariables(
+  props.story.appearance ?? createDefaultStoryAppearance(props.story.templateId ?? 'editorial-rose'),
+))
 let motionMedia: gsap.MatchMedia | undefined
 const appCursorPreset = useState<NonNullable<StoryContent['cursorPreset']>>('story-cursor', () => 'system')
 
@@ -148,7 +154,7 @@ watch(orderedSections, async () => {
   await nextTick()
   const root = experience.value
   if (root) setupSectionMotion(root)
-}, { flush: 'post' })
+}, { deep: true, flush: 'post' })
 
 function setupSectionMotion(root: HTMLElement): void {
   motionMedia?.revert()
@@ -188,7 +194,9 @@ function setupSectionMotion(root: HTMLElement): void {
       }
 
       if (config.animation.scroll === 'parallax') {
-        const image = section.querySelector<HTMLElement>('img')
+        const backgroundMedia = section.closest('.story-section-host')
+          ?.querySelector<HTMLElement>('.story-section-background-media')
+        const image = backgroundMedia ?? section.querySelector<HTMLElement>('img')
         if (image) {
           gsap.fromTo(image, {
             yPercent: 6,

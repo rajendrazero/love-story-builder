@@ -6,7 +6,6 @@
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="gallery" />
     <header class="section-heading">
       <div>
         <p class="eyebrow">{{ galleryCopy.eyebrow }}</p>
@@ -47,7 +46,6 @@ import type { StoryContent } from '#shared/schema/story'
 import type { StorySectionConfig } from '#shared/story-sections'
 import type { StoryTemplateId } from '#shared/story-templates'
 import { useStoryGallery } from '~/composables/story/useStoryGallery'
-import DecorativeLayer from './DecorativeLayer.vue'
 
 const props = defineProps<{
   story: StoryContent

@@ -6,7 +6,6 @@
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="book" />
     <header class="book-heading">
       <p class="eyebrow">{{ bookCopy.eyebrow }}</p>
       <h2>{{ bookCopy.title }}</h2>
@@ -133,7 +132,6 @@ import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
 import type { StorySectionConfig } from '#shared/story-sections'
 import { getStoryPageTurn, getStoryPageTurnDuration } from '~/composables/story/story-book'
-import DecorativeLayer from './DecorativeLayer.vue'
 
 type StoryPage = StoryContent['storyPages'][number]
 type BookCopy = {

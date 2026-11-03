@@ -9,6 +9,7 @@ const props = defineProps<{
   config: StorySectionConfig
   storySlug?: string
   storyPassword?: string
+  preview?: boolean
 }>()
 
 const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
@@ -65,7 +66,8 @@ async function openCapsule(): Promise<void> {
     <div class="creative-frame capsule-content">
       <p class="creative-eyebrow">Untuk dibuka pada {{ formattedCapsuleDate }}</p>
       <h2>{{ capsule?.title }}</h2>
-      <p v-if="capsuleMessage" class="capsule-message">{{ capsuleMessage }}</p>
+      <p v-if="preview" class="capsule-message">{{ capsule?.message }}</p>
+      <p v-else-if="capsuleMessage" class="capsule-message">{{ capsuleMessage }}</p>
       <template v-else>
         <p class="capsule-seal" aria-hidden="true">✦</p>
         <button type="button" class="capsule-open" :disabled="loadingCapsule" @click="openCapsule">

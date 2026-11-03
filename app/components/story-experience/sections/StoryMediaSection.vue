@@ -6,6 +6,7 @@ import type { StorySectionConfig } from '#shared/story-sections'
 const props = defineProps<{
   story: StoryContent
   config: StorySectionConfig
+  preview?: boolean
 }>()
 const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
 </script>
@@ -25,6 +26,7 @@ const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
         <h2>{{ story.detailTitle }}</h2>
       </header>
       <video
+        v-if="story.greetingVideoUrl"
         class="moments-video"
         :src="story.greetingVideoUrl"
         controls
@@ -33,6 +35,15 @@ const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
         preload="metadata"
         aria-label="Video kenangan kalian"
       />
+      <div
+        v-else-if="preview"
+        class="moments-video-preview"
+        role="img"
+        aria-label="Contoh tampilan video kenangan"
+      >
+        <img src="/previews/journey.svg" alt="">
+        <span><span aria-hidden="true">▶</span> Contoh video kenangan</span>
+      </div>
     </div>
   </section>
   <section
@@ -104,6 +115,34 @@ const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
   margin-inline: auto;
   background: #09090b;
   object-fit: contain;
+}
+
+.moments-video-preview {
+  position: relative;
+  width: min(100%, 68rem);
+  aspect-ratio: 16 / 9;
+  margin-inline: auto;
+  overflow: hidden;
+  background: #09090b;
+}
+
+.moments-video-preview img {
+  width: 100%;
+  height: 100%;
+  opacity: 0.72;
+  object-fit: cover;
+}
+
+.moments-video-preview > span {
+  position: absolute;
+  inset: auto 1rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  color: #fffaf5;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  text-shadow: 0 1px 0.6rem rgb(0 0 0 / 65%);
 }
 
 .creative-music {

@@ -56,6 +56,8 @@ const migrations = [
   '0010_add_draft_custom_slug.sql',
   '0011_create_uploaded_images.sql',
   '0012_add_composable_story_sections.sql',
+  '0013_add_story_entrance_style.sql',
+  '0014_add_story_appearance.sql',
 ]
 
 const users = {

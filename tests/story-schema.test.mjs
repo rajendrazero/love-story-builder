@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { publishStorySchema, storyContentSchema, updateStorySchema } from '../shared/schema/story.ts'
 import { storySlugPattern } from '../shared/story-slug.ts'
+import { createDefaultSectionConfig } from '../shared/story-sections.ts'
 
 const story = {
   title: 'A story about us',
@@ -69,6 +70,71 @@ test('rejects arbitrary cursor values and oversized template copy', () => {
 
 test('continues to accept older published stories without optional template settings', () => {
   assert.equal(storyContentSchema.safeParse(story).success, true)
+})
+
+test('validates required content only for enabled sections', () => {
+  const hero = createDefaultSectionConfig('hero', 0)
+  const gallery = createDefaultSectionConfig('gallery', 1)
+  const loveNotes = createDefaultSectionConfig('love-notes', 1)
+
+  const missingGallery = storyContentSchema.safeParse({
+    ...story,
+    templateId: 'memory-atlas',
+    sectionLayout: [hero, gallery],
+    gallery: [],
+  })
+
+  test('accepts multiple love notes and future plans within the editor list limit', () => {
+    const sections = [
+      createDefaultSectionConfig('hero', 0),
+      createDefaultSectionConfig('love-notes', 1),
+      createDefaultSectionConfig('future-dreams', 2),
+    ]
+    const multipleItems = storyContentSchema.safeParse({
+      ...story,
+      sectionLayout: sections,
+      sectionContent: {
+        loveNotes: ['Catatan pertama', 'Catatan kedua', 'Catatan ketiga'],
+        futureDreams: ['Rencana pertama', 'Rencana kedua', 'Rencana ketiga'],
+      },
+    })
+
+    assert.equal(multipleItems.success, true)
+    assert.equal(storyContentSchema.safeParse({
+      ...story,
+      sectionLayout: sections,
+      sectionContent: {
+        loveNotes: Array.from({ length: 13 }, (_, index) => `Catatan ${index + 1}`),
+        futureDreams: ['Rencana bersama'],
+      },
+    }).success, false)
+  })
+  assert.equal(missingGallery.success, false)
+  assert.ok(missingGallery.error.issues.some(issue => issue.path[0] === 'gallery'))
+
+  const disabledGallery = storyContentSchema.safeParse({
+    ...story,
+    templateId: 'memory-atlas',
+    sectionLayout: [hero, { ...gallery, enabled: false }],
+    gallery: [],
+  })
+  assert.equal(disabledGallery.success, true)
+
+  const missingLoveNotes = storyContentSchema.safeParse({
+    ...story,
+    templateId: 'memory-atlas',
+    sectionLayout: [hero, loveNotes],
+    sectionContent: { loveNotes: [] },
+  })
+  assert.equal(missingLoveNotes.success, false)
+  assert.ok(missingLoveNotes.error.issues.some(issue =>
+    issue.path[0] === 'sectionContent' && issue.path[1] === 'love-notes',
+  ))
+})
+
+test('accepts registered entrance styles and rejects unknown styles', () => {
+  assert.equal(storyContentSchema.safeParse({ ...story, entranceStyle: 'atlas' }).success, true)
+  assert.equal(storyContentSchema.safeParse({ ...story, entranceStyle: 'unknown' }).success, false)
 })
 
 test('accepts short custom story links and normalizes their casing', () => {

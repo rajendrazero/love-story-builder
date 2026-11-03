@@ -16,6 +16,8 @@ const migrationPaths = [
   'migrations/0010_add_draft_custom_slug.sql',
   'migrations/0011_create_uploaded_images.sql',
   'migrations/0012_add_composable_story_sections.sql',
+  'migrations/0013_add_story_entrance_style.sql',
+  'migrations/0014_add_story_appearance.sql',
 ]
 
 function legacyStory(templateId) {
@@ -172,6 +174,8 @@ test('normalizes legacy stories and drafts without losing content or ownership',
   assert.equal(database.prepare("PRAGMA table_info('stories')").all().some(row => row.name === 'title'), false)
   assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'section_layout_json'))
   assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'section_content_json'))
+  assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'entrance_style'))
+  assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'appearance_json'))
   assert.deepEqual(database.prepare('PRAGMA foreign_key_check').all(), [])
 
   for (const table of ['user', 'session', 'account', 'verification', 'rateLimit']) {

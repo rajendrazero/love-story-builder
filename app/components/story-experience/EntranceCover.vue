@@ -1,5 +1,12 @@
 <template>
-  <section class="entrance-cover" :class="`entrance-cover-${entrance.style}`" aria-labelledby="entrance-title">
+  <section
+    class="entrance-cover"
+    :class="[
+      `entrance-cover-${entrance.style}`,
+      preview ? `entrance-cover-preview-${previewSize}` : '',
+    ]"
+    :aria-labelledby="entranceTitleId"
+  >
     <img class="entrance-cover-image" :src="story.heroImage" alt="">
     <div class="entrance-cover-shade" />
     <DecorativeLayer
@@ -9,10 +16,19 @@
     />
     <div class="entrance-cover-content">
       <p class="entrance-eyebrow">SELAMANYA · A PLACE FOR YOUR STORY</p>
-      <p class="entrance-to">Untuk {{ story.coupleNames }}</p>
-      <h1 id="entrance-title">{{ story.title }}</h1>
+      <p class="entrance-to">Untuk {{ story.coupleNames || 'Kalian berdua' }}</p>
+      <h1 :id="entranceTitleId">{{ story.title || 'Kisah kita, selamanya' }}</h1>
       <p class="entrance-prompt">Sebuah cerita kecil menunggu untuk dibuka.</p>
+      <span
+        v-if="preview"
+        class="entrance-open-button entrance-preview-action"
+        aria-hidden="true"
+      >
+        <span class="entrance-object" aria-hidden="true">{{ entranceSymbol }}</span>
+        <span>{{ entrance.actionLabel }}</span>
+      </span>
       <button
+        v-else
         id="entrance-open"
         ref="openButton"
         type="button"
@@ -29,24 +45,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowRef, useId, useTemplateRef } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
-import { getTemplateDefinition } from '#shared/story-templates'
+import { getTemplateEntrance } from '#shared/story-templates'
 import { useStoryMusicEngine } from '~/composables/story/music-engine'
 import DecorativeLayer from './DecorativeLayer.vue'
 
 const props = defineProps<{
-  story: Pick<StoryContent, 'coupleNames' | 'heroImage' | 'templateId' | 'title'>
+  story: Pick<StoryContent, 'coupleNames' | 'entranceStyle' | 'heroImage' | 'templateId' | 'title'>
+  preview?: boolean
+  previewSize?: 'small' | 'large'
 }>()
 const emit = defineEmits<{
   open: []
 }>()
 
 const openButton = useTemplateRef<HTMLButtonElement>('openButton')
+const entranceTitleId = `entrance-title-${useId()}`
 const opening = shallowRef(false)
-const music = useStoryMusicEngine()
-const entrance = computed(() => getTemplateDefinition(props.story.templateId ?? 'editorial-rose')?.entrance
-  ?? { style: 'editorial' as const, actionLabel: 'Buka cerita kami' })
+const music = props.preview ? undefined : useStoryMusicEngine()
+const entrance = computed(() => getTemplateEntrance(
+  props.story.entranceStyle,
+  props.story.templateId ?? 'editorial-rose',
+))
 const entranceSymbol = computed(() => ({
   editorial: '✦',
   cinema: '▶',
@@ -59,17 +80,19 @@ let previousBodyOverflow = ''
 function openStory(): void {
   if (opening.value) return
   opening.value = true
-  if (music.hasTrack.value) void music.toggle()
+  if (music?.hasTrack.value) void music.toggle()
   emit('open')
 }
 
 onMounted(() => {
+  if (props.preview) return
   previousBodyOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
   openButton.value?.focus()
 })
 
 onBeforeUnmount(() => {
+  if (props.preview) return
   document.body.style.overflow = previousBodyOverflow
 })
 </script>
@@ -216,6 +239,71 @@ onBeforeUnmount(() => {
   margin: 0.85rem 0 0;
   color: rgb(255 250 245 / 62%);
   font-size: 0.72rem;
+}
+
+.entrance-cover-preview-small,
+.entrance-cover-preview-large {
+  position: relative;
+  inset: auto;
+  z-index: 0;
+  min-height: 0;
+  border-radius: var(--radius-large);
+  padding: clamp(0.75rem, 3vw, 2rem);
+}
+
+.entrance-cover-preview-small {
+  height: 10.5rem;
+}
+
+.entrance-cover-preview-large {
+  min-height: min(72svh, 48rem);
+}
+
+.entrance-cover-preview-small .entrance-cover-content,
+.entrance-cover-preview-large .entrance-cover-content {
+  animation: none;
+}
+
+.entrance-cover-preview-small .entrance-eyebrow,
+.entrance-cover-preview-small .entrance-audio-note {
+  display: none;
+}
+
+.entrance-cover-preview-small .entrance-to {
+  margin-top: 0;
+  font-size: 0.72rem;
+}
+
+.entrance-cover-preview-small h1 {
+  font-size: clamp(1.3rem, 5vw, 2rem);
+}
+
+.entrance-cover-preview-small .entrance-prompt {
+  margin-top: 0.45rem;
+  font-size: 0.65rem;
+}
+
+.entrance-cover-preview-small .entrance-open-button {
+  min-height: 2rem;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+  padding: 0.25rem 0.7rem 0.25rem 0.3rem;
+  font-size: 0.65rem;
+}
+
+.entrance-cover-preview-small .entrance-object {
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.8rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrance-cover-content,
+  .entrance-object,
+  .entrance-open-button {
+    animation: none;
+    transition: none;
+  }
 }
 
 @keyframes entrance-arrive {

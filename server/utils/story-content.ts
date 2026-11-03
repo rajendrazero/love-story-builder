@@ -3,12 +3,18 @@ import {
   storyTemplateSchema,
   type StoryContent,
 } from '#shared/schema/story'
-import { createDefaultSectionLayout } from '#shared/story-templates'
+import {
+  createDefaultSectionLayout,
+  getTemplateDefinition,
+  templateEntranceStyleSchema,
+} from '#shared/story-templates'
 import { storySectionContentSchema, storySectionLayoutSchema } from '#shared/story-sections'
+import { createDefaultStoryAppearance, storyAppearanceSchema } from '#shared/story-appearance'
 import type { D1Database, D1Statement } from './cloudflare'
 
 interface StoryContentRow {
   template_id: string
+  entrance_style: string | null
   cursor_preset: string
   title: string
   couple_names: string
@@ -25,6 +31,7 @@ interface StoryContentRow {
   music_url: string
   section_layout_json: string | null
   section_content_json: string | null
+  appearance_json: string | null
 }
 
 interface GalleryRow {
@@ -60,6 +67,7 @@ interface StoryContentInput extends Omit<Partial<StoryContent>, 'gallery' | 'sto
 
 const contentColumns = [
   'template_id',
+  'entrance_style',
   'cursor_preset',
   'title',
   'couple_names',
@@ -76,6 +84,7 @@ const contentColumns = [
   'music_url',
   'section_layout_json',
   'section_content_json',
+  'appearance_json',
 ] as const
 
 export function storyContentStatements(
@@ -83,9 +92,11 @@ export function storyContentStatements(
   id: string,
   content: StoryContentInput,
 ): D1Statement[] {
+  const templateId = content.templateId ?? 'editorial-rose'
   const values = [
     id,
-    content.templateId ?? 'editorial-rose',
+    templateId,
+    content.entranceStyle ?? getTemplateDefinition(templateId)?.entrance.style ?? 'editorial',
     content.cursorPreset ?? 'system',
     content.title ?? '',
     content.coupleNames ?? '',
@@ -102,6 +113,7 @@ export function storyContentStatements(
     content.musicUrl ?? '',
     JSON.stringify(content.sectionLayout ?? createDefaultSectionLayout(content.templateId ?? 'editorial-rose')),
     JSON.stringify(content.sectionContent ?? {}),
+    JSON.stringify(content.appearance ?? createDefaultStoryAppearance(content.templateId ?? 'editorial-rose')),
   ]
   const columns = ['id', ...contentColumns]
   const placeholders = columns.map(() => '?').join(', ')
@@ -170,9 +182,12 @@ export async function getStoryContent(
   if (!row) return null
 
   const template = storyTemplateSchema.safeParse(row.template_id)
+  const entranceStyle = row.entrance_style === null
+    ? undefined
+    : templateEntranceStyleSchema.safeParse(row.entrance_style)
   const cursor = storyCursorSchema.safeParse(row.cursor_preset)
-  if (!template.success || !cursor.success) {
-    throw new Error(`Story content ${id} has invalid template or cursor data.`)
+  if (!template.success || !cursor.success || (entranceStyle && !entranceStyle.success)) {
+    throw new Error(`Story content ${id} has invalid template, entrance, or cursor data.`)
   }
   const parsedLayout = row.section_layout_json === null
     ? undefined
@@ -182,11 +197,17 @@ export async function getStoryContent(
       ? {}
       : parseStoredJson(row.section_content_json, 'section content', id),
   )
+  const parsedAppearance = row.appearance_json === null
+    ? undefined
+    : storyAppearanceSchema.safeParse(parseStoredJson(row.appearance_json, 'appearance', id))
   if (parsedLayout && !parsedLayout.success) {
     throw new Error(`Story content ${id} has invalid section layout data.`)
   }
   if (!parsedSectionContent.success) {
     throw new Error(`Story content ${id} has invalid section content data.`)
+  }
+  if (parsedAppearance && !parsedAppearance.success) {
+    throw new Error(`Story content ${id} has invalid appearance data.`)
   }
 
   const [
@@ -235,6 +256,7 @@ export async function getStoryContent(
 
   return {
     templateId: template.data,
+    entranceStyle: entranceStyle?.data ?? getTemplateDefinition(template.data)?.entrance.style ?? 'editorial',
     cursorPreset: cursor.data,
     templateDetails,
     title: row.title,
@@ -258,6 +280,7 @@ export async function getStoryContent(
     musicUrl: row.music_url,
     sectionLayout: parsedLayout?.data ?? createDefaultSectionLayout(template.data),
     sectionContent: parsedSectionContent.data,
+    appearance: parsedAppearance?.data ?? createDefaultStoryAppearance(template.data),
   }
 }
 

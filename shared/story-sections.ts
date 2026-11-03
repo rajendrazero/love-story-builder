@@ -43,6 +43,31 @@ export type StorySectionEntrance = 'fade-up' | 'slide-left' | 'slide-right' | 'z
 export type StorySectionScrollEffect = 'none' | 'parallax' | 'fade'
 
 const storySectionTypeSchema = z.enum(STORY_SECTION_TYPES)
+const storySectionBackgroundSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('theme') }).strict(),
+  z.object({
+    type: z.literal('color'),
+    color: z.string().regex(/^#[\da-f]{6}$/i),
+  }).strict(),
+  z.object({
+    type: z.literal('image'),
+    url: z.string().max(2048),
+  }).strict(),
+  z.object({
+    type: z.literal('video'),
+    url: z.string().max(2048),
+  }).strict(),
+])
+
+export const storySectionDesignSchema = z.object({
+  background: storySectionBackgroundSchema,
+  ornament: z.object({
+    enabled: z.boolean(),
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    scale: z.number().min(50).max(150),
+  }).strict(),
+}).strict()
 
 export const storySectionSchema = z.object({
   id: z.string().trim().min(1).max(48).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -50,6 +75,7 @@ export const storySectionSchema = z.object({
   variant: z.string().trim().min(1).max(48),
   enabled: z.boolean(),
   order: z.number().int().min(0).max(STORY_SECTION_TYPES.length - 1),
+  design: storySectionDesignSchema.optional(),
   animation: z.object({
     entrance: z.enum(['fade-up', 'slide-left', 'slide-right', 'zoom']),
     scroll: z.enum(['none', 'parallax', 'fade']),
@@ -111,7 +137,29 @@ export const storySectionContentSchema = z.object({
 }).strict()
 
 export type StorySectionConfig = z.infer<typeof storySectionSchema>
+export type StorySectionDesign = z.infer<typeof storySectionDesignSchema>
 export type StorySectionContent = z.infer<typeof storySectionContentSchema>
+
+const sectionsWithDefaultOrnaments = new Set<StorySectionType>([
+  'hero',
+  'greeting',
+  'first-encounter',
+  'gallery',
+  'book',
+  'finale',
+])
+
+export function createDefaultStorySectionDesign(type: StorySectionType): StorySectionDesign {
+  return {
+    background: { type: 'theme' },
+    ornament: {
+      enabled: sectionsWithDefaultOrnaments.has(type),
+      x: 50,
+      y: 50,
+      scale: 100,
+    },
+  }
+}
 
 const sectionAnimationDefaults: Record<StorySectionType, StorySectionConfig['animation']> = {
   hero: { entrance: 'zoom', scroll: 'parallax' },

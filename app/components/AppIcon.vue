@@ -2,6 +2,8 @@
 export type AppIconName =
   | 'alert'
   | 'arrow-up-right'
+  | 'arrow-up'
+  | 'arrow-down'
   | 'check'
   | 'chevron-left'
   | 'chevron-down'
@@ -16,6 +18,7 @@ export type AppIconName =
   | 'lock'
   | 'log-out'
   | 'menu'
+  | 'move'
   | 'more-horizontal'
   | 'pause'
   | 'play'
@@ -28,6 +31,8 @@ export type AppIconName =
 const iconNames: Record<AppIconName, string> = {
   alert: 'lucide:circle-alert',
   'arrow-up-right': 'lucide:arrow-up-right',
+  'arrow-up': 'lucide:arrow-up',
+  'arrow-down': 'lucide:arrow-down',
   check: 'lucide:check',
   'chevron-left': 'lucide:chevron-left',
   'chevron-down': 'lucide:chevron-down',
@@ -42,6 +47,7 @@ const iconNames: Record<AppIconName, string> = {
   lock: 'lucide:lock-keyhole',
   'log-out': 'lucide:log-out',
   menu: 'lucide:menu',
+  move: 'lucide:move',
   'more-horizontal': 'lucide:ellipsis',
   pause: 'lucide:pause',
   play: 'lucide:play',

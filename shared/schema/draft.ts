@@ -1,13 +1,17 @@
 import { z } from 'zod'
-import { storyCursorSchema, storyTemplateSchema } from './story'
+import { storyCursorSchema, storyTemplateSchema } from './story.ts'
 import { storySlugPattern } from '../story-slug.ts'
-import { storySectionContentSchema, storySectionLayoutSchema } from '../story-sections.ts'
+import { STORY_SECTION_TYPES, storySectionContentSchema, storySectionLayoutSchema } from '../story-sections.ts'
+import { templateEntranceStyleSchema } from '../story-templates.ts'
+import { storyAppearanceSchema } from '../story-appearance.ts'
 
 const draftText = (limit: number) => z.string().max(limit).optional()
 const draftUrl = z.string().max(2048).optional()
+// Hero is configured in the cover step, so it has no separate section step.
+const maxStoryEditorStep = STORY_SECTION_TYPES.length + 2
 
 export const storyDraftSchema = z.object({
-  activeStep: z.number().int().min(0).max(6).optional(),
+  activeStep: z.number().int().min(0).max(maxStoryEditorStep).optional(),
   editingSlug: z.string().regex(storySlugPattern).optional(),
   customSlug: z.string()
     .trim()
@@ -17,7 +21,9 @@ export const storyDraftSchema = z.object({
     .transform(value => value || undefined)
     .refine(value => value === undefined || storySlugPattern.test(value)),
   templateId: storyTemplateSchema.optional(),
+  entranceStyle: templateEntranceStyleSchema.optional(),
   cursorPreset: storyCursorSchema.optional(),
+  appearance: storyAppearanceSchema.optional(),
   sectionLayout: storySectionLayoutSchema.optional(),
   sectionContent: storySectionContentSchema.optional(),
   templateDetails: z.object({

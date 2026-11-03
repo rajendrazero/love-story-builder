@@ -15,8 +15,12 @@ export const ALLOWED_CLOUDINARY_AUDIO_MIME_TYPES = [
   'audio/x-wav',
   'audio/mp3',
 ] as const
+export const MAX_CLOUDINARY_VIDEO_SIZE = 50 * 1024 * 1024
+export const ALLOWED_CLOUDINARY_VIDEO_FORMATS = ['mp4', 'webm'] as const
+export const ALLOWED_CLOUDINARY_VIDEO_MIME_TYPES = ['video/mp4', 'video/webm'] as const
 
 export type CloudinaryAudioMimeType = 'audio/mpeg' | 'audio/mp4' | 'audio/ogg' | 'audio/wav'
+export type CloudinaryVideoMimeType = typeof ALLOWED_CLOUDINARY_VIDEO_MIME_TYPES[number]
 
 export function isAllowedCloudinaryImageMimeType(value: string): boolean {
   return value === 'image/jpeg' || value === 'image/png' || value === 'image/webp'
@@ -32,6 +36,10 @@ export function cloudinaryAudioMimeType(value: string): CloudinaryAudioMimeType 
 
 export function isAllowedCloudinaryAudioMimeType(value: string): boolean {
   return cloudinaryAudioMimeType(value) !== null
+}
+
+export function cloudinaryVideoMimeType(value: string): CloudinaryVideoMimeType | null {
+  return value === 'video/mp4' || value === 'video/webm' ? value : null
 }
 
 function hasSafeCloudinaryPath(value: string): boolean {
@@ -102,6 +110,14 @@ export function isOwnedCloudinaryImageUrl(
 }
 
 export function isOwnedCloudinaryAudioUrl(
+  value: unknown,
+  cloudName: string,
+  folder: string,
+): value is string {
+  return isOwnedCloudinaryResourceUrl(value, cloudName, folder, 'video')
+}
+
+export function isOwnedCloudinaryVideoUrl(
   value: unknown,
   cloudName: string,
   folder: string,

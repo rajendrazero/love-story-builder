@@ -161,7 +161,7 @@ import { availableStoryTemplates, type StoryTemplateId } from '#shared/story-tem
 const route = useRoute()
 const router = useRouter()
 const previewOverlay = useTemplateRef<HTMLDivElement>('previewOverlay')
-const pageSize = 4
+const pageSize = 6
 const previewId = ref<StoryTemplateId | ''>('')
 const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q.slice(0, 80) : '')
 const activeCategory = computed<TemplateCategoryId | ''>(() => {

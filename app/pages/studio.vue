@@ -7,10 +7,10 @@
         <p class="mt-4 leading-7 text-[#756a62]">Draft tersimpan di akunmu. Kamu bisa melanjutkan dari perangkat lain, memperbarui cerita terbit, dan hanya kamu serta admin yang bisa mengelolanya.</p>
       </div>
 
-      <div class="mb-8 grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
+      <div class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
         <button
           v-for="(step, index) in steps"
-          :key="step.title"
+          :key="step.id"
           type="button"
           class="step-tab"
           :class="{ 'step-tab-active': activeStep === index, 'step-tab-complete': index < activeStep }"
@@ -53,13 +53,42 @@
       </div>
 
       <div class="space-y-5">
-        <section v-show="activeStep === 0" class="editor-card">
-          <p class="section-kicker">01 — Pembuka</p>
+        <div v-if="activeSectionType" class="flex justify-end">
+          <AppButton variant="secondary" @click="openActiveSectionPreview">
+            <AppIcon name="eye" :size="16" />
+            Pratinjau hasil section
+          </AppButton>
+        </div>
+
+        <section v-if="activeStepId === 'theme'" class="editor-card">
+          <StoryThemePicker
+            :model-value="draft.templateId ?? 'editorial-rose'"
+            @update:model-value="changeTemplate"
+          />
+          <div class="mt-7 border-t border-[#e7ddd4] pt-6">
+            <StoryAppearanceEditor v-model="appearanceModel" />
+          </div>
+        </section>
+
+        <section v-else-if="activeStepId === 'cover'" class="editor-card">
+          <EntranceCoverPicker
+            v-model="entranceStyleModel"
+            :template-id="draft.templateId ?? 'editorial-rose'"
+            :story="draft"
+          />
+          <StorySectionAppearanceEditor
+            :model-value="sectionDesign('hero')"
+            section-type="hero"
+            section-label="Sampul"
+            :template-id="draft.templateId ?? 'editorial-rose'"
+            :appearance="appearanceModel"
+            @update:model-value="updateSectionDesign('hero', $event)"
+          />
           <div class="mb-7 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e3dbd2] p-4">
             <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-[#9c6257]">Template terpilih</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-[#9c6257]">Identitas cerita</p>
               <strong class="mt-1 block font-display text-2xl">{{ selectedTemplate.name }}</strong>
-              <p class="mt-1 text-sm text-[#756a62]">{{ selectedTemplate.mood }}</p>
+              <p class="mt-1 text-sm text-[#756a62]">Warna {{ selectedTemplate.colors[1] }} · {{ selectedTemplate.fontPair }}</p>
             </div>
           </div>
           <div class="grid gap-5 md:grid-cols-2">
@@ -88,17 +117,26 @@
           </div>
         </section>
 
-        <section v-show="activeStep === 1" class="editor-card">
-          <p class="section-kicker">02 — Kartu ucapan</p>
+        <section v-else-if="activeStepId === 'sections'" class="editor-card">
+          <p class="section-kicker">03 — Pilih dan susun cerita</p>
+          <StorySectionEditor
+            v-model="sectionLayoutModel"
+            :template-id="draft.templateId ?? 'editorial-rose'"
+            :story="draft"
+          />
+        </section>
+
+        <section v-else-if="activeSectionType === 'greeting'" class="editor-card">
+          <p class="section-kicker">Section aktif · Kartu ucapan</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.greetingImage" label="Latar kartu" />
             <label class="floating-field"><span class="editor-label">Tulisan untuknya</span><textarea v-model="draft.greetingText" name="greetingText" class="editor-input min-h-36" maxlength="1000" required placeholder="Untuk kamu, rumah yang selalu ingin kutuju..." /></label>
-            <label class="floating-field md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
+            <label v-if="!hasSection('moments-in-motion')" class="floating-field md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
           </div>
         </section>
 
-        <section v-show="activeStep === 2" class="editor-card">
-          <p class="section-kicker">03 — Galeri bergerak</p>
+        <section v-else-if="activeSectionType === 'gallery'" class="editor-card">
+          <p class="section-kicker">Section aktif · Galeri kenangan</p>
           <div class="space-y-4">
             <div v-for="(photo, index) in draft.gallery" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <ImageField v-model="photo.url" :label="`Foto ${index + 1}`" />
@@ -109,8 +147,8 @@
           </div>
         </section>
 
-        <section v-show="activeStep === 3" class="editor-card">
-          <p class="section-kicker">04 — Tentang kalian</p>
+        <section v-else-if="activeSectionType === 'first-encounter'" class="editor-card">
+          <p class="section-kicker">Section aktif · Pertemuan pertama</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.secondImage" label="Foto berdua" />
             <div class="space-y-5">
@@ -120,9 +158,9 @@
           </div>
         </section>
 
-        <section v-show="activeStep === 4" class="editor-card">
-          <p class="section-kicker">05 — Buku cerita</p>
-          <p class="mb-4 text-sm text-[#756a62]">Setiap bagian menjadi satu halaman dalam buku kenangan kalian.</p>
+        <section v-else-if="['timeline', 'book', 'constellation'].includes(activeSectionType ?? '')" class="editor-card">
+          <p class="section-kicker">Section aktif · {{ steps[activeStep]?.title }}</p>
+          <p class="mb-4 text-sm text-[#756a62]">Bab cerita menjadi sumber kenangan untuk garis waktu, buku, atau konstelasi yang aktif.</p>
           <div class="space-y-4">
             <article v-for="(page, index) in draft.storyPages" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-2">
               <label class="floating-field"><span class="editor-label">Halaman {{ index + 1 }} · Judul</span><input v-model="page.title" :name="`storyPageTitle-${index}`" class="editor-input" maxlength="100" required placeholder="Pertemuan pertama"></label>
@@ -134,30 +172,50 @@
           </div>
         </section>
 
-        <section v-show="activeStep === 5" class="editor-card">
-          <p class="section-kicker">06 — Pesan terakhir</p>
+        <section v-else-if="activeSectionType === 'finale'" class="editor-card">
+          <p class="section-kicker">Section aktif · Penutup</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.finalImage" label="Foto penutup" />
             <label class="floating-field"><span class="editor-label">Pesan untuknya</span><textarea v-model="draft.finalMessage" name="finalMessage" class="editor-input min-h-36" maxlength="1000" required placeholder="Dan jika aku harus memilih lagi, tetap kamu..." /></label>
           </div>
         </section>
 
-        <section v-show="activeStep === 6" class="editor-card">
-          <p class="section-kicker">07 — Susunan, lagu & privasi</p>
-          <div class="mb-6 grid gap-6">
-            <StorySectionContentEditor v-model="sectionContentModel" />
-            <StorySectionEditor
-              v-model="sectionLayoutModel"
-              :template-id="draft.templateId ?? 'editorial-rose'"
-            />
+        <section v-else-if="activeSectionType === 'moments-in-motion'" class="editor-card">
+          <p class="section-kicker">Section aktif · Momen bergerak</p>
+          <p class="mb-4 text-sm text-[#756a62]">Video ini juga menjadi latar kartu ucapan bila section kartu ucapan aktif.</p>
+          <div class="grid gap-5 md:grid-cols-2">
+            <label class="floating-field"><span class="editor-label">Judul momen video</span><input v-model="draft.detailTitle" name="videoMomentTitle" class="editor-input" maxlength="100" required placeholder="Satu momen yang ingin diulang"></label>
+            <label class="floating-field"><span class="editor-label">Tautan video kenangan</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" required placeholder="https://... tautan video MP4 langsung"></label>
           </div>
+        </section>
+
+        <section v-else-if="activeSectionType === 'music'" class="editor-card">
+          <p class="section-kicker">Section aktif · Soundtrack</p>
           <div class="grid gap-5 md:grid-cols-2">
             <AudioField v-model="draft.musicUrl" />
             <label class="floating-field"><span class="editor-label">Judul lagu (opsional)</span><input v-model="draft.musicTitle" name="musicTitle" class="editor-input" maxlength="120" placeholder="Lagu yang mengingatkan kalian"></label>
             <label class="floating-field"><span class="editor-label">Penyanyi (opsional)</span><input v-model="draft.musicArtist" name="musicArtist" class="editor-input" maxlength="120" placeholder="Nama penyanyi"></label>
-            <p v-if="unsupportedMusicProvider" class="text-sm text-amber-800 md:col-span-2" role="alert">
-              Tautan {{ unsupportedMusicProvider }} tidak bisa diputar di cerita. Gunakan URL HTTPS file audio langsung atau unggah file yang hak penggunaannya kamu miliki.
-            </p>
+            <p v-if="unsupportedMusicProvider" class="text-sm text-amber-800 md:col-span-2" role="alert">Tautan {{ unsupportedMusicProvider }} tidak bisa diputar di cerita. Gunakan URL HTTPS file audio langsung atau unggah file yang hak penggunaannya kamu miliki.</p>
+          </div>
+        </section>
+
+        <section v-else-if="activeSectionType && contentEditorSectionTypes.has(activeSectionType)" class="editor-card">
+          <p class="section-kicker">Section aktif · {{ steps[activeStep]?.title }}</p>
+          <StorySectionContentEditor
+            v-model="sectionContentModel"
+            :section-type="activeSectionType"
+          />
+        </section>
+
+        <section v-else-if="activeStepId === 'settings'" class="editor-card">
+          <p class="section-kicker">Pengaturan akhir · Privasi & tampilan</p>
+          <div v-if="!hasSection('music')" class="mb-6 grid gap-5 md:grid-cols-2">
+            <AudioField v-model="draft.musicUrl" />
+            <label class="floating-field"><span class="editor-label">Judul lagu (opsional)</span><input v-model="draft.musicTitle" name="musicTitle" class="editor-input" maxlength="120" placeholder="Lagu yang mengingatkan kalian"></label>
+            <label class="floating-field"><span class="editor-label">Penyanyi (opsional)</span><input v-model="draft.musicArtist" name="musicArtist" class="editor-input" maxlength="120" placeholder="Nama penyanyi"></label>
+            <p v-if="unsupportedMusicProvider" class="text-sm text-amber-800 md:col-span-2" role="alert">Tautan {{ unsupportedMusicProvider }} tidak bisa diputar di cerita. Gunakan URL HTTPS file audio langsung atau unggah file yang hak penggunaannya kamu miliki.</p>
+          </div>
+          <div class="grid gap-5 md:grid-cols-2">
             <label class="floating-field">
               <span class="editor-label">Kursor halaman</span>
               <select v-model="draft.cursorPreset" name="cursorPreset" class="editor-input">
@@ -228,6 +286,18 @@
           <p class="mt-3 text-xs leading-5 text-muted">Spotify, YouTube Music, dan SoundCloud tidak dapat diputar langsung. URL audio langsung harus mendukung pemutaran publik; file yang diunggah ke akun disimpan di Cloudinary. Musik baru mulai setelah cerita dibuka. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>
         </section>
 
+        <section v-if="activeSectionType" class="editor-card">
+          <StorySectionAppearanceEditor
+            :key="activeSectionType"
+            :model-value="sectionDesign(activeSectionType)"
+            :section-type="activeSectionType"
+            :section-label="activeStepInfo?.title ?? 'Section cerita'"
+            :template-id="draft.templateId ?? 'editorial-rose'"
+            :appearance="appearanceModel"
+            @update:model-value="updateSectionDesign(activeSectionType, $event)"
+          />
+        </section>
+
         <div class="flex flex-col gap-4 pb-14 sm:flex-row sm:items-center sm:justify-between">
           <AppButton variant="secondary" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)"><AppIcon name="chevron-left" :size="16" />Sebelumnya</AppButton>
           <div class="flex flex-wrap gap-3">
@@ -242,6 +312,13 @@
           </div>
         </div>
       </div>
+
+      <StorySectionPreviewDialog
+        v-model:open="sectionPreviewOpen"
+        :story="draft"
+        :section="activeSectionConfig"
+        :section-label="activeStepInfo?.title ?? 'Section cerita'"
+      />
 
       <div v-if="previewOpen" class="fixed inset-0 z-40 overflow-y-auto bg-ink/75 p-4 md:p-8">
         <div class="fixed inset-x-4 top-4 z-50 flex items-center justify-between rounded-full bg-paper px-4 py-2 shadow-lg md:inset-x-10">
@@ -331,8 +408,21 @@ import {
   getTemplateDefinition,
   storyTemplateSchema,
   storyTemplates,
+  type StoryTemplateId,
 } from '#shared/story-templates'
-import { createEmptyStorySectionContent } from '#shared/story-sections'
+import {
+  createDefaultStorySectionDesign,
+  createEmptyStorySectionContent,
+  sortStorySections,
+  type StorySectionConfig,
+  type StorySectionDesign,
+  type StorySectionType,
+} from '#shared/story-sections'
+import {
+  createDefaultStoryAppearance,
+  type StoryAppearance,
+} from '#shared/story-appearance'
+import { createStoryEditorSteps } from '#shared/story-editor-steps'
 import { getUnsupportedMusicProvider } from '#shared/music-embed'
 import { isValidStorySlug } from '#shared/story-slug'
 import { getUserFacingError } from '#shared/utils/user-facing-error'
@@ -341,6 +431,11 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import StorySectionContentEditor from '~/components/story-section-editor/StorySectionContentEditor.vue'
 import StorySectionEditor from '~/components/story-section-editor/StorySectionEditor.vue'
+import StoryThemePicker from '~/components/story-editor/StoryThemePicker.vue'
+import StorySectionPreviewDialog from '~/components/story-editor/StorySectionPreviewDialog.vue'
+import EntranceCoverPicker from '~/components/story-editor/EntranceCoverPicker.vue'
+import StoryAppearanceEditor from '~/components/story-editor/StoryAppearanceEditor.vue'
+import StorySectionAppearanceEditor from '~/components/story-editor/StorySectionAppearanceEditor.vue'
 
 const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'))
 definePageMeta({ middleware: 'auth' })
@@ -349,18 +444,11 @@ const studioPage = ref<HTMLElement | null>(null)
 const publishedDialog = ref<HTMLElement | null>(null)
 const publishedDialogClose = ref<HTMLButtonElement | null>(null)
 let studioMotion: gsap.MatchMedia | undefined
-const steps = [
-  { title: 'Sampul' },
-  { title: 'Ucapan' },
-  { title: 'Galeri' },
-  { title: 'Momen' },
-  { title: 'Bab cerita' },
-  { title: 'Penutup' },
-  { title: 'Lagu & privasi' },
-]
 const draft = reactive<StoryContent & { password: string }>({
   templateId: 'editorial-rose',
+  entranceStyle: 'editorial',
   cursorPreset: 'system',
+  appearance: createDefaultStoryAppearance('editorial-rose'),
   templateDetails: createTemplateCustomization('editorial-rose'),
   sectionLayout: createDefaultSectionLayout('editorial-rose'),
   sectionContent: createEmptyStorySectionContent(),
@@ -389,18 +477,79 @@ const sectionLayoutModel = computed({
     draft.sectionLayout = value
   },
 })
+const appearanceModel = computed({
+  get: () => draft.appearance ?? createDefaultStoryAppearance(draft.templateId ?? 'editorial-rose'),
+  set: (value: StoryAppearance) => {
+    draft.appearance = value
+  },
+})
 const sectionContentModel = computed({
   get: () => draft.sectionContent ?? createEmptyStorySectionContent(),
   set: (value: NonNullable<StoryContent['sectionContent']>) => {
     draft.sectionContent = value
   },
 })
+const steps = computed(() => createStoryEditorSteps(draft.sectionLayout ?? []))
 const selectedTemplate = computed(() => getTemplateDefinition(draft.templateId) ?? storyTemplates[0])
+const entranceStyleModel = computed({
+  get: () => draft.entranceStyle ?? selectedTemplate.value.entrance.style,
+  set: (value: NonNullable<StoryContent['entranceStyle']>) => {
+    draft.entranceStyle = value
+  },
+})
+const contentEditorSectionTypes = new Set<StorySectionType>([
+  'love-notes',
+  'distance-map',
+  'future-dreams',
+  'countdown',
+  'memory-capsule',
+])
+function hasSection(type: StorySectionType): boolean {
+  return (draft.sectionLayout ?? []).some(section => section.enabled && section.type === type)
+}
+function sectionDesign(type: StorySectionType): StorySectionDesign {
+  return draft.sectionLayout?.find(section => section.type === type)?.design
+    ?? createDefaultStorySectionDesign(type)
+}
+function updateSectionDesign(type: StorySectionType, design: StorySectionDesign): void {
+  const sections = draft.sectionLayout ?? createDefaultSectionLayout(draft.templateId ?? 'editorial-rose')
+  draft.sectionLayout = sections.map(section =>
+    section.type === type ? { ...section, design } : section,
+  )
+}
+function firstValidationField(caught: unknown): string | undefined {
+  if (typeof caught !== 'object' || caught === null) return undefined
+  const response = 'data' in caught && typeof caught.data === 'object' && caught.data !== null
+    ? caught.data
+    : undefined
+  const payload = response && 'data' in response
+    && typeof response.data === 'object'
+    && response.data !== null
+    ? response.data
+    : response
+  if (!payload || !('fieldErrors' in payload) || typeof payload.fieldErrors !== 'object' || payload.fieldErrors === null) {
+    return undefined
+  }
+  return Object.keys(payload.fieldErrors)[0]
+}
 const unsupportedMusicProvider = computed(() => getUnsupportedMusicProvider(draft.musicUrl))
 const saving = ref(false)
 const savingDraft = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const activeStep = ref(0)
+const activeStepInfo = computed(() => steps.value[activeStep.value])
+const activeStepId = computed(() => activeStepInfo.value?.id ?? '')
+const activeSectionType = computed(() => activeStepInfo.value?.sectionType)
+const activeSectionConfig = computed<StorySectionConfig | null>(() => {
+  const sectionType = activeSectionType.value
+  return sectionType
+    ? draft.sectionLayout?.find(section => section.type === sectionType) ?? null
+    : null
+})
+const sectionPreviewOpen = ref(false)
+watch(() => steps.value.length, (length) => {
+  activeStep.value = Math.min(activeStep.value, Math.max(0, length - 1))
+}, { flush: 'sync' })
 const error = ref('')
 const errorTitle = ref('Ada bagian yang perlu diperiksa')
 const errorLocation = ref('Studio cerita')
@@ -436,6 +585,10 @@ watch(publishedUrl, async (url) => {
 function closePublishedDialog() {
   publishedUrl.value = ''
   void nextTick(() => studioPage.value?.focus())
+}
+
+function openActiveSectionPreview(): void {
+  if (activeSectionConfig.value) sectionPreviewOpen.value = true
 }
 
 function onPublishedDialogKeydown(event: KeyboardEvent) {
@@ -485,34 +638,12 @@ const previewLinkWarning = computed(() => invalidOptionalPreviewLinks.value.leng
   ? `Pratinjau mengabaikan ${invalidOptionalPreviewLinks.value.map(link => link.label).join(' dan ')} yang tidak valid. Perbaiki atau kosongkan tautan sebelum menerbitkan.`
   : '')
 const shareOrigin = useState('studio-share-origin', () => useRequestURL().origin)
-const previewStepByField: Record<string, number> = {
-  title: 0,
-  coupleNames: 0,
-  date: 0,
-  heroImage: 0,
-  templateDetails: 0,
-  sectionLayout: 6,
-  sectionContent: 6,
-  greetingImage: 1,
-  greetingVideoUrl: 1,
-  greetingText: 1,
-  gallery: 2,
-  secondImage: 3,
-  detailTitle: 3,
-  detailText: 3,
-  storyPages: 4,
-  finalImage: 5,
-  finalMessage: 5,
-  musicUrl: 6,
-  musicTitle: 6,
-  musicArtist: 6,
-  cursorPreset: 6,
-}
 const previewFieldLabels: Record<string, string> = {
   title: 'Judul cerita',
   coupleNames: 'Nama kalian',
   date: 'Tanggal spesial',
   heroImage: 'Foto sampul',
+  entranceStyle: 'Gaya layar pembuka',
   templateDetails: 'Detail template',
   sectionLayout: 'Susunan section cerita',
   sectionContent: 'Konten tambahan',
@@ -530,6 +661,72 @@ const previewFieldLabels: Record<string, string> = {
   musicTitle: 'Judul lagu',
   musicArtist: 'Penyanyi',
   cursorPreset: 'Kursor halaman',
+}
+
+function stepIndexForField(field: string, nestedField?: string): number {
+  const sectionContentTypes: Record<string, StorySectionType> = {
+    loveNotes: 'love-notes',
+    'love-notes': 'love-notes',
+    distanceMap: 'distance-map',
+    'distance-map': 'distance-map',
+    futureDreams: 'future-dreams',
+    'future-dreams': 'future-dreams',
+    countdown: 'countdown',
+    memoryCapsule: 'memory-capsule',
+    'memory-capsule': 'memory-capsule',
+  }
+  let stepId = 'settings'
+
+  if (field === 'templateId') {
+    stepId = 'theme'
+  } else if (['title', 'coupleNames', 'date', 'heroImage', 'entranceStyle', 'templateDetails'].includes(field)) {
+    stepId = 'cover'
+  } else if (field === 'sectionLayout') {
+    stepId = 'sections'
+  } else if (field === 'sectionContent') {
+    const sectionType = nestedField ? sectionContentTypes[nestedField] : undefined
+    stepId = sectionType ? `section:${sectionType}` : 'sections'
+  } else if (field === 'greetingImage' || field === 'greetingText') {
+    stepId = 'section:greeting'
+  } else if (field === 'gallery') {
+    stepId = 'section:gallery'
+  } else if (field === 'secondImage') {
+    stepId = 'section:first-encounter'
+  } else if (field === 'detailTitle' || field === 'detailText') {
+    stepId = hasSection('first-encounter')
+      ? 'section:first-encounter'
+      : hasSection('moments-in-motion')
+        ? 'section:moments-in-motion'
+        : 'section:timeline'
+  } else if (field === 'greetingVideoUrl') {
+    stepId = hasSection('moments-in-motion') ? 'section:moments-in-motion' : 'section:greeting'
+  } else if (field === 'storyPages') {
+    const sharedPageSection = sortStorySections(draft.sectionLayout ?? [])
+      .find(section => ['timeline', 'book', 'constellation'].includes(section.type))
+    stepId = sharedPageSection ? `section:${sharedPageSection.type}` : 'sections'
+  } else if (field === 'finalImage' || field === 'finalMessage') {
+    stepId = 'section:finale'
+  } else if (['musicUrl', 'musicTitle', 'musicArtist'].includes(field) && hasSection('music')) {
+    stepId = 'section:music'
+  }
+
+  const index = steps.value.findIndex(step => step.id === stepId)
+  return index >= 0 ? index : steps.value.length - 1
+}
+
+function stepIndexForIssue(issue: ZodIssue | undefined): number {
+  const field = typeof issue?.path[0] === 'string' ? issue.path[0] : ''
+  const nestedField = typeof issue?.path[1] === 'string' ? issue.path[1] : undefined
+  return stepIndexForField(field, nestedField)
+}
+
+function focusValidationField(caught: unknown, details: ReturnType<typeof getUserFacingError>): void {
+  const field = firstValidationField(caught)
+  if (!field) return
+  const [fieldName, nestedField] = field.split('.')
+  const step = stepIndexForField(fieldName ?? field, nestedField)
+  activeStep.value = step
+  details.location = `Studio · Langkah ${step + 1} · ${steps.value[step]?.title ?? 'Konten cerita'}`
 }
 let localDraftRefKey = ''
 let localDraftContentKey = ''
@@ -554,6 +751,8 @@ function applyStoryContent(content: Partial<StoryContent>) {
   Object.assign(draft, content)
   const templateId = content.templateId ?? 'editorial-rose'
   draft.templateId = templateId
+  draft.appearance = content.appearance ?? createDefaultStoryAppearance(templateId)
+  draft.entranceStyle = content.entranceStyle ?? getTemplateDefinition(templateId)?.entrance.style ?? 'editorial'
   draft.cursorPreset = content.cursorPreset ?? 'system'
   draft.sectionLayout = content.sectionLayout ?? createDefaultSectionLayout(templateId)
   draft.sectionContent = {
@@ -564,6 +763,19 @@ function applyStoryContent(content: Partial<StoryContent>) {
     ...createTemplateCustomization(templateId),
     ...content.templateDetails,
   }
+}
+
+function changeTemplate(templateId: StoryTemplateId): void {
+  if (draft.templateId === templateId) return
+  draft.templateId = templateId
+  draft.appearance = createDefaultStoryAppearance(templateId)
+  draft.entranceStyle = getTemplateDefinition(templateId)?.entrance.style ?? 'editorial'
+  draft.templateDetails = {
+    ...draft.templateDetails,
+    ...createTemplateCustomization(templateId),
+  }
+  draft.sectionLayout = createDefaultSectionLayout(templateId)
+  activeStep.value = 0
 }
 
 function persistLocalSnapshot() {
@@ -619,7 +831,7 @@ async function saveDraftWork() {
     error.value = details.message
     errorTitle.value = details.title
     errorLocation.value = details.location ?? 'Studio cerita · Draft otomatis'
-    if (details.location?.includes('Langkah 7')) activeStep.value = 6
+    focusValidationField(caught, details)
     persistLocalSnapshot()
   } finally {
     savingDraft.value = false
@@ -644,6 +856,8 @@ async function restoreDraft() {
       return
     }
     draft.templateId = templateId.data
+    draft.appearance = createDefaultStoryAppearance(templateId.data)
+    draft.entranceStyle = getTemplateDefinition(templateId.data)?.entrance.style ?? 'editorial'
     draft.templateDetails = {
       ...draft.templateDetails,
       ...createTemplateCustomization(templateId.data),
@@ -672,7 +886,7 @@ async function restoreDraft() {
       applyStoryContent(savedDraft)
       editingStorySlug.value = savedEditingSlug ?? ''
       customSlug.value = savedCustomSlug ?? savedEditingSlug ?? ''
-      activeStep.value = Math.max(0, Math.min(steps.length - 1, Number(content.activeStep) || 0))
+      activeStep.value = Math.max(0, Math.min(steps.value.length - 1, Number(content.activeStep) || 0))
       await saveDraft()
       if (saveStatus.value === 'error') throw new Error('Draft belum berhasil diimpor dan disimpan.')
       localStorage.removeItem('selamanya:draft-content')
@@ -724,7 +938,7 @@ async function restoreDraft() {
       draftId.value = result.id
       lastSavedAt.value = result.updatedAt
       saveStatus.value = 'saved'
-      activeStep.value = Math.max(0, Math.min(steps.length - 1, savedStep ?? 0))
+      activeStep.value = Math.max(0, Math.min(steps.value.length - 1, savedStep ?? 0))
       return
     } catch {
       if (requestedDraftId) {
@@ -744,7 +958,7 @@ async function restoreDraft() {
         editingStorySlug.value = savedEditingSlug ?? ''
         customSlug.value = savedCustomSlug ?? savedEditingSlug ?? ''
       }
-      activeStep.value = Math.max(0, Math.min(steps.length - 1, Number(content.activeStep) || 0))
+      activeStep.value = Math.max(0, Math.min(steps.value.length - 1, Number(content.activeStep) || 0))
     } catch {
       localStorage.removeItem(localDraftContentKey)
     }
@@ -753,7 +967,7 @@ async function restoreDraft() {
 }
 
 async function goToStep(index: number) {
-  if (index < 0 || index >= steps.length) return
+  if (index < 0 || index >= steps.value.length) return
   activeStep.value = index
   if (saveTimer) clearTimeout(saveTimer)
   persistLocalSnapshot()
@@ -818,14 +1032,16 @@ onMounted(() => {
 function showStoryValidationIssue(issue: ZodIssue | undefined) {
   const field = issue?.path[0]
   const fieldName = typeof field === 'string' ? field : ''
-  const label = previewFieldLabels[fieldName] ?? 'Konten cerita'
-  const step = previewStepByField[fieldName]
-  if (step !== undefined) {
-    activeStep.value = step
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  const contentType = typeof issue?.path[1] === 'string' ? issue.path[1] : ''
+  const label = previewFieldLabels[fieldName]
+    ?? (fieldName === 'sectionContent' ? `${contentType || 'Section'} · konten` : 'Konten cerita')
+  const step = stepIndexForIssue(issue)
+  activeStep.value = step
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 
-  if (issue?.code === 'invalid_format' && issue.format === 'url') {
+  if (issue?.code === 'custom' && issue.message) {
+    error.value = issue.message
+  } else if (issue?.code === 'invalid_format' && issue.format === 'url') {
     let value: unknown = draft
     for (const key of issue.path) {
       if (typeof value !== 'object' || value === null) {
@@ -843,7 +1059,7 @@ function showStoryValidationIssue(issue: ZodIssue | undefined) {
     error.value = `${label} belum lengkap atau tidak valid.`
   }
   errorTitle.value = 'Pratinjau belum siap'
-  errorLocation.value = `Studio · Langkah ${(step ?? activeStep.value) + 1} · ${steps[step ?? activeStep.value]?.title ?? 'Konten cerita'}`
+  errorLocation.value = `Studio · Langkah ${step + 1} · ${steps.value[step]?.title ?? 'Konten cerita'}`
 }
 
 function openPreview() {
@@ -905,8 +1121,8 @@ async function publish() {
     error.value = details.message
     errorTitle.value = details.title
     errorLocation.value = details.location ?? 'Studio cerita · Publikasi'
-    if (details.location?.includes('Langkah 7')) {
-      activeStep.value = 6
+    focusValidationField(caught, details)
+    if (firstValidationField(caught)) {
       previewOpen.value = false
     }
     notifyError(details)

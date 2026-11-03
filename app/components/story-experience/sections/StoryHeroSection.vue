@@ -5,7 +5,6 @@
     :data-section-variant="config.variant"
     :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="hero" />
     <div class="story-hero-copy">
       <p class="story-date">{{ story.date }}</p>
       <h1>{{ story.coupleNames }}</h1>
@@ -41,7 +40,6 @@
 import { computed } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StorySectionConfig } from '#shared/story-sections'
-import DecorativeLayer from '../DecorativeLayer.vue'
 
 const props = defineProps<{
   story: StoryContent
