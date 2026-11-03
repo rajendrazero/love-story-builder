@@ -28,7 +28,12 @@
       <AppErrorAlert v-if="error" class="mt-4 text-left" :title="error.title" :message="error.message" :location="error.location" />
     </form>
   </main>
-  <StoryExperience v-else-if="story" :story="story" />
+  <StoryExperience
+    v-else-if="story"
+    :story="story"
+    :story-slug="slug"
+    :story-password="unlockedPassword"
+  />
 </template>
 
 <script setup lang="ts">
@@ -46,6 +51,7 @@ const title = computed(() => data.value?.title ?? 'Cerita kita')
 const locked = ref(data.value?.locked ?? true)
 const story = ref<StoryContent | null>(data.value?.story ?? null)
 const password = ref('')
+const unlockedPassword = ref('')
 const passwordVisible = ref(false)
 const error = ref<UserFacingError | null>(null)
 const metadataTitle = computed(() => story.value
@@ -72,6 +78,7 @@ async function unlock() {
       body: { password: password.value },
     })
     story.value = result.story
+    unlockedPassword.value = password.value
     locked.value = false
   } catch (caught) {
     error.value = getUserFacingError(caught, {

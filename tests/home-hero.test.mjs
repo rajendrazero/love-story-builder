@@ -28,13 +28,14 @@ test('home parallax uses direct scrub triggers and refreshes after the page moun
 
 test('story decorations vary by template and story section without entering layout flow', () => {
   const decorations = readFileSync(new URL('../app/components/story-experience/DecorativeLayer.vue', import.meta.url), 'utf8')
-  const experience = readFileSync(new URL('../app/components/StoryExperience.vue', import.meta.url), 'utf8')
+  const heroSection = readFileSync(new URL('../app/components/story-experience/sections/StoryHeroSection.vue', import.meta.url), 'utf8')
 
   for (const templateId of ['editorial-rose', 'midnight-cinema', 'botanical-journal', 'love-letter', 'memory-atlas']) {
     assert.ok(decorations.includes(`templateId === '${templateId}'`) || (templateId === 'memory-atlas' && decorations.includes('v-else>')))
   }
   assert.match(decorations, /decorative-scene-\$\{scene\}/)
-  assert.match(experience, /:template-id="story\.templateId \?\? 'editorial-rose'"/)
+  assert.match(heroSection, /:template-id="templateId"/)
+  assert.match(heroSection, /data-story-section="hero"/)
   assert.match(decorations, /\.decorative-layer\s*\{[^}]*position: absolute;[^}]*inset: 0;/s)
 })
 

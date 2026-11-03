@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { storySlugPattern } from '../story-slug.ts'
 import { getTemplateDefinition, storyTemplateSchema, templateDetailsSchema } from '../story-templates.ts'
+import {
+  storySectionContentSchema,
+  storySectionLayoutSchema,
+  validateStorySectionContent,
+} from '../story-sections.ts'
 
 export { storyTemplateSchema }
 
@@ -20,6 +25,8 @@ export const storyContentSchema = z.object({
   templateId: storyTemplateSchema.optional(),
   cursorPreset: storyCursorSchema.optional(),
   templateDetails: templateDetailsSchema.optional(),
+  sectionLayout: storySectionLayoutSchema.optional(),
+  sectionContent: storySectionContentSchema.optional(),
   title: z.string().trim().min(1).max(100),
   coupleNames: z.string().trim().min(1).max(100),
   date: z.string().trim().min(1).max(80),
@@ -46,19 +53,35 @@ export const storyContentSchema = z.object({
   musicArtist: z.string().trim().max(120).optional(),
 }).superRefine((story, context) => {
   const template = getTemplateDefinition(story.templateId ?? 'editorial-rose')
-  if (!template || !template.customizationKey || !story.templateDetails) return
-
-  const value = story.templateDetails[template.customizationKey]
-  if (value === undefined) return
-
-  const parsed = template.schema.safeParse(value)
-  if (!parsed.success) {
-    for (const issue of parsed.error.issues) {
-      context.addIssue({
-        ...issue,
-        path: ['templateDetails', template.customizationKey, ...issue.path],
-      })
+  if (template?.customizationKey && story.templateDetails) {
+    const value = story.templateDetails[template.customizationKey]
+    if (value !== undefined) {
+      const parsed = template.schema.safeParse(value)
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          context.addIssue({
+            ...issue,
+            path: ['templateDetails', template.customizationKey, ...issue.path],
+          })
+        }
+      }
     }
+  }
+
+  const sectionIssues = validateStorySectionContent(
+    story.sectionLayout ?? template?.sections ?? [],
+    story.sectionContent,
+    {
+      greetingVideoUrl: story.greetingVideoUrl,
+      musicUrl: story.musicUrl,
+    },
+  )
+  for (const issue of sectionIssues) {
+    context.addIssue({
+      code: 'custom',
+      path: ['sectionContent', issue.type],
+      message: issue.message,
+    })
   }
 })
 

@@ -3,6 +3,8 @@ import {
   storyTemplateSchema,
   type StoryContent,
 } from '#shared/schema/story'
+import { createDefaultSectionLayout } from '#shared/story-templates'
+import { storySectionContentSchema, storySectionLayoutSchema } from '#shared/story-sections'
 import type { D1Database, D1Statement } from './cloudflare'
 
 interface StoryContentRow {
@@ -21,6 +23,8 @@ interface StoryContentRow {
   final_image: string
   final_message: string
   music_url: string
+  section_layout_json: string | null
+  section_content_json: string | null
 }
 
 interface GalleryRow {
@@ -70,6 +74,8 @@ const contentColumns = [
   'final_image',
   'final_message',
   'music_url',
+  'section_layout_json',
+  'section_content_json',
 ] as const
 
 export function storyContentStatements(
@@ -94,6 +100,8 @@ export function storyContentStatements(
     content.finalImage ?? '',
     content.finalMessage ?? '',
     content.musicUrl ?? '',
+    JSON.stringify(content.sectionLayout ?? createDefaultSectionLayout(content.templateId ?? 'editorial-rose')),
+    JSON.stringify(content.sectionContent ?? {}),
   ]
   const columns = ['id', ...contentColumns]
   const placeholders = columns.map(() => '?').join(', ')
@@ -166,6 +174,20 @@ export async function getStoryContent(
   if (!template.success || !cursor.success) {
     throw new Error(`Story content ${id} has invalid template or cursor data.`)
   }
+  const parsedLayout = row.section_layout_json === null
+    ? undefined
+    : storySectionLayoutSchema.safeParse(parseStoredJson(row.section_layout_json, 'section layout', id))
+  const parsedSectionContent = storySectionContentSchema.safeParse(
+    row.section_content_json === null
+      ? {}
+      : parseStoredJson(row.section_content_json, 'section content', id),
+  )
+  if (parsedLayout && !parsedLayout.success) {
+    throw new Error(`Story content ${id} has invalid section layout data.`)
+  }
+  if (!parsedSectionContent.success) {
+    throw new Error(`Story content ${id} has invalid section content data.`)
+  }
 
   const [
     galleryResult,
@@ -234,5 +256,46 @@ export async function getStoryContent(
     finalImage: row.final_image,
     finalMessage: row.final_message,
     musicUrl: row.music_url,
+    sectionLayout: parsedLayout?.data ?? createDefaultSectionLayout(template.data),
+    sectionContent: parsedSectionContent.data,
+  }
+}
+
+export async function getPublicStoryContent(
+  database: D1Database,
+  id: string,
+  now: Date = new Date(),
+): Promise<StoryContent | null> {
+  const story = await getStoryContent(database, id)
+  const capsule = story?.sectionContent?.memoryCapsule
+  if (!story || !capsule?.message) return story
+  if (!capsule.unlockDate) return withoutCapsuleMessage(story, capsule)
+
+  const unlockAt = Date.parse(`${capsule.unlockDate}T00:00:00.000Z`)
+  if (!Number.isFinite(unlockAt)) {
+    throw new Error(`Story content ${id} has an invalid memory capsule unlock date.`)
+  }
+  if (unlockAt <= now.getTime()) return story
+
+  return unlockAt <= now.getTime() ? story : withoutCapsuleMessage(story, capsule)
+}
+
+function withoutCapsuleMessage(story: StoryContent, capsule: NonNullable<StoryContent['sectionContent']>['memoryCapsule']): StoryContent {
+  if (!capsule) return story
+  const { message: _lockedMessage, ...safeCapsule } = capsule
+  return {
+    ...story,
+    sectionContent: {
+      ...story.sectionContent,
+      memoryCapsule: safeCapsule,
+    },
+  }
+}
+
+function parseStoredJson(value: string, field: string, id: string): unknown {
+  try {
+    return JSON.parse(value)
+  } catch {
+    throw new Error(`Story content ${id} has malformed ${field} JSON.`)
   }
 }

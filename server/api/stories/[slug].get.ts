@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getRouterParam, setResponseHeader } from 'h3'
 import { requireDatabase } from '../../utils/cloudflare'
-import { getStoryContent } from '../../utils/story-content'
+import { getPublicStoryContent } from '../../utils/story-content'
 import { isValidStorySlug } from '#shared/story-slug'
 
 interface StoryRow {
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   if (row.password_hash) {
     return { title: row.title, locked: true }
   }
-  const story = await getStoryContent(database, row.content_id)
+  const story = await getPublicStoryContent(database, row.content_id)
   if (!story) {
     throw createError({ statusCode: 500, statusMessage: 'Konten cerita tidak ditemukan.' })
   }

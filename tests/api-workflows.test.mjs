@@ -18,6 +18,7 @@ const [{ default: publishStory }, { default: getPublicStory }, { default: unlock
   import('../server/api/stories/[slug].get.ts'),
   import('../server/api/stories/[slug]/unlock.post.ts'),
 ])
+const { default: getStoryCapsule } = await import('../server/api/stories/[slug]/capsules/[capsuleId].post.ts')
 const [{ default: getAccountStories }, { default: getOwnedStory }, { default: updateStory }, { default: updateStoryVisibility }, { default: deleteStory }] = await Promise.all([
   import('../server/api/account/stories/index.get.ts'),
   import('../server/api/account/stories/[slug].get.ts'),
@@ -54,6 +55,7 @@ const migrations = [
   '0009_seed_existing_user_roles.sql',
   '0010_add_draft_custom_slug.sql',
   '0011_create_uploaded_images.sql',
+  '0012_add_composable_story_sections.sql',
 ]
 
 const users = {
@@ -413,6 +415,79 @@ test('public story reads hide password-protected content and omit password hashe
       })),
       assertHttpError(404),
     )
+  } finally {
+    database.close()
+  }
+})
+
+test('memory capsule messages stay private until the configured date and password checks pass', async () => {
+  const database = createDatabase()
+  try {
+    const capsule = {
+      id: 'memory-capsule',
+      type: 'memory-capsule',
+      variant: 'sealed-letter',
+      enabled: true,
+      order: 0,
+      animation: { entrance: 'fade-up', scroll: 'none' },
+    }
+    await publishStory(createEvent(database, {
+      method: 'POST',
+      path: '/api/stories',
+      body: {
+        ...storyPayload,
+        sectionLayout: [capsule],
+        sectionContent: {
+          memoryCapsule: {
+            title: 'Untuk masa depan',
+            unlockDate: '2999-01-01',
+            message: 'A private note from the past.',
+          },
+        },
+        customSlug: 'future-capsule',
+        password: 'a secure story password',
+      },
+    }))
+
+    const lockedResponse = await getPublicStory(createEvent(database, {
+      path: '/api/stories/future-capsule',
+      params: { slug: 'future-capsule' },
+    }))
+    assert.deepEqual(lockedResponse, { title: storyPayload.title, locked: true })
+    const unlockedResponse = await unlockStory(createEvent(database, {
+      method: 'POST',
+      path: '/api/stories/future-capsule/unlock',
+      params: { slug: 'future-capsule' },
+      body: { password: 'a secure story password' },
+    }))
+    assert.equal(unlockedResponse.story.sectionContent.memoryCapsule.message, undefined)
+
+    const capsuleEvent = (password) => createEvent(database, {
+      method: 'POST',
+      path: '/api/stories/future-capsule/capsules/memory-capsule',
+      params: { slug: 'future-capsule', capsuleId: 'memory-capsule' },
+      ...(password === undefined ? {} : { body: { password } }),
+    })
+    await assert.rejects(getStoryCapsule(capsuleEvent(undefined)), assertHttpError(401))
+    await assert.rejects(getStoryCapsule(capsuleEvent('incorrect password')), assertHttpError(401))
+    await assert.rejects(getStoryCapsule(capsuleEvent('a secure story password')), assertHttpError(403))
+
+    const contentId = database.prepare('SELECT content_id FROM stories WHERE slug = ?')
+      .bind('future-capsule').first().content_id
+    database.prepare('UPDATE story_content SET section_content_json = ? WHERE id = ?')
+      .bind(JSON.stringify({
+        memoryCapsule: {
+          title: 'Untuk masa depan',
+          unlockDate: '2000-01-01',
+          message: 'A private note from the past.',
+        },
+      }), contentId).run()
+
+    assert.deepEqual(await getStoryCapsule(capsuleEvent('a secure story password')), {
+      title: 'Untuk masa depan',
+      message: 'A private note from the past.',
+      unlockDate: '2000-01-01',
+    })
   } finally {
     database.close()
   }

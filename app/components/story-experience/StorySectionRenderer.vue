@@ -2,9 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
+import type { StorySectionConfig } from '#shared/story-sections'
 import DecorativeLayer from './DecorativeLayer.vue'
-
-type StorySection = 'greeting' | 'detail' | 'finale'
 
 interface SectionCopy {
   greetingEyebrow: string
@@ -16,7 +15,7 @@ interface SectionCopy {
 
 const props = defineProps<{
   story: StoryContent
-  section: StorySection
+  config: StorySectionConfig
 }>()
 
 const greetingVideo = ref<HTMLVideoElement | null>(null)
@@ -42,6 +41,12 @@ onBeforeUnmount(() => {
 })
 
 const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
+const sectionType = computed(() => props.config.type)
+const decorativeScene = computed<'greeting' | 'detail' | 'finale'>(() =>
+  sectionType.value === 'greeting'
+    ? 'greeting'
+    : sectionType.value === 'first-encounter' ? 'detail' : 'finale',
+)
 const sectionCopyByTemplate: Record<StoryTemplateId, SectionCopy> = {
   'editorial-rose': {
     greetingEyebrow: 'Untukmu, selalu ♡',
@@ -85,11 +90,14 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
 
 <template>
   <section
-    v-if="section === 'greeting'"
+    v-if="sectionType === 'greeting'"
     class="story-screen story-greeting"
     :class="`template-${templateId}`"
+    data-story-section="greeting"
+    :data-section-variant="config.variant"
+    :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <div class="greeting-copy">
       <p class="eyebrow">{{ sectionCopy.greetingEyebrow }}</p>
       <p class="greeting-text">{{ story.greetingText }}</p>
@@ -118,11 +126,14 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
   </section>
 
   <section
-    v-else-if="section === 'detail'"
+    v-else-if="sectionType === 'first-encounter'"
     class="story-screen story-detail"
     :class="`template-${templateId}`"
+    data-story-section="first-encounter"
+    :data-section-variant="config.variant"
+    :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <div class="detail-photo">
       <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
       <span class="photo-sticker">{{ sectionCopy.detailSticker }}</span>
@@ -138,8 +149,11 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     v-else
     class="story-screen story-finale"
     :class="`template-${templateId}`"
+    data-story-section="finale"
+    :data-section-variant="config.variant"
+    :data-scroll-effect="config.animation.scroll"
   >
-    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="decorativeScene" />
     <figure class="final-photo">
       <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
       <figcaption>{{ sectionCopy.finaleCaption }}</figcaption>
@@ -634,5 +648,33 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
   .final-photo {
     height: min(58svh, 36rem);
   }
+}
+
+.story-greeting[data-section-variant='film-scene'] .greeting-photo {
+  border-radius: 0.2rem;
+  transform: rotate(0);
+}
+
+.story-greeting[data-section-variant='journal-entry'] .greeting-photo {
+  border-radius: 0.25rem;
+  transform: rotate(-1deg);
+}
+
+.story-detail[data-section-variant='map-pin'] .detail-photo {
+  border-radius: 50% 50% 0.35rem 0.35rem;
+}
+
+.story-detail[data-section-variant='cinematic'] .detail-photo {
+  border-radius: 0.2rem;
+  transform: rotate(0);
+}
+
+.story-finale[data-section-variant='credits'] .final-copy {
+  text-align: center;
+}
+
+.story-finale[data-section-variant='sealed-note'] .final-message {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
 }
 </style>

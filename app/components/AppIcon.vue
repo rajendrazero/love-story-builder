@@ -4,6 +4,8 @@ export type AppIconName =
   | 'arrow-up-right'
   | 'check'
   | 'chevron-left'
+  | 'chevron-down'
+  | 'chevron-up'
   | 'close'
   | 'copy'
   | 'eye'
@@ -28,6 +30,8 @@ const iconNames: Record<AppIconName, string> = {
   'arrow-up-right': 'lucide:arrow-up-right',
   check: 'lucide:check',
   'chevron-left': 'lucide:chevron-left',
+  'chevron-down': 'lucide:chevron-down',
+  'chevron-up': 'lucide:chevron-up',
   close: 'lucide:x',
   copy: 'lucide:copy',
   eye: 'lucide:eye',

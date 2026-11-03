@@ -37,63 +37,14 @@
 
       <div class="story-content" :inert="!experienceReady" :aria-hidden="!experienceReady">
         <component :is="storyLayout">
-          <template #hero>
-            <section class="story-screen story-hero">
-              <DecorativeLayer
-                class="story-section-decorations"
-                :template-id="story.templateId ?? 'editorial-rose'"
-                scene="hero"
-              />
-              <div class="story-hero-copy">
-                <p class="story-date">{{ story.date }}</p>
-                <h1>{{ story.coupleNames }}</h1>
-                <p class="story-title">{{ story.title }}</p>
-                <p
-                  v-if="['editorial-rose', 'love-letter'].includes(story.templateId ?? '') && story.templateDetails?.editorialRose?.dedication"
-                  class="template-detail template-editorial-detail"
-                >
-                  {{ story.templateDetails.editorialRose.dedication }}
-                </p>
-                <p
-                  v-else-if="story.templateId === 'midnight-cinema' && story.templateDetails?.midnightCinema?.openingQuote"
-                  class="template-detail template-cinema-detail"
-                >
-                  “{{ story.templateDetails.midnightCinema.openingQuote }}”
-                </p>
-                <p
-                  v-else-if="story.templateId === 'botanical-journal' && story.templateDetails?.botanicalJournal?.journalLabel"
-                  class="template-detail template-botanical-detail"
-                >
-                  {{ story.templateDetails.botanicalJournal.journalLabel }}
-                </p>
-              </div>
-              <figure class="story-hero-photo">
-                <img :src="story.heroImage" :alt="story.coupleNames">
-                <figcaption>this is so us ♡</figcaption>
-              </figure>
-              <span class="hero-sparkle" aria-hidden="true">✳</span>
-            </section>
-          </template>
-
-          <template #greeting>
-            <StorySectionRenderer :story="story" section="greeting" />
-          </template>
-
-          <template #gallery>
-            <StoryGallery :photos="story.gallery" :template-id="story.templateId" />
-          </template>
-
-          <template #detail>
-            <StorySectionRenderer :story="story" section="detail" />
-          </template>
-
-          <template #book>
-            <StoryBookInteraction :story="story" />
-          </template>
-
-          <template #finale>
-            <StorySectionRenderer :story="story" section="finale" />
-          </template>
+          <StorySectionHost
+            v-for="section in orderedSections"
+            :key="section.id"
+            :story="story"
+            :section="section"
+            :story-slug="storySlug"
+            :story-password="storyPassword"
+          />
         </component>
         <footer class="story-footer">Disimpan di sini, <span>selamanya.</span></footer>
       </div>
@@ -120,14 +71,12 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { StoryContent } from '#shared/schema/story'
 import { availableStoryTemplates, getTemplateDefinition, storyTemplateSchema, type StoryTemplateId } from '#shared/story-templates'
+import { sortStorySections, type StorySectionEntrance } from '#shared/story-sections'
 import { templateRenderers } from '~/components/story-templates/registry'
-import StoryGallery from '~/components/story-experience/StoryGallery.vue'
 import MusicEngine from '~/components/story-experience/MusicEngine.vue'
 import EntranceCover from '~/components/story-experience/EntranceCover.vue'
 import FloatingMusicPlayer from '~/components/story-experience/FloatingMusicPlayer.vue'
-import DecorativeLayer from '~/components/story-experience/DecorativeLayer.vue'
-import StoryBookInteraction from '~/components/story-experience/StoryBookInteraction.vue'
-import StorySectionRenderer from '~/components/story-experience/StorySectionRenderer.vue'
+import StorySectionHost from '~/components/story-experience/StorySectionHost.vue'
 
 const props = withDefaults(defineProps<{
   story: StoryContent
@@ -135,6 +84,8 @@ const props = withDefaults(defineProps<{
   createTo?: string
   templatePicker?: boolean
   closable?: boolean
+  storySlug?: string
+  storyPassword?: string
 }>(), {
   demo: false,
   createTo: '/templates',
@@ -153,6 +104,10 @@ const experienceReady = ref(!needsEntrance.value)
 const storyLayout = computed(() => {
   const template = getTemplateDefinition(props.story.templateId ?? 'editorial-rose')
   return templateRenderers[template?.renderer ?? 'EditorialRoseLayout']
+})
+const orderedSections = computed(() => {
+  const template = getTemplateDefinition(props.story.templateId ?? 'editorial-rose')
+  return sortStorySections(props.story.sectionLayout ?? template?.sections ?? [])
 })
 const previewMusicUrl = ref(props.story.musicUrl)
 const activeMusicUrl = computed(() => props.demo ? previewMusicUrl.value.trim() : props.story.musicUrl)
@@ -186,69 +141,90 @@ function selectTemplate(event: Event) {
 onMounted(() => {
   appCursorPreset.value = props.story.cursorPreset ?? 'system'
   const root = experience.value
-  if (!root) return
+  if (root) setupSectionMotion(root)
+})
 
+watch(orderedSections, async () => {
+  await nextTick()
+  const root = experience.value
+  if (root) setupSectionMotion(root)
+}, { flush: 'post' })
+
+function setupSectionMotion(root: HTMLElement): void {
+  motionMedia?.revert()
   gsap.registerPlugin(ScrollTrigger)
   motionMedia = gsap.matchMedia(root)
   const scroller = getScrollContainer(root)
   motionMedia.add('(prefers-reduced-motion: no-preference)', () => {
-    const revealGroups: Record<string, string> = {
-      'story-hero': '.story-hero-copy, .story-hero-photo',
-      'story-greeting': '.greeting-copy, .greeting-photo',
-      'story-gallery': '.section-heading, .gallery-card',
-      'story-detail': '.detail-photo, .detail-copy',
-      'story-book': '.book-heading, .book-stage, .book-controls',
-      'story-finale': '.final-photo, .final-copy',
+    const entranceMotion: Record<StorySectionEntrance, { x: number, y: number, scale: number }> = {
+      'fade-up': { x: 0, y: 22, scale: 1 },
+      'slide-left': { x: -28, y: 0, scale: 1 },
+      'slide-right': { x: 28, y: 0, scale: 1 },
+      zoom: { x: 0, y: 0, scale: 0.96 },
     }
 
-    root.querySelectorAll<HTMLElement>('.story-screen').forEach((section) => {
-      const sectionName = [...section.classList].find(name => name in revealGroups)
-      const revealGroup = sectionName ? revealGroups[sectionName] : undefined
-      if (!revealGroup) return
-
-      const targets = section.querySelectorAll<HTMLElement>(revealGroup)
-      if (!targets.length) return
-
-      gsap.from(targets, {
-        y: 18,
-        autoAlpha: 0,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: section,
-          ...(scroller ? { scroller } : {}),
-          start: 'top 72%',
-          once: true,
-        },
-      })
-    })
-
-    root.querySelectorAll<HTMLElement>(
-      '.story-hero-photo img, .greeting-photo img, .greeting-photo video, .detail-photo img, .final-photo img',
-    ).forEach((image) => {
-      const section = image.closest<HTMLElement>('.story-screen')
+    orderedSections.value.forEach((config) => {
+      const section = [...root.querySelectorAll<HTMLElement>('[data-story-section]')]
+        .find(element => element.dataset.storySection === config.type)
       if (!section) return
 
-      gsap.fromTo(image, {
-        yPercent: 7,
-        scale: 1.08,
-      }, {
-        yPercent: -7,
-        scale: 1.02,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          ...(scroller ? { scroller } : {}),
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 0.7,
-        },
-      })
+      const targets = [...section.children]
+        .filter((element): element is HTMLElement => element instanceof HTMLElement)
+        .filter(element => !element.classList.contains('story-section-decorations'))
+      if (targets.length) {
+        gsap.from(targets, {
+          ...entranceMotion[config.animation.entrance],
+          autoAlpha: 0,
+          duration: 0.78,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: section,
+            ...(scroller ? { scroller } : {}),
+            start: 'top 74%',
+            once: true,
+          },
+        })
+      }
+
+      if (config.animation.scroll === 'parallax') {
+        const image = section.querySelector<HTMLElement>('img')
+        if (image) {
+          gsap.fromTo(image, {
+            yPercent: 6,
+            scale: 1.06,
+          }, {
+            yPercent: -6,
+            scale: 1.02,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              ...(scroller ? { scroller } : {}),
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.7,
+            },
+          })
+        }
+      } else if (config.animation.scroll === 'fade') {
+        gsap.fromTo(section, {
+          autoAlpha: 0.72,
+        }, {
+          autoAlpha: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            ...(scroller ? { scroller } : {}),
+            start: 'top 85%',
+            end: 'top 35%',
+            scrub: 0.5,
+          },
+        })
+      }
     })
     ScrollTrigger.refresh()
   })
-})
+}
 
 function getScrollContainer(element: HTMLElement): HTMLElement | undefined {
   let ancestor = element.parentElement

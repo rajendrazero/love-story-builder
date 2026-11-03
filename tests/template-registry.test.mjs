@@ -5,6 +5,7 @@ import { storyContentSchema } from '../shared/schema/story.ts'
 import {
   availableStoryTemplates,
   createTemplateCustomization,
+  createDefaultSectionLayout,
   getTemplateDefinition,
   parseTemplateCustomization,
   storyTemplateSchema,
@@ -44,6 +45,11 @@ test('registry includes each existing public template ID exactly once', () => {
   assert.ok(storyTemplates.every(template => template.status === 'available'))
   assert.ok(storyTemplates.every(template => template.name && template.description && template.thumbnail))
   assert.ok(storyTemplates.every(template => template.renderer && template.category === 'couple'))
+  assert.ok(storyTemplates.every(template => template.sections.length >= 6))
+  assert.notDeepEqual(
+    createDefaultSectionLayout('editorial-rose').map(section => section.type),
+    createDefaultSectionLayout('memory-atlas').map(section => section.type),
+  )
 })
 
 test('rejects unknown template IDs and resolves registered definitions', () => {
@@ -92,6 +98,7 @@ test('editor, previews, and public renderer all use the shared registry', () => 
   const catalog = readFileSync(new URL('../app/pages/templates.vue', import.meta.url), 'utf8')
   const preview = readFileSync(new URL('../app/pages/preview.vue', import.meta.url), 'utf8')
   const renderer = readFileSync(new URL('../app/components/StoryExperience.vue', import.meta.url), 'utf8')
+  const sectionHost = readFileSync(new URL('../app/components/story-experience/StorySectionHost.vue', import.meta.url), 'utf8')
   const rendererRegistry = readFileSync(new URL('../app/components/story-templates/registry.ts', import.meta.url), 'utf8')
 
   assert.match(editor, /createTemplateCustomization/)
@@ -99,9 +106,13 @@ test('editor, previews, and public renderer all use the shared registry', () => 
   assert.match(catalog, /#shared\/story-templates/)
   assert.match(preview, /#shared\/story-templates/)
   assert.match(renderer, /templateRenderers\[template\?\.renderer/)
+  assert.match(renderer, /v-for="section in orderedSections"/)
+  assert.match(editor, /StorySectionEditor/)
+  assert.match(editor, /StorySectionContentEditor/)
   for (const template of storyTemplates) {
     assert.ok(rendererRegistry.includes(template.renderer), `${template.renderer} must be imported`)
   }
+  assert.match(sectionHost, /satisfies Record<StorySectionType, Component>/)
 })
 
 test('public story schema keeps accepting legacy stories without template metadata', () => {

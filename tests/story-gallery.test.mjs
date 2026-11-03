@@ -26,12 +26,14 @@ test('gallery navigation safely ignores an unavailable track', () => {
   assert.doesNotThrow(() => gallery.scroll(1))
 })
 
-test('story renderer delegates its gallery slot to the reusable gallery component', () => {
+test('section host delegates the gallery section to the reusable gallery component', () => {
   const storyExperience = readFileSync(new URL('../app/components/StoryExperience.vue', import.meta.url), 'utf8')
+  const sectionHost = readFileSync(new URL('../app/components/story-experience/StorySectionHost.vue', import.meta.url), 'utf8')
   const galleryComponent = readFileSync(new URL('../app/components/story-experience/StoryGallery.vue', import.meta.url), 'utf8')
 
-  assert.match(storyExperience, /<StoryGallery :photos="story\.gallery" :template-id="story\.templateId" \/>/)
-  assert.match(storyExperience, /<template #gallery>/)
+  assert.match(storyExperience, /v-for="section in orderedSections"/)
+  assert.match(sectionHost, /gallery: StoryGallery/)
+  assert.match(galleryComponent, /data-story-section="gallery"/)
   assert.match(galleryComponent, /@keydown\.left\.prevent="scroll\(-1\)"/)
   assert.match(galleryComponent, /@keydown\.right\.prevent="scroll\(1\)"/)
   for (const templateId of [

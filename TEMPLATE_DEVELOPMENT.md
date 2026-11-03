@@ -5,22 +5,36 @@ Dokumen ini mencatat kontrak template cerita yang digunakan GALERRY saat ini. Pe
 ## Struktur saat ini
 
 - `shared/story-templates.ts` menyimpan ID, metadata, fitur, konfigurasi entrance, serta skema kustomisasi template.
-- `shared/schema/story.ts` memvalidasi konten cerita yang dipakai draft, publikasi, preview, dan renderer publik.
+- `shared/story-sections.ts` mendefinisikan 15 jenis section, variasi, validasi urutan, preset animasi, dan konten tambahan.
+- `shared/schema/story.ts` memvalidasi konten cerita, susunan section, dan variasi yang dipakai draft, publikasi, preview, serta renderer publik.
 - `app/components/story-templates/registry.ts` menghubungkan setiap `TemplateRendererId` ke komponen layout Vue.
-- `app/components/StoryExperience.vue` memilih layout dari registry dan menyediakan slot `hero`, `greeting`, `gallery`, `detail`, `book`, dan `finale`.
-- `app/components/story-experience/` berisi section renderer dan interaksi bersama, termasuk entrance, dekorasi, serta audio.
+- `app/components/StoryExperience.vue` memilih layout dari registry, mengurutkan section aktif, dan menerapkan animasi sesuai konfigurasi.
+- `app/components/story-experience/StorySectionHost.vue` memetakan setiap jenis section ke renderer terdaftar; `sections/` berisi renderer konten tambahan.
+- `app/components/story-section-editor/` menyediakan pengaturan section, variasi, animasi, susunan, dan konten khusus di Studio.
+- `server/utils/story-content.ts` menyimpan konfigurasi dan konten section sebagai JSON opsional di D1. Migration `0012_add_composable_story_sections.sql` harus diterapkan melalui alur deployment database normal.
 
-Template yang terdaftar: `editorial-rose`, `midnight-cinema`, `botanical-journal`, `love-letter`, dan `memory-atlas`. Setiap layout boleh mengatur urutan atau komposisi slotnya sendiri; jangan memaksakan satu struktur visual untuk semua template.
+Template yang terdaftar: `editorial-rose`, `midnight-cinema`, `botanical-journal`, `love-letter`, dan `memory-atlas`. Layout kini menjadi pembungkus presentasi; urutan section ditentukan konfigurasi template dan dapat disesuaikan dari Studio.
+
+Template menyediakan komposisi section awal yang berbeda. Pengguna dapat mengaktifkan atau menonaktifkan section, memilih variasi, mengubah animasi, dan menyusun ulang section melalui Studio. Cerita lama tanpa konfigurasi menggunakan susunan bawaan template masing-masing.
+
+### Konten dan keamanan section
+
+- Field cerita yang sudah ada tetap menjadi sumber konten untuk sampul, ucapan, galeri, pertemuan, garis waktu, buku, dan penutup.
+- Section momen bergerak menggunakan video ucapan; section musik menggunakan lagu cerita yang sama dengan satu `MusicEngine` global.
+- Catatan cinta, peta perjalanan, rencana bersama, hitung mundur, dan kapsul kenangan memakai `sectionContent` opsional yang divalidasi dengan batas panjang.
+- Pesan kapsul yang belum mencapai tanggal buka tidak disertakan dalam respons cerita publik. Endpoint kapsul memeriksa tanggal di server, memeriksa sandi cerita jika cerita dilindungi, dan memakai rate limit. Jangan mengirim pesan terkunci ke renderer publik.
+- Jika section tambahan diaktifkan, konten wajibnya divalidasi sebelum draft dipublikasikan. Draft tetap dapat disimpan saat konten masih dilengkapi.
 
 ## Menambahkan atau mengubah template
 
 1. Tambahkan ID dan metadata ke `storyTemplates` di `shared/story-templates.ts`, termasuk kategori, fitur, warna, status, dan entrance.
 2. Jika ada konten kustom, tambahkan skema yang ketat di `templateCustomizationSchemas`, kaitkan `customizationKey`, dan buat default yang valid. Hindari memasukkan data presentasi ke dalam field cerita umum.
 3. Tambahkan renderer ke `TemplateRendererId`, buat komponen layout di `app/components/story-templates/layouts/`, lalu daftarkan di `registry.ts`. Registry harus tetap memenuhi `Record<TemplateRendererId, Component>`.
-4. Gunakan slot pengalaman yang disediakan oleh `StoryExperience`. Tambahkan kebutuhan konten baru ke `StoryContent` hanya bila benar-benar berlaku lintas template, lalu validasi melalui Zod.
-5. Pertahankan teks pengguna sebagai interpolasi Vue biasa. Jangan render teks cerita dengan `v-html`.
-6. Gunakan stylesheet scoped pada layout atau komponen. Nama kelas template harus unik dan tidak mengubah precedence CSS template lain.
-7. Periksa tampilan entrance, seluruh section, galeri, buku, penutup, dan kontrol musik pada layar kecil serta desktop. Hormati `prefers-reduced-motion`.
+4. Daftarkan jenis dan variasi baru di `shared/story-sections.ts`; hubungkan renderer bertipe di `StorySectionHost.vue` dan tetapkan komposisi default template di `shared/story-templates.ts`.
+5. Tambahkan kebutuhan konten ke `StoryContent` hanya bila benar-benar berlaku lintas template, lalu validasi melalui Zod. Untuk field persisten baru, tambahkan migration D1 dan wiring di `server/utils/story-content.ts`; jangan jalankan migration di luar alur rilis yang disetujui.
+6. Pertahankan teks pengguna sebagai interpolasi Vue biasa. Jangan render teks cerita dengan `v-html`.
+7. Gunakan stylesheet scoped pada layout atau komponen. Nama kelas template harus unik dan tidak mengubah precedence CSS template lain.
+8. Periksa tampilan entrance, seluruh section, galeri, buku, penutup, dan kontrol musik pada layar kecil serta desktop. Hormati `prefers-reduced-motion`.
 
 ## Entrance dan dekorasi
 

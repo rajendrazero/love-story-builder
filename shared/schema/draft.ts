@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { storyCursorSchema, storyTemplateSchema } from './story'
 import { storySlugPattern } from '../story-slug.ts'
+import { storySectionContentSchema, storySectionLayoutSchema } from '../story-sections.ts'
 
 const draftText = (limit: number) => z.string().max(limit).optional()
 const draftUrl = z.string().max(2048).optional()
@@ -17,6 +18,8 @@ export const storyDraftSchema = z.object({
     .refine(value => value === undefined || storySlugPattern.test(value)),
   templateId: storyTemplateSchema.optional(),
   cursorPreset: storyCursorSchema.optional(),
+  sectionLayout: storySectionLayoutSchema.optional(),
+  sectionContent: storySectionContentSchema.optional(),
   templateDetails: z.object({
     editorialRose: z.object({
       dedication: draftText(180),

@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getRouterParam, readBody, setResponseH
 import { unlockStorySchema } from '#shared/schema/story'
 import { requireDatabase } from '../../../utils/cloudflare'
 import { enforceRateLimit } from '../../../utils/rate-limit'
-import { getStoryContent } from '../../../utils/story-content'
+import { getPublicStoryContent } from '../../../utils/story-content'
 import { verifyStoryPassword } from '../../../utils/story-password'
 import { isValidStorySlug } from '#shared/story-slug'
 
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   ) {
     throw createError({ statusCode: 401, statusMessage: 'Sandi yang kamu masukkan belum tepat.' })
   }
-  const story = await getStoryContent(database, row.content_id)
+  const story = await getPublicStoryContent(database, row.content_id)
   if (!story) {
     throw createError({ statusCode: 500, statusMessage: 'Konten cerita tidak ditemukan.' })
   }

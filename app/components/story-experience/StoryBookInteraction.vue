@@ -1,5 +1,11 @@
 <template>
-  <section class="story-screen story-book" :class="`template-${templateId}`">
+  <section
+    class="story-screen story-book"
+    :class="`template-${templateId}`"
+    data-story-section="book"
+    :data-section-variant="config.variant"
+    :data-scroll-effect="config.animation.scroll"
+  >
     <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="book" />
     <header class="book-heading">
       <p class="eyebrow">{{ bookCopy.eyebrow }}</p>
@@ -125,6 +131,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
+import type { StorySectionConfig } from '#shared/story-sections'
 import { getStoryPageTurn, getStoryPageTurnDuration } from '~/composables/story/story-book'
 import DecorativeLayer from './DecorativeLayer.vue'
 
@@ -136,7 +143,7 @@ type BookCopy = {
   coverInside: string
 }
 
-const props = defineProps<{ story: StoryContent }>()
+const props = defineProps<{ story: StoryContent, config: StorySectionConfig }>()
 const templateId = computed(() => props.story.templateId ?? 'editorial-rose')
 const bookCopyByTemplate: Record<StoryTemplateId, BookCopy> = {
   'editorial-rose': {

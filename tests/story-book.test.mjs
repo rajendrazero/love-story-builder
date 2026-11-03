@@ -34,10 +34,12 @@ test('reduced motion uses a shorter page-turn completion delay', () => {
 
 test('book component preserves template copy, interaction, and cleanup wiring', () => {
   const storyExperience = readFileSync(new URL('../app/components/StoryExperience.vue', import.meta.url), 'utf8')
+  const sectionHost = readFileSync(new URL('../app/components/story-experience/StorySectionHost.vue', import.meta.url), 'utf8')
   const component = readFileSync(new URL('../app/components/story-experience/StoryBookInteraction.vue', import.meta.url), 'utf8')
 
-  assert.match(storyExperience, /<template #book>/)
-  assert.match(storyExperience, /<StoryBookInteraction :story="story" \/>/)
+  assert.match(storyExperience, /<StorySectionHost/)
+  assert.match(sectionHost, /book: StoryBookInteraction/)
+  assert.match(component, /data-story-section="book"/)
   assert.match(component, /@click="turnPage\('next'\)"/)
   assert.match(component, /@click="turnPage\('previous'\)"/)
   assert.match(component, /@click="toggleBook"/)

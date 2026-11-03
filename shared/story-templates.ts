@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import type { TemplateCategoryId } from './template-categories.ts'
+import {
+  createDefaultSectionConfig,
+  type StorySectionConfig,
+  type StorySectionType,
+} from './story-sections.ts'
 
 export const templateCustomizationSchemas = {
   editorialRose: z.object({
@@ -60,6 +65,7 @@ interface TemplateDefinition {
   defaults: Record<string, string>
   customizationKey: TemplateCustomizationKey | null
   features: readonly TemplateFeature[]
+  sections: readonly StorySectionConfig[]
   status: TemplateStatus
   highlights: readonly string[]
   colors: readonly [string, string, string]
@@ -68,6 +74,12 @@ interface TemplateDefinition {
 
 const commonFeatures = ['book', 'chapters', 'gallery', 'music', 'video-greeting'] as const satisfies readonly TemplateFeature[]
 const customCopyFeatures = [...commonFeatures, 'custom-copy'] as const satisfies readonly TemplateFeature[]
+
+function defineSections(
+  definitions: readonly (readonly [StorySectionType, string])[],
+): StorySectionConfig[] {
+  return definitions.map(([type, variant], order) => createDefaultSectionConfig(type, order, variant))
+}
 
 export const storyTemplates = [
   {
@@ -84,6 +96,15 @@ export const storyTemplates = [
     defaults: { dedication: '', signature: '' },
     customizationKey: 'editorialRose',
     features: customCopyFeatures,
+    sections: defineSections([
+      ['hero', 'cover-story'],
+      ['greeting', 'letter'],
+      ['gallery', 'photo-wall'],
+      ['first-encounter', 'editorial'],
+      ['timeline', 'vertical'],
+      ['book', 'open-book'],
+      ['finale', 'closing-letter'],
+    ]),
     status: 'available',
     highlights: ['Sampul editorial', 'Foto bergaya cetak', 'Dedikasi & tanda tangan'],
     colors: ['#f8e6e3', '#a94d58', '#fffaf5'],
@@ -103,6 +124,15 @@ export const storyTemplates = [
     defaults: { openingQuote: '', credits: '' },
     customizationKey: 'midnightCinema',
     features: customCopyFeatures,
+    sections: defineSections([
+      ['hero', 'cinema-poster'],
+      ['gallery', 'film-strip'],
+      ['greeting', 'film-scene'],
+      ['first-encounter', 'cinematic'],
+      ['timeline', 'cinematic'],
+      ['book', 'feature-book'],
+      ['finale', 'credits'],
+    ]),
     status: 'available',
     highlights: ['Sampul sinematik', 'Galeri seperti film', 'Kutipan & kredit penutup'],
     colors: ['#18151d', '#d2a7ff', '#f2eaf7'],
@@ -122,6 +152,15 @@ export const storyTemplates = [
     defaults: { journalLabel: '', fieldNote: '' },
     customizationKey: 'botanicalJournal',
     features: customCopyFeatures,
+    sections: defineSections([
+      ['hero', 'field-notes'],
+      ['greeting', 'journal-entry'],
+      ['first-encounter', 'field-note'],
+      ['gallery', 'specimen-grid'],
+      ['timeline', 'observation-log'],
+      ['book', 'journal'],
+      ['finale', 'last-page'],
+    ]),
     status: 'available',
     highlights: ['Foto cetak jurnal', 'Catatan lapangan', 'Halaman bernuansa kertas'],
     colors: ['#e7ebd8', '#53684b', '#fcf8ed'],
@@ -141,6 +180,15 @@ export const storyTemplates = [
     defaults: { dedication: '', signature: '' },
     customizationKey: 'editorialRose',
     features: customCopyFeatures,
+    sections: defineSections([
+      ['hero', 'letter-cover'],
+      ['greeting', 'love-letter'],
+      ['gallery', 'polaroid'],
+      ['first-encounter', 'first-meeting'],
+      ['timeline', 'chapter-ledger'],
+      ['book', 'journal'],
+      ['finale', 'sealed-note'],
+    ]),
     status: 'available',
     highlights: ['Pembuka seperti surat', 'Foto bergaya polaroid', 'Buku kenangan bertekstur'],
     colors: ['#f5e8d5', '#995d50', '#342923'],
@@ -160,6 +208,15 @@ export const storyTemplates = [
     defaults: {},
     customizationKey: null,
     features: commonFeatures,
+    sections: defineSections([
+      ['hero', 'atlas-cover'],
+      ['greeting', 'travel-note'],
+      ['first-encounter', 'map-pin'],
+      ['gallery', 'archive'],
+      ['timeline', 'route-log'],
+      ['book', 'travel-journal'],
+      ['finale', 'closing-coordinates'],
+    ]),
     status: 'available',
     highlights: ['Garis waktu vertikal', 'Arsip foto horizontal', 'Bab perjalanan berurutan'],
     colors: ['#e8e2d2', '#35596b', '#253943'],
@@ -179,6 +236,11 @@ export const storyTemplateSchema = z.custom<StoryTemplateId>(
 
 export function getTemplateDefinition(id: string | undefined): StoryTemplateDefinition | undefined {
   return storyTemplates.find(template => template.id === id)
+}
+
+export function createDefaultSectionLayout(id: StoryTemplateId): StorySectionConfig[] {
+  const template = getTemplateDefinition(id)
+  return template ? template.sections.map(section => ({ ...section, animation: { ...section.animation } })) : []
 }
 
 export function parseTemplateCustomization(

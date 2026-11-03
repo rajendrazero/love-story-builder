@@ -1,5 +1,11 @@
 <template>
-  <section class="story-screen story-gallery" :class="`template-${templateId}`">
+  <section
+    class="story-screen story-gallery"
+    :class="`template-${templateId}`"
+    data-story-section="gallery"
+    :data-section-variant="config.variant"
+    :data-scroll-effect="config.animation.scroll"
+  >
     <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="gallery" />
     <header class="section-heading">
       <div>
@@ -38,19 +44,20 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
+import type { StorySectionConfig } from '#shared/story-sections'
 import type { StoryTemplateId } from '#shared/story-templates'
 import { useStoryGallery } from '~/composables/story/useStoryGallery'
 import DecorativeLayer from './DecorativeLayer.vue'
 
-const props = withDefaults(defineProps<{
-  photos: StoryContent['gallery']
-  templateId?: StoryTemplateId
-}>(), {
-  templateId: 'editorial-rose',
-})
+const props = defineProps<{
+  story: StoryContent
+  config: StorySectionConfig
+}>()
 
 const galleryTrack = useTemplateRef<HTMLDivElement>('galleryTrack')
 const { scroll } = useStoryGallery(() => galleryTrack.value)
+const photos = computed(() => props.story.gallery)
+const templateId = computed<StoryTemplateId>(() => props.story.templateId ?? 'editorial-rose')
 const galleryCopyByTemplate: Record<StoryTemplateId, { eyebrow: string; title: string; hint: string }> = {
   'editorial-rose': {
     eyebrow: 'The camera roll, but make it forever',
@@ -78,7 +85,7 @@ const galleryCopyByTemplate: Record<StoryTemplateId, { eyebrow: string; title: s
     hint: 'Geser arsip →',
   },
 }
-const galleryCopy = computed(() => galleryCopyByTemplate[props.templateId])
+const galleryCopy = computed(() => galleryCopyByTemplate[templateId.value])
 </script>
 
 <style scoped>
@@ -361,6 +368,36 @@ const galleryCopy = computed(() => galleryCopyByTemplate[props.templateId])
 
 .story-gallery.template-memory-atlas .gallery-print img { border-radius: 0; }
 .story-gallery.template-memory-atlas .gallery-print figcaption { color: var(--atlas-ink); }
+
+.story-gallery[data-section-variant='film-strip'] .gallery-track {
+  gap: 0.6rem;
+}
+
+.story-gallery[data-section-variant='film-strip'] .gallery-card {
+  width: min(58vw, 26rem);
+  height: min(55svh, 29rem);
+}
+
+.story-gallery[data-section-variant='film-strip'] .gallery-print {
+  border-radius: 0.15rem;
+}
+
+.story-gallery[data-section-variant='archive'] .gallery-card:nth-child(n) {
+  transform: none;
+}
+
+.story-gallery[data-section-variant='archive'] .gallery-print {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.story-gallery[data-section-variant='polaroid'] .gallery-card:nth-child(even) {
+  transform: rotate(3deg) translateY(0.8rem);
+}
+
+.story-gallery[data-section-variant='polaroid'] .gallery-card:nth-child(odd) {
+  transform: rotate(-3deg) translateY(-0.4rem);
+}
 
 @media (max-width: 700px) {
   .section-heading {

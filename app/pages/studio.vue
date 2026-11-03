@@ -143,7 +143,14 @@
         </section>
 
         <section v-show="activeStep === 6" class="editor-card">
-          <p class="section-kicker">07 — Lagu & privasi</p>
+          <p class="section-kicker">07 — Susunan, lagu & privasi</p>
+          <div class="mb-6 grid gap-6">
+            <StorySectionContentEditor v-model="sectionContentModel" />
+            <StorySectionEditor
+              v-model="sectionLayoutModel"
+              :template-id="draft.templateId ?? 'editorial-rose'"
+            />
+          </div>
           <div class="grid gap-5 md:grid-cols-2">
             <AudioField v-model="draft.musicUrl" />
             <label class="floating-field"><span class="editor-label">Judul lagu (opsional)</span><input v-model="draft.musicTitle" name="musicTitle" class="editor-input" maxlength="120" placeholder="Lagu yang mengingatkan kalian"></label>
@@ -318,13 +325,22 @@
 <script setup lang="ts">
 import AppButton from '../components/AppButton.vue'
 import { storyContentSchema, type StoryContent } from '#shared/schema/story'
-import { createTemplateCustomization, getTemplateDefinition, storyTemplateSchema, storyTemplates } from '#shared/story-templates'
+import {
+  createDefaultSectionLayout,
+  createTemplateCustomization,
+  getTemplateDefinition,
+  storyTemplateSchema,
+  storyTemplates,
+} from '#shared/story-templates'
+import { createEmptyStorySectionContent } from '#shared/story-sections'
 import { getUnsupportedMusicProvider } from '#shared/music-embed'
 import { isValidStorySlug } from '#shared/story-slug'
 import { getUserFacingError } from '#shared/utils/user-facing-error'
 import type { ZodIssue } from 'zod'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import StorySectionContentEditor from '~/components/story-section-editor/StorySectionContentEditor.vue'
+import StorySectionEditor from '~/components/story-section-editor/StorySectionEditor.vue'
 
 const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'))
 definePageMeta({ middleware: 'auth' })
@@ -346,6 +362,8 @@ const draft = reactive<StoryContent & { password: string }>({
   templateId: 'editorial-rose',
   cursorPreset: 'system',
   templateDetails: createTemplateCustomization('editorial-rose'),
+  sectionLayout: createDefaultSectionLayout('editorial-rose'),
+  sectionContent: createEmptyStorySectionContent(),
   title: '',
   coupleNames: '',
   date: '',
@@ -364,6 +382,18 @@ const draft = reactive<StoryContent & { password: string }>({
   musicTitle: '',
   musicArtist: '',
   password: '',
+})
+const sectionLayoutModel = computed({
+  get: () => draft.sectionLayout ?? createDefaultSectionLayout(draft.templateId ?? 'editorial-rose'),
+  set: (value: NonNullable<StoryContent['sectionLayout']>) => {
+    draft.sectionLayout = value
+  },
+})
+const sectionContentModel = computed({
+  get: () => draft.sectionContent ?? createEmptyStorySectionContent(),
+  set: (value: NonNullable<StoryContent['sectionContent']>) => {
+    draft.sectionContent = value
+  },
 })
 const selectedTemplate = computed(() => getTemplateDefinition(draft.templateId) ?? storyTemplates[0])
 const unsupportedMusicProvider = computed(() => getUnsupportedMusicProvider(draft.musicUrl))
@@ -461,6 +491,8 @@ const previewStepByField: Record<string, number> = {
   date: 0,
   heroImage: 0,
   templateDetails: 0,
+  sectionLayout: 6,
+  sectionContent: 6,
   greetingImage: 1,
   greetingVideoUrl: 1,
   greetingText: 1,
@@ -482,6 +514,8 @@ const previewFieldLabels: Record<string, string> = {
   date: 'Tanggal spesial',
   heroImage: 'Foto sampul',
   templateDetails: 'Detail template',
+  sectionLayout: 'Susunan section cerita',
+  sectionContent: 'Konten tambahan',
   greetingImage: 'Latar kartu',
   greetingVideoUrl: 'Tautan video latar',
   greetingText: 'Tulisan kartu ucapan',
@@ -521,6 +555,11 @@ function applyStoryContent(content: Partial<StoryContent>) {
   const templateId = content.templateId ?? 'editorial-rose'
   draft.templateId = templateId
   draft.cursorPreset = content.cursorPreset ?? 'system'
+  draft.sectionLayout = content.sectionLayout ?? createDefaultSectionLayout(templateId)
+  draft.sectionContent = {
+    ...createEmptyStorySectionContent(),
+    ...content.sectionContent,
+  }
   draft.templateDetails = {
     ...createTemplateCustomization(templateId),
     ...content.templateDetails,
@@ -609,6 +648,7 @@ async function restoreDraft() {
       ...draft.templateDetails,
       ...createTemplateCustomization(templateId.data),
     }
+    draft.sectionLayout = createDefaultSectionLayout(templateId.data)
     await saveDraft()
     if (saveStatus.value === 'error') throw new Error('Draft baru belum tersimpan.')
     await navigateTo(`/studio?draft=${draftId.value}`, { replace: true })

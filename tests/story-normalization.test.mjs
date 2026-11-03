@@ -14,6 +14,8 @@ const migrationPaths = [
   'migrations/0008_create_better_auth_tables.sql',
   'migrations/0009_seed_existing_user_roles.sql',
   'migrations/0010_add_draft_custom_slug.sql',
+  'migrations/0011_create_uploaded_images.sql',
+  'migrations/0012_add_composable_story_sections.sql',
 ]
 
 function legacyStory(templateId) {
@@ -106,6 +108,9 @@ test('normalizes legacy stories and drafts without losing content or ownership',
   database.exec(readFileSync(migrationPaths[9], 'utf8'))
   database.exec(readFileSync(migrationPaths[7], 'utf8'))
   database.exec(readFileSync(migrationPaths[8], 'utf8'))
+  for (const migrationPath of migrationPaths.slice(10)) {
+    database.exec(readFileSync(migrationPath, 'utf8'))
+  }
 
   const storyContent = database.prepare(
     'SELECT template_id, cursor_preset, title, couple_names, date_label FROM story_content WHERE id = ?',
@@ -165,6 +170,8 @@ test('normalizes legacy stories and drafts without losing content or ownership',
     assert.equal(columns.includes('payload_json'), false)
   }
   assert.equal(database.prepare("PRAGMA table_info('stories')").all().some(row => row.name === 'title'), false)
+  assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'section_layout_json'))
+  assert.ok(database.prepare("PRAGMA table_info('story_content')").all().some(row => row.name === 'section_content_json'))
   assert.deepEqual(database.prepare('PRAGMA foreign_key_check').all(), [])
 
   for (const table of ['user', 'session', 'account', 'verification', 'rateLimit']) {
