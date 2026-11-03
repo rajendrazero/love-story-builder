@@ -1,5 +1,6 @@
 <template>
   <section class="story-screen story-gallery" :class="`template-${templateId}`">
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="gallery" />
     <header class="section-heading">
       <div>
         <p class="eyebrow">{{ galleryCopy.eyebrow }}</p>
@@ -39,6 +40,7 @@ import { computed, useTemplateRef } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
 import { useStoryGallery } from '~/composables/story/useStoryGallery'
+import DecorativeLayer from './DecorativeLayer.vue'
 
 const props = withDefaults(defineProps<{
   photos: StoryContent['gallery']

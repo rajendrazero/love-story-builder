@@ -42,6 +42,8 @@ export const storyContentSchema = z.object({
   finalImage: imageUrl,
   finalMessage: z.string().trim().min(1).max(1000),
   musicUrl: z.union([z.literal(''), httpsUrl]),
+  musicTitle: z.string().trim().max(120).optional(),
+  musicArtist: z.string().trim().max(120).optional(),
 }).superRefine((story, context) => {
   const template = getTemplateDefinition(story.templateId ?? 'editorial-rose')
   if (!template || !template.customizationKey || !story.templateDetails) return

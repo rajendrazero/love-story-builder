@@ -1,5 +1,6 @@
 <template>
   <section class="story-screen story-book" :class="`template-${templateId}`">
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" scene="book" />
     <header class="book-heading">
       <p class="eyebrow">{{ bookCopy.eyebrow }}</p>
       <h2>{{ bookCopy.title }}</h2>
@@ -125,6 +126,7 @@ import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
 import { getStoryPageTurn, getStoryPageTurnDuration } from '~/composables/story/story-book'
+import DecorativeLayer from './DecorativeLayer.vue'
 
 type StoryPage = StoryContent['storyPages'][number]
 type BookCopy = {

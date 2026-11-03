@@ -8,17 +8,20 @@
           <p class="mt-3 text-sm text-[#756a62]">{{ user?.name }} · {{ user?.email }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <NuxtLink to="/templates" class="rounded-full bg-[#5045f5] px-5 py-3 text-sm font-semibold text-white no-underline transition hover:bg-[#3e35d6]">
-            Buat cerita ↗
+          <NuxtLink to="/templates" class="inline-flex items-center gap-2 rounded-full bg-[#5045f5] px-5 py-3 text-sm font-semibold text-white no-underline transition hover:bg-[#3e35d6]">
+            Buat cerita
+            <AppIcon name="arrow-up-right" :size="16" />
           </NuxtLink>
           <AppButton variant="secondary" :disabled="loading" :loading="loading" @click="load">
-            {{ loading ? 'Memuat…' : 'Muat ulang ↻' }}
+            <AppIcon name="refresh" :size="17" />
+            {{ loading ? 'Memuat…' : 'Muat ulang' }}
           </AppButton>
         </div>
       </div>
 
-      <p v-if="error" class="mt-6 rounded-2xl border border-destructive bg-destructive-surface p-4 text-sm text-destructive" role="alert">{{ error }}</p>
+      <AppErrorAlert v-if="error" class="mt-6" :title="error.title" :message="error.message" :location="error.location" />
       <AppButton variant="secondary" size="sm" class="my-5" :disabled="signingOut" :loading="signingOut" @click="signOut">
+        <AppIcon name="log-out" :size="17" />
         {{ signingOut ? 'Keluar…' : 'Keluar dari akun' }}
       </AppButton>
       <div v-if="hasLegacyDraft" class="my-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d6c9bf] bg-white/70 p-4">
@@ -41,7 +44,10 @@
             <img v-if="story.story.heroImage" :src="story.story.heroImage" :alt="story.title" class="h-48 w-full rounded-xl object-cover">
             <h3 class="mt-4 font-display text-2xl">{{ story.title }}</h3>
             <p class="mt-1 text-xs text-[#756a62]">{{ story.story.coupleNames }} · {{ formatDate(story.publishedAt) }}</p>
-            <p class="mt-2 text-xs text-[#756a62]">{{ story.passwordProtected ? '🔒 Dengan sandi' : '🌐 Publik' }}</p>
+            <p class="mt-2 inline-flex items-center gap-1.5 text-xs text-[#756a62]">
+              <AppIcon :name="story.passwordProtected ? 'lock' : 'globe'" :size="14" />
+              {{ story.passwordProtected ? 'Dengan sandi' : 'Publik' }}
+            </p>
             <p class="mt-2 text-xs font-semibold" :class="story.isActive ? 'text-[#53684b]' : 'text-[#9c6257]'">
               {{ story.isActive ? 'Aktif · dapat dibuka melalui link' : 'Nonaktif · link publik disembunyikan' }}
             </p>
@@ -52,9 +58,11 @@
                 {{ pendingAction === `toggle-story:${story.slug}` ? 'Memproses…' : story.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
               </AppButton>
               <AppButton variant="danger" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `delete-story:${story.slug}`" @click="deleteStory(story.slug)">
+                <AppIcon name="trash" :size="15" />
                 {{ pendingAction === `delete-story:${story.slug}` ? 'Menghapus…' : 'Hapus' }}
               </AppButton>
               <AppButton variant="secondary" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `copy-story:${story.slug}`" @click="copyLink(story.slug)">
+                <AppIcon name="copy" :size="15" />
                 {{ pendingAction === `copy-story:${story.slug}` ? 'Menyalin…' : 'Salin link' }}
               </AppButton>
             </div>
@@ -76,10 +84,12 @@
               <p v-if="draft.publishedSlug" class="mt-1 text-xs text-[#756a62]">Terkait cerita terbit · {{ draft.publishedSlug }}</p>
             </div>
             <div class="flex shrink-0 gap-3">
-              <NuxtLink :to="draft.publishedSlug ? `/studio?edit=${draft.publishedSlug}` : `/studio?draft=${draft.id}`" class="text-xs text-[#9c6257] underline underline-offset-4">
+              <NuxtLink :to="draft.publishedSlug ? `/studio?edit=${draft.publishedSlug}` : `/studio?draft=${draft.id}`" class="inline-flex min-h-11 items-center gap-1.5 text-xs text-[#9c6257] underline underline-offset-4">
+                <AppIcon name="arrow-up-right" :size="14" />
                 {{ draft.publishedSlug ? 'Edit cerita' : 'Lanjutkan' }}
               </NuxtLink>
               <AppButton variant="ghost" size="sm" :disabled="Boolean(pendingAction)" :loading="pendingAction === `delete-draft:${draft.id}`" @click="deleteDraft(draft.id)">
+                <AppIcon name="trash" :size="15" />
                 {{ pendingAction === `delete-draft:${draft.id}` ? 'Menghapus…' : 'Hapus' }}
               </AppButton>
             </div>
@@ -95,6 +105,7 @@
 import AppButton from '../components/AppButton.vue'
 import { createAuthClient } from 'better-auth/vue'
 import type { StoryContent } from '#shared/schema/story'
+import { getUserFacingError, type UserFacingError } from '#shared/utils/user-facing-error'
 
 definePageMeta({ middleware: 'auth' })
 useSeoMeta({ title: 'Akun — Selamanya', robots: 'noindex, nofollow' })
@@ -122,7 +133,7 @@ const { success, error: notifyError } = useNotifications()
 const user = ref<{ id: string, name: string, email: string }>()
 const stories = ref<AccountStory[]>([])
 const drafts = ref<AccountDraft[]>([])
-const error = ref('')
+const error = ref<UserFacingError | null>(null)
 const loading = ref(false)
 const signingOut = ref(false)
 const pendingAction = ref('')
@@ -130,7 +141,7 @@ const hasLegacyDraft = ref(false)
 
 async function load() {
   loading.value = true
-  error.value = ''
+  error.value = null
   try {
     const [profile, storyResult, draftResult] = await Promise.all([
       $fetch<{ id: string, name: string, email: string }>('/api/account/me'),
@@ -141,7 +152,11 @@ async function load() {
     stories.value = storyResult.stories
     drafts.value = draftResult.drafts
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Data akun belum dapat dimuat.'
+    error.value = getUserFacingError(caught, {
+      title: 'Data akun belum dapat dimuat',
+      fallback: 'Periksa koneksi, lalu coba muat ulang halaman akun.',
+      location: 'Halaman akun',
+    })
     notifyError(error.value)
   } finally {
     loading.value = false
@@ -162,7 +177,11 @@ async function deleteStory(slug: string) {
     success('Cerita berhasil dihapus.')
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Cerita belum berhasil dihapus.'
+    error.value = getUserFacingError(caught, {
+      title: 'Cerita belum berhasil dihapus',
+      fallback: 'Coba lagi. Cerita dan tautan publiknya belum diubah.',
+      location: 'Akun · Cerita terbit',
+    })
     notifyError(error.value)
   } finally {
     pendingAction.value = ''
@@ -188,7 +207,11 @@ async function toggleStory(story: AccountStory) {
     success(active ? 'Cerita berhasil diaktifkan.' : 'Cerita berhasil dinonaktifkan.')
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Status cerita belum berhasil diubah.'
+    error.value = getUserFacingError(caught, {
+      title: 'Status cerita belum berubah',
+      fallback: 'Coba lagi. Status publikasi cerita masih seperti sebelumnya.',
+      location: 'Akun · Cerita terbit',
+    })
     notifyError(error.value)
   } finally {
     pendingAction.value = ''
@@ -209,7 +232,11 @@ async function deleteDraft(id: string) {
     success('Draft berhasil dihapus.')
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Draft belum berhasil dihapus.'
+    error.value = getUserFacingError(caught, {
+      title: 'Draft belum berhasil dihapus',
+      fallback: 'Coba lagi. Draft masih tersimpan di akunmu.',
+      location: 'Akun · Draft tersimpan',
+    })
     notifyError(error.value)
   } finally {
     pendingAction.value = ''
@@ -222,8 +249,12 @@ async function copyLink(slug: string) {
   try {
     await navigator.clipboard.writeText(`${window.location.origin}/w/${slug}`)
     success('Link cerita berhasil disalin.')
-  } catch {
-    error.value = 'Tautan belum bisa disalin.'
+  } catch (caught) {
+    error.value = getUserFacingError(caught, {
+      title: 'Link belum bisa disalin',
+      fallback: 'Izinkan akses clipboard atau salin link dengan membuka cerita terlebih dahulu.',
+      location: 'Akun · Cerita terbit',
+    })
     notifyError(error.value)
   } finally {
     pendingAction.value = ''
@@ -242,7 +273,11 @@ async function signOut() {
     success('Kamu sudah keluar dari akun.')
     await navigateTo('/login')
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Belum berhasil keluar dari akun.'
+    error.value = getUserFacingError(caught, {
+      title: 'Belum berhasil keluar dari akun',
+      fallback: 'Coba lagi. Sesi akunmu mungkin masih aktif.',
+      location: 'Navigasi akun',
+    })
     notifyError(error.value)
   } finally {
     signingOut.value = false
@@ -261,10 +296,17 @@ onMounted(() => {
 
 <style scoped>
 .section-kicker { color: #5045f5; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
-.account-stat, .account-card, .account-draft { border: 1px solid #e7ddd4; border-radius: 1.5rem; background: #fffdfa; box-shadow: 0 12px 40px rgb(35 25 20 / 4%); }
+.account-stat, .account-card, .account-draft { border: 1px solid #e7ddd4; border-radius: 1.5rem; background: #fffdfa; box-shadow: 0 12px 40px rgb(35 25 20 / 4%); transition: transform 220ms var(--motion-ease-standard), border-color 220ms var(--motion-ease-standard), box-shadow 220ms var(--motion-ease-standard); }
 .account-stat { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; color: #756a62; font-size: 0.8rem; }
+.account-stat:first-child { border-color: rgb(80 69 245 / 18%); background: linear-gradient(135deg, #fffdfa 58%, var(--brand-lavender-soft)); }
+.account-stat:nth-child(2) { border-color: rgb(255 121 104 / 20%); background: linear-gradient(135deg, #fffdfa 58%, var(--brand-peach-soft)); }
 .account-stat strong { color: #201d28; font-family: 'Instrument Serif', serif; font-size: 2rem; }
 .account-card { padding: 1rem; }
 .account-draft { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; }
 .loading-panel { display: flex; min-height: 7rem; align-items: center; justify-content: center; gap: 0.7rem; border: 1px dashed #d6c9bf; border-radius: 1.25rem; color: #756a62; font-size: 0.82rem; }
+.account-card:hover, .account-draft:hover { transform: translateY(-2px); border-color: rgb(80 69 245 / 30%); box-shadow: 0 16px 36px rgb(35 25 20 / 8%); }
+@media (prefers-reduced-motion: reduce) {
+  .account-stat, .account-card, .account-draft { transition: none; }
+  .account-card:hover, .account-draft:hover { transform: none; }
+}
 </style>

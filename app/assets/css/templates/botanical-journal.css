@@ -1,0 +1,88 @@
+.template-botanical-journal .story-hero {
+  background-color: #e7ebd8;
+  background-image: radial-gradient(ellipse at 75% 35%, rgb(83 104 75 / 16%), transparent 52%);
+}
+.template-botanical-journal .story-date { background-color: #53684b; }
+.template-botanical-journal .story-date, .template-botanical-journal .story-title, .template-botanical-journal .hero-sparkle { color: #53684b; }
+.template-botanical-journal .story-date { color: white; }
+.template-botanical-journal .story-greeting { background: #e7dcc1; }
+.template-botanical-journal .story-detail { background: #d8e2d0; }
+.template-botanical-journal .story-finale { background: #bfcbab; }
+
+.template-botanical-journal .story-hero {
+  grid-template-columns: 0.85fr 1.15fr;
+  background-image: radial-gradient(ellipse at 15% 15%, rgb(255 255 255 / 54%), transparent 48%);
+}
+.template-botanical-journal .story-hero h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+}
+.template-botanical-journal .story-hero-photo {
+  border: 1px solid #53684b;
+  border-radius: 0.25rem;
+  padding: 0.65rem 0.65rem 3.2rem;
+  transform: rotate(-1deg);
+}
+.template-botanical-journal .story-greeting { grid-template-columns: 1fr 1fr; }
+.template-botanical-journal .story-detail { grid-template-columns: 1.1fr 0.9fr; }
+.template-botanical-journal .template-botanical-detail {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid #53684b;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  color: #53684b;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.template-botanical-journal .story-hero {
+  grid-template-columns: 0.9fr 1.1fr;
+  background-image:
+    radial-gradient(ellipse at 12% 18%, rgb(255 255 255 / 66%), transparent 42%),
+    repeating-linear-gradient(0deg, transparent 0 2.1rem, rgb(83 104 75 / 7%) 2.1rem 2.15rem);
+}
+.template-botanical-journal .story-hero-photo {
+  border: 0.7rem solid #f8f4e8;
+  border-bottom-width: 3rem;
+  border-radius: 50% 50% 0.4rem 0.4rem;
+  padding: 0;
+  box-shadow: 0 1rem 2.5rem rgb(38 51 34 / 20%);
+  transform: rotate(-1.5deg);
+}
+.template-botanical-journal .story-hero-photo img { border-radius: inherit; }
+.template-botanical-journal .story-hero-photo figcaption {
+  right: 0;
+  bottom: -2.2rem;
+  color: #53684b;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+}
+.template-botanical-journal .story-greeting {
+  grid-template-columns: 1fr 1.1fr;
+  background-image: repeating-linear-gradient(0deg, transparent 0 2.2rem, rgb(83 104 75 / 6%) 2.2rem 2.25rem);
+}
+.template-botanical-journal .story-detail {
+  grid-template-columns: 1.1fr 0.9fr;
+  background-image: repeating-linear-gradient(0deg, transparent 0 2.2rem, rgb(83 104 75 / 6%) 2.2rem 2.25rem);
+}
+.template-botanical-journal .story-finale {
+  grid-template-columns: 1fr 1fr;
+  background-image: radial-gradient(ellipse at 20% 50%, rgb(255 255 255 / 46%), transparent 45%);
+}
+
+@media (max-width: 760px) {
+  .template-botanical-journal .story-hero { grid-template-columns: 1fr; }
+  .template-botanical-journal .story-hero-photo {
+    position: absolute;
+    inset: 15% 5% auto auto;
+    width: 53%;
+    height: 55%;
+  }
+  .template-botanical-journal .story-hero-copy { align-self: end; width: 72%; }
+  .template-botanical-journal .story-detail { grid-template-columns: 1fr 1fr; }
+}

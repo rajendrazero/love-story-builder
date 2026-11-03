@@ -1,0 +1,15 @@
+.brand-ui [class~="text-[#9c6257]"] {
+  color: var(--brand-cobalt);
+}
+
+.brand-ui [class~="border-[#cbbcb0]"] {
+  border-color: #d3d0c8;
+}
+
+.brand-ui [class~="border-[#e7ddd4]"] {
+  border-color: #e5e1d8;
+}
+
+.brand-ui .section-kicker {
+  color: var(--brand-cobalt);
+}

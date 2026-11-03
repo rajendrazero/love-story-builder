@@ -144,7 +144,7 @@ onBeforeUnmount(() => {
 .confirm-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 150;
+  z-index: var(--z-dialog);
   display: grid;
   place-items: center;
   padding: 1rem;

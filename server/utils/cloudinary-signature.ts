@@ -1,4 +1,6 @@
-import { CLOUDINARY_UPLOAD_PRESET } from '../../shared/utils/cloudinary-upload-policy.ts'
+import {
+  ALLOWED_CLOUDINARY_IMAGE_FORMATS,
+} from '../../shared/utils/cloudinary-upload-policy.ts'
 
 export interface CloudinaryCredentials {
   cloudName: string
@@ -8,8 +10,8 @@ export interface CloudinaryCredentials {
 
 export interface CloudinaryUploadSignature extends Omit<CloudinaryCredentials, 'apiSecret'> {
   folder: string
+  allowedFormats: string
   timestamp: number
-  uploadPreset: string
   signature: string
 }
 
@@ -69,9 +71,10 @@ export async function createCloudinaryUploadSignature(
   credentials: CloudinaryCredentials,
   timestamp: number,
   folder: string,
+  options: { allowedFormats?: readonly string[] } = {},
 ): Promise<CloudinaryUploadSignature> {
-  const uploadPreset = CLOUDINARY_UPLOAD_PRESET
-  const source = `folder=${folder}&timestamp=${timestamp}&upload_preset=${uploadPreset}${credentials.apiSecret}`
+  const allowedFormats = (options.allowedFormats ?? ALLOWED_CLOUDINARY_IMAGE_FORMATS).join(',')
+  const source = `allowed_formats=${allowedFormats}&folder=${folder}&timestamp=${timestamp}${credentials.apiSecret}`
   const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(source))
   const signature = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
 
@@ -79,8 +82,8 @@ export async function createCloudinaryUploadSignature(
     cloudName: credentials.cloudName,
     apiKey: credentials.apiKey,
     folder,
+    allowedFormats,
     timestamp,
-    uploadPreset,
     signature,
   }
 }

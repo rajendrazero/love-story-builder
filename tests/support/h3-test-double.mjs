@@ -10,9 +10,17 @@ export function getRouterParam(event, name) {
   return event.context.params?.[name]
 }
 
+export function getQuery(event) {
+  return Object.fromEntries(new URL(event.request.url).searchParams)
+}
+
 export async function readBody(event) {
   if (Object.hasOwn(event.context, 'body')) return event.context.body
   return event.request.json()
+}
+
+export async function readFormData(event) {
+  return event.request.formData()
 }
 
 export function setResponseHeader(event, name, value) {

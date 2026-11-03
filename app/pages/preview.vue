@@ -14,8 +14,12 @@ import { availableStoryTemplates, type StoryTemplateId } from '#shared/story-tem
 
 const previewTemplate = ref<StoryTemplateId>('editorial-rose')
 const previewStory = computed(() => ({ ...demoStory, templateId: previewTemplate.value }))
+const previewDescription = computed(() => `Lihat preview ${availableStoryTemplates.find(template => template.id === previewTemplate.value)?.name ?? 'cerita'} sebelum membuat ceritamu sendiri.`)
 useSeoMeta({
   title: 'Pratinjau template — Selamanya',
-  description: () => `Lihat preview ${availableStoryTemplates.find(template => template.id === previewTemplate.value)?.name ?? 'cerita'} sebelum membuat ceritamu sendiri.`,
+  description: previewDescription,
+  ogTitle: 'Pratinjau template — Selamanya',
+  ogDescription: previewDescription,
+  ogType: 'website',
 })
 </script>

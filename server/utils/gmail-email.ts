@@ -18,6 +18,8 @@ interface GoogleApiErrorResponse {
   error_description?: unknown
 }
 
+const providerRequestTimeoutMs = 10_000
+
 function encodeBase64(value: string): string {
   const bytes = new TextEncoder().encode(value)
   let binary = ''
@@ -147,6 +149,7 @@ export async function sendGmailEmail(email: GmailEmail, fetcher: typeof fetch = 
   const tokenResponse = await fetcher('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    signal: AbortSignal.timeout(providerRequestTimeoutMs),
     body: new URLSearchParams({
       client_id: email.clientId,
       client_secret: email.clientSecret,
@@ -176,6 +179,7 @@ export async function sendGmailEmail(email: GmailEmail, fetcher: typeof fetch = 
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(providerRequestTimeoutMs),
     body: JSON.stringify({ raw: rawMessage }),
   })
   if (!sendResponse.ok) {

@@ -4,11 +4,19 @@
     <p v-else class="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900" role="alert">
       Pemeriksaan manusia belum dikonfigurasi. Admin perlu mengatur Turnstile sebelum akun dapat dipakai.
     </p>
-    <p v-if="loadError" class="mt-2 text-xs text-red-700" role="alert">{{ loadError }}</p>
+    <AppErrorAlert
+      v-if="loadError"
+      class="mt-2"
+      title="Pemeriksaan keamanan belum siap"
+      :message="loadError"
+      location="Form akun · Verifikasi Turnstile"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { getUserFacingError } from '#shared/utils/user-facing-error'
+
 interface TurnstileApi {
   render(
     container: HTMLElement,
@@ -53,7 +61,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const container = ref<HTMLElement | null>(null)
 const loadError = ref('')
 const config = useRuntimeConfig()
-const siteKey = String(config.public.turnstileSiteKey || '')
+const siteKey = ref(String(config.public.turnstileSiteKey || ''))
 let widgetId = ''
 
 function reset() {
@@ -64,14 +72,27 @@ function reset() {
 defineExpose({ reset })
 
 onMounted(async () => {
-  if (!siteKey || !container.value) return
+  if (!siteKey.value || !container.value) {
+    try {
+      const runtimeConfig = await $fetch<{ siteKey: string }>('/api/config/turnstile')
+      siteKey.value = runtimeConfig.siteKey
+    } catch (caught) {
+      loadError.value = getUserFacingError(caught, {
+        title: 'Konfigurasi pemeriksaan keamanan belum dapat dimuat',
+        fallback: 'Periksa koneksi, lalu muat ulang halaman.',
+        location: 'Form akun · Verifikasi Turnstile',
+      }).message
+      return
+    }
+  }
+  if (!siteKey.value || !container.value) return
   try {
     await loadTurnstile()
     if (!window.turnstile || !container.value) {
       throw new Error('Widget pemeriksaan manusia belum siap.')
     }
     widgetId = window.turnstile.render(container.value, {
-      sitekey: siteKey,
+      sitekey: siteKey.value,
       theme: 'light',
       callback: token => emit('update:modelValue', token),
       'expired-callback': () => emit('update:modelValue', ''),
@@ -81,7 +102,11 @@ onMounted(async () => {
       },
     })
   } catch (caught) {
-    loadError.value = caught instanceof Error ? caught.message : 'Widget pemeriksaan manusia tidak dapat dimuat.'
+    loadError.value = getUserFacingError(caught, {
+      title: 'Pemeriksaan keamanan belum siap',
+      fallback: 'Muat ulang halaman atau coba lagi beberapa saat.',
+      location: 'Form akun · Verifikasi Turnstile',
+    }).message
   }
 })
 

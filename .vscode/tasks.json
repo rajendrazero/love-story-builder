@@ -1,0 +1,100 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Phase 8 tests and typecheck",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/s",
+				"/c",
+				"pnpm.cmd test && pnpm.cmd typecheck && git diff --check"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Local Worker preview",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/s",
+				"/c",
+				"pnpm.cmd dev"
+			],
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "custom",
+				"pattern": {
+					"regexp": "^$"
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*",
+					"endsPattern": "Ready on https://127\\.0\\.0\\.1:8787"
+				}
+			}
+		},
+		{
+			"label": "Check Turnstile CLI availability",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/s",
+				"/c",
+				"if defined CLOUDFLARE_API_TOKEN (echo CLOUDFLARE_API_TOKEN_PRESENT) else (echo CLOUDFLARE_API_TOKEN_MISSING) & where bash.exe & where python.exe"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build GALERRY after delete fix",
+			"type": "shell",
+			"command": "pnpm.cmd",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Identify local preview listener",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 8787 -State Listen | Select-Object -ExpandProperty OwningProcess -Unique"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Identify preview process by port",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/s",
+				"/c",
+				"netstat -ano | findstr :8787"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Add Three.js for hero scene",
+			"type": "shell",
+			"command": "pnpm.cmd",
+			"args": [
+				"add",
+				"three"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

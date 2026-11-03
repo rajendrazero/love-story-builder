@@ -1,0 +1,48 @@
+.template-editorial-rose .story-hero { background-color: #f2d9d4; }
+.template-editorial-rose .story-date { background-color: #9c6257; }
+.template-editorial-rose .story-title, .template-editorial-rose .story-date, .template-editorial-rose .hero-sparkle { color: #8d4c50; }
+.template-editorial-rose .story-date { color: white; }
+.template-editorial-rose .story-greeting { background: #e9c2b9; }
+.template-editorial-rose .story-detail { background: #dce8da; }
+.template-editorial-rose .story-finale { background: #cf8b7e; }
+.template-editorial-rose .story-hero-copy { padding-left: clamp(0rem, 3vw, 3rem); }
+.template-editorial-rose .template-editorial-detail {
+  border-left: 2px solid #9c6257;
+  padding-left: 0.9rem;
+  color: #704249;
+  font-style: italic;
+}
+.template-editorial-rose .story-hero-photo { transform: rotate(2deg); }
+.template-editorial-rose .story-hero {
+  grid-template-columns: 1fr 0.95fr;
+  background-image:
+    radial-gradient(ellipse at 88% 14%, rgb(255 250 245 / 72%), transparent 31%),
+    repeating-linear-gradient(0deg, transparent 0 2.4rem, rgb(141 76 80 / 5%) 2.4rem 2.45rem);
+}
+.template-editorial-rose .story-hero-photo {
+  border: 0.65rem solid #fffaf5;
+  border-bottom-width: 3.2rem;
+  border-radius: 0.2rem;
+  padding: 0;
+  background: #fffaf5;
+  box-shadow: 0 1.2rem 3rem rgb(89 48 52 / 18%);
+  transform: rotate(2deg);
+}
+.template-editorial-rose .story-hero-photo figcaption {
+  right: 0.5rem;
+  bottom: -2.35rem;
+  color: #704249;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 760px) {
+  .template-editorial-rose .story-hero { grid-template-columns: 1fr; }
+  .template-editorial-rose .story-hero-photo {
+    position: absolute;
+    inset: 15% 5% auto auto;
+    width: 53%;
+    height: 55%;
+  }
+  .template-editorial-rose .story-hero-copy { align-self: end; width: 72%; }
+}

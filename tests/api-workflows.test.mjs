@@ -31,14 +31,16 @@ const [{ default: getAdminStories }, { default: updateAdminStoryVisibility }, { 
   import('../server/api/admin/stories/[slug].delete.ts'),
   import('../server/api/admin/drafts/[id].delete.ts'),
 ])
-const [{ default: createUploadSignature }, { default: saveUploadedImage }] = await Promise.all([
-  import('../server/api/uploads/signature.post.ts'),
+const [{ default: uploadImage }, { default: saveUploadedImage }, { default: deleteUploadedImage }] = await Promise.all([
+  import('../server/api/uploads/image.post.ts'),
   import('../server/api/uploads/library.post.ts'),
+  import('../server/api/uploads/library.delete.ts'),
 ])
+const { default: retiredUploadSignature } = await import('../server/api/uploads/signature.post.ts')
+const { default: getTurnstileConfig } = await import('../server/api/config/turnstile.get.ts')
 const { hashStoryPassword } = await import('../server/utils/story-password.ts')
 const { requireUser: requireVerifiedUser } = await import('../server/utils/require-user.ts')
 const { cloudinaryUploadFolderForOwner } = await import('../server/utils/cloudinary-signature.ts')
-const { CLOUDINARY_UPLOAD_PRESET } = await import('../shared/utils/cloudinary-upload-policy.ts')
 
 const migrations = [
   '0001_create_stories.sql',
@@ -184,6 +186,30 @@ function createEvent(database, {
       responseHeaders: new Map(),
     },
   }
+}
+
+function createDeleteImageEvent(database, url, options = {}) {
+  return createEvent(database, {
+    method: 'DELETE',
+    path: `/api/uploads/library?url=${encodeURIComponent(url)}`,
+    ...options,
+  })
+}
+
+function createUploadImageEvent(database, file, options = {}) {
+  const event = createEvent(database, {
+    method: 'POST',
+    path: '/api/uploads/image',
+    ...options,
+  })
+  const formData = new FormData()
+  formData.append('file', file)
+  event.request = new Request('https://localhost/api/uploads/image', {
+    method: 'POST',
+    headers: { 'cf-connecting-ip': options.ip ?? '192.0.2.10' },
+    body: formData,
+  })
+  return event
 }
 
 function assertHttpError(statusCode) {
@@ -609,30 +635,415 @@ test('server session helper rejects missing and unverified users', async () => {
   }
 })
 
-test('upload signatures are private, preset-bound, and scoped to the signed-in user', async () => {
+test('uploads image bytes through the owner-scoped Cloudinary proxy', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const file = new File([new Uint8Array([0xff, 0xd8, 0xff, 0x00])], 'photo.jpg', { type: 'image/jpeg' })
+  let cloudinaryRequest
+
+  try {
+    globalThis.fetch = async (url, options) => {
+      cloudinaryRequest = { url, options }
+      const ownerFolder = await cloudinaryUploadFolderForOwner(users.owner.id)
+      return Response.json({
+        secure_url: `https://res.cloudinary.com/upload-cloud/image/upload/v123/${ownerFolder}/photo.jpg`,
+      })
+    }
+
+    const response = await uploadImage(createUploadImageEvent(database, file))
+    const ownerFolder = await cloudinaryUploadFolderForOwner(users.owner.id)
+    const body = cloudinaryRequest.options.body
+
+    assert.equal(response.url, `https://res.cloudinary.com/upload-cloud/image/upload/v123/${ownerFolder}/photo.jpg`)
+    assert.match(cloudinaryRequest.url, /api\.cloudinary\.com\/v1_1\/upload-cloud\/image\/upload$/)
+    assert.equal(cloudinaryRequest.options.method, 'POST')
+    assert.equal(body.get('file').type, 'image/jpeg')
+    assert.equal(body.get('api_key'), 'test-api-key')
+    assert.equal(body.get('folder'), ownerFolder)
+    assert.equal(body.get('allowed_formats'), 'jpg,jpeg,png,webp')
+    assert.equal(body.get('api_secret'), null)
+    assert.equal(database.prepare('SELECT url FROM uploaded_images').first(), null)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('rejects oversized or mismatched image bytes before contacting Cloudinary', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  let cloudinaryRequestCount = 0
+
+  try {
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({})
+    }
+
+    const oversizedFile = new File(
+      [new Uint8Array(10 * 1024 * 1024 + 1)],
+      'large.jpg',
+      { type: 'image/jpeg' },
+    )
+    await assert.rejects(
+      uploadImage(createUploadImageEvent(database, oversizedFile)),
+      assertHttpError(413),
+    )
+
+    const mismatchedFile = new File(['not a JPEG'], 'photo.jpg', { type: 'image/jpeg' })
+    await assert.rejects(
+      uploadImage(createUploadImageEvent(database, mismatchedFile, { ip: '192.0.2.11' })),
+      assertHttpError(415),
+    )
+    assert.equal(cloudinaryRequestCount, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('retires direct signature minting after moving uploads server-side', async () => {
   const database = createDatabase()
   try {
-    const response = await createUploadSignature(createEvent(database, {
-      method: 'POST',
-      path: '/api/uploads/signature',
-    }))
-    const ownerFolder = await cloudinaryUploadFolderForOwner(users.owner.id)
-
-    assert.equal(response.cloudName, 'upload-cloud')
-    assert.equal(response.folder, ownerFolder)
-    assert.equal(response.uploadPreset, CLOUDINARY_UPLOAD_PRESET)
-    assert.equal('apiSecret' in response, false)
-
     await assert.rejects(
-      createUploadSignature(createEvent(database, {
+      retiredUploadSignature(createEvent(database, {
         method: 'POST',
         path: '/api/uploads/signature',
-        user: null,
-        ip: '192.0.2.20',
       })),
-      assertHttpError(401),
+      assertHttpError(410),
     )
   } finally {
+    database.close()
+  }
+})
+
+test('deletes only an unused image registered to the signed-in owner', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const folder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const imageUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/unused.jpg`
+  let cloudinaryRequest
+
+  try {
+    database.prepare(
+      'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+    ).bind(users.owner.id, imageUrl, '2026-01-01').run()
+
+    globalThis.fetch = async (url, options) => {
+      cloudinaryRequest = { url, options }
+      return Response.json({ result: 'ok' })
+    }
+
+    assert.deepEqual(await deleteUploadedImage(createDeleteImageEvent(database, imageUrl)), { deleted: true })
+
+    assert.match(cloudinaryRequest.url, /api\.cloudinary\.com\/v1_1\/upload-cloud\/image\/destroy$/)
+    assert.equal(
+      database.prepare('SELECT url FROM uploaded_images WHERE owner_user_id = ? AND url = ?')
+        .bind(users.owner.id, imageUrl)
+        .first(),
+      null,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('deletes a legacy image only when it is registered to the signed-in owner', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const imageUrl = 'https://res.cloudinary.com/upload-cloud/image/upload/v123/kekasih/legacy-photo.png'
+  let cloudinaryRequest
+
+  try {
+    database.prepare(
+      'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+    ).bind(users.owner.id, imageUrl, '2026-01-01').run()
+
+    globalThis.fetch = async (url, options) => {
+      cloudinaryRequest = { url, options }
+      return Response.json({ result: 'ok' })
+    }
+
+    assert.deepEqual(await deleteUploadedImage(createDeleteImageEvent(database, imageUrl)), { deleted: true })
+    assert.equal(cloudinaryRequest.options.body.get('public_id'), 'kekasih/legacy-photo')
+    assert.equal(
+      database.prepare('SELECT url FROM uploaded_images WHERE owner_user_id = ? AND url = ?')
+        .bind(users.owner.id, imageUrl)
+        .first(),
+      null,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('does not delete a legacy URL absent from the signed-in owner library', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  let cloudinaryRequestCount = 0
+
+  try {
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(
+        database,
+        'https://res.cloudinary.com/upload-cloud/image/upload/v123/kekasih/another-users-photo.png',
+      )),
+      assertHttpError(404),
+    )
+    assert.equal(cloudinaryRequestCount, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('reports an unregistered image as in-use before checking gallery registration', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const folder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const imageUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/legacy-in-use.jpg`
+  let cloudinaryRequestCount = 0
+
+  try {
+    const draftId = 'f'.repeat(32)
+    seedContent(database, draftId)
+    database.prepare('UPDATE story_content SET hero_image = ? WHERE id = ?').bind(imageUrl, draftId).run()
+    database.prepare(
+      'INSERT INTO story_drafts (id, key_hash, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).bind(draftId, 'draft-key-hash', users.owner.id, '2026-01-01', '2026-01-01').run()
+
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, imageUrl)),
+      assertHttpError(409),
+    )
+    assert.equal(cloudinaryRequestCount, 0)
+    assert.equal(database.prepare(
+      'SELECT url FROM uploaded_images WHERE owner_user_id = ? AND url = ?',
+    ).bind(users.owner.id, imageUrl).first(), null)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('rejects legacy DELETE bodies without reading them in the Worker runtime', async () => {
+  const database = createDatabase()
+  const imageUrl = 'https://res.cloudinary.com/upload-cloud/image/upload/v123/kekasih/owner/photo.jpg'
+  try {
+    await assert.rejects(
+      deleteUploadedImage(createEvent(database, {
+        method: 'DELETE',
+        path: '/api/uploads/library',
+        body: { url: imageUrl },
+      })),
+      assertHttpError(400),
+    )
+  } finally {
+    database.close()
+  }
+})
+
+test('exposes only the public Turnstile site key from Worker runtime configuration', async () => {
+  const database = createDatabase()
+  try {
+    const event = createEvent(database, {
+      path: '/api/config/turnstile',
+      environment: { NUXT_PUBLIC_TURNSTILE_SITE_KEY: 'public-site-key' },
+      runtimeConfig: { public: { turnstileSiteKey: 'build-time-site-key' } },
+    })
+    assert.deepEqual(await getTurnstileConfig(event), { siteKey: 'public-site-key' })
+    assert.equal(event.context.responseHeaders.get('Cache-Control'), 'no-store')
+
+    const runtimeFallback = createEvent(database, {
+      path: '/api/config/turnstile',
+      runtimeConfig: { public: { turnstileSiteKey: 'runtime-site-key' } },
+    })
+    assert.deepEqual(await getTurnstileConfig(runtimeFallback), { siteKey: 'runtime-site-key' })
+  } finally {
+    database.close()
+  }
+})
+
+test('refuses to delete an image referenced by an owned draft or published story', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const folder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const imageUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/in-use.jpg`
+  let cloudinaryRequestCount = 0
+
+  try {
+    database.prepare(
+      'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+    ).bind(users.owner.id, imageUrl, '2026-01-01').run()
+
+    const draftId = 'c'.repeat(32)
+    seedContent(database, draftId)
+    database.prepare('UPDATE story_content SET hero_image = ? WHERE id = ?').bind(imageUrl, draftId).run()
+    database.prepare(
+      'INSERT INTO story_drafts (id, key_hash, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).bind(draftId, 'draft-key-hash', users.owner.id, '2026-01-01', '2026-01-01').run()
+
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, imageUrl)),
+      assertHttpError(409),
+    )
+
+    seedStory(database, { id: 'media-story', slug: 'media-story' })
+    database.prepare('UPDATE story_content SET hero_image = ? WHERE id = ?').bind(imageUrl, 'media-story').run()
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, imageUrl)),
+      assertHttpError(409),
+    )
+
+    assert.equal(cloudinaryRequestCount, 0)
+    assert.ok(
+      database.prepare('SELECT url FROM uploaded_images WHERE owner_user_id = ? AND url = ?')
+        .bind(users.owner.id, imageUrl)
+        .first(),
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('refuses deletion for every story and draft image reference using SQLite-compatible queries', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const folder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const draftId = 'd'.repeat(32)
+  const storyId = 'e'.repeat(32)
+  let cloudinaryRequestCount = 0
+
+  try {
+    seedContent(database, draftId)
+    database.prepare(
+      'INSERT INTO story_drafts (id, key_hash, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).bind(draftId, 'draft-key-hash', users.owner.id, '2026-01-01', '2026-01-01').run()
+    seedStory(database, { id: storyId, slug: 'referenced-story' })
+
+    const references = []
+    let imageIndex = 0
+    for (const contentId of [draftId, storyId]) {
+      for (const column of ['hero_image', 'greeting_image', 'second_image', 'final_image']) {
+        const url = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/reference-${imageIndex++}.jpg`
+        database.prepare(
+          'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+        ).bind(users.owner.id, url, '2026-01-01').run()
+        database.prepare(`UPDATE story_content SET ${column} = ? WHERE id = ?`).bind(url, contentId).run()
+        references.push(url)
+      }
+
+      const galleryUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/gallery-${imageIndex++}.jpg`
+      database.prepare(
+        'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+      ).bind(users.owner.id, galleryUrl, '2026-01-01').run()
+      database.prepare(
+        'UPDATE story_gallery_items SET url = ? WHERE content_id = ? AND position = 0',
+      ).bind(galleryUrl, contentId).run()
+      references.push(galleryUrl)
+
+      const chapterUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/chapter-${imageIndex++}.jpg`
+      database.prepare(
+        'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+      ).bind(users.owner.id, chapterUrl, '2026-01-01').run()
+      database.prepare(
+        'UPDATE story_chapters SET image_url = ? WHERE content_id = ? AND position = 0',
+      ).bind(chapterUrl, contentId).run()
+      references.push(chapterUrl)
+    }
+
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+
+    for (const [index, url] of references.entries()) {
+      await assert.rejects(
+        deleteUploadedImage(createDeleteImageEvent(database, url, { ip: `192.0.2.${40 + index}` })),
+        assertHttpError(409),
+        `referenced image ${index} must be protected`,
+      )
+    }
+    assert.equal(cloudinaryRequestCount, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('refuses to delete an image referenced by another account story', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const folder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const imageUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${folder}/shared.jpg`
+  let cloudinaryRequestCount = 0
+
+  try {
+    database.prepare(
+      'INSERT INTO uploaded_images (owner_user_id, url, created_at) VALUES (?, ?, ?)',
+    ).bind(users.owner.id, imageUrl, '2026-01-01').run()
+    seedStory(database, { id: 'foreign-story', slug: 'foreign-story', ownerId: users.other.id })
+    database.prepare('UPDATE story_content SET hero_image = ? WHERE id = ?').bind(imageUrl, 'foreign-story').run()
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, imageUrl)),
+      assertHttpError(409),
+    )
+    assert.equal(cloudinaryRequestCount, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    database.close()
+  }
+})
+
+test('rejects unauthorized and foreign-owner media deletion before contacting Cloudinary', async () => {
+  const database = createDatabase()
+  const originalFetch = globalThis.fetch
+  const ownerFolder = await cloudinaryUploadFolderForOwner(users.owner.id)
+  const foreignImageUrl = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${ownerFolder}/photo.jpg`
+  let cloudinaryRequestCount = 0
+
+  try {
+    globalThis.fetch = async () => {
+      cloudinaryRequestCount++
+      return Response.json({ result: 'ok' })
+    }
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, foreignImageUrl, { user: null })),
+      assertHttpError(401),
+    )
+
+    const otherOwnerFolder = await cloudinaryUploadFolderForOwner(users.other.id)
+    const otherOwnerImage = `https://res.cloudinary.com/upload-cloud/image/upload/v123/${otherOwnerFolder}/photo.jpg`
+    await assert.rejects(
+      deleteUploadedImage(createDeleteImageEvent(database, otherOwnerImage)),
+      assertHttpError(400),
+    )
+    assert.equal(cloudinaryRequestCount, 0)
+  } finally {
+    globalThis.fetch = originalFetch
     database.close()
   }
 })

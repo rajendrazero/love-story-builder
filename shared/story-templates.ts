@@ -39,6 +39,12 @@ export type TemplateFeature =
   | 'music'
   | 'video-greeting'
 export type TemplateStatus = 'available' | 'planned'
+export type TemplateEntranceStyle = 'editorial' | 'cinema' | 'botanical' | 'letter' | 'atlas'
+
+export interface TemplateEntranceConfig {
+  style: TemplateEntranceStyle
+  actionLabel: string
+}
 
 interface TemplateDefinition {
   id: string
@@ -57,6 +63,7 @@ interface TemplateDefinition {
   status: TemplateStatus
   highlights: readonly string[]
   colors: readonly [string, string, string]
+  entrance: TemplateEntranceConfig
 }
 
 const commonFeatures = ['book', 'chapters', 'gallery', 'music', 'video-greeting'] as const satisfies readonly TemplateFeature[]
@@ -80,6 +87,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Sampul editorial', 'Foto bergaya cetak', 'Dedikasi & tanda tangan'],
     colors: ['#f8e6e3', '#a94d58', '#fffaf5'],
+    entrance: { style: 'editorial', actionLabel: 'Buka cerita kami' },
   },
   {
     id: 'midnight-cinema',
@@ -98,6 +106,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Sampul sinematik', 'Galeri seperti film', 'Kutipan & kredit penutup'],
     colors: ['#18151d', '#d2a7ff', '#f2eaf7'],
+    entrance: { style: 'cinema', actionLabel: 'Mulai cerita' },
   },
   {
     id: 'botanical-journal',
@@ -116,6 +125,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Foto cetak jurnal', 'Catatan lapangan', 'Halaman bernuansa kertas'],
     colors: ['#e7ebd8', '#53684b', '#fcf8ed'],
+    entrance: { style: 'botanical', actionLabel: 'Buka jurnal' },
   },
   {
     id: 'love-letter',
@@ -134,6 +144,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Pembuka seperti surat', 'Foto bergaya polaroid', 'Buku kenangan bertekstur'],
     colors: ['#f5e8d5', '#995d50', '#342923'],
+    entrance: { style: 'letter', actionLabel: 'Buka surat' },
   },
   {
     id: 'memory-atlas',
@@ -152,6 +163,7 @@ export const storyTemplates = [
     status: 'available',
     highlights: ['Garis waktu vertikal', 'Arsip foto horizontal', 'Bab perjalanan berurutan'],
     colors: ['#e8e2d2', '#35596b', '#253943'],
+    entrance: { style: 'atlas', actionLabel: 'Jelajahi cerita' },
   },
 ] as const satisfies readonly TemplateDefinition[]
 

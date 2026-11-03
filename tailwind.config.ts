@@ -6,6 +6,11 @@ export default <Partial<Config>>{
   ],
   theme: {
     extend: {
+      screens: {
+        xs: '320px',
+        compact: '375px',
+        '3xl': '1536px',
+      },
       colors: {
         background: 'var(--color-background)',
         foreground: 'var(--color-foreground)',

@@ -36,6 +36,8 @@ test('refreshes Google OAuth token and sends a UTF-8 activation message', async 
   assert.equal(requests[0].url, 'https://oauth2.googleapis.com/token')
   assert.equal(requests[0].options.method, 'POST')
   assert.equal(requests[0].options.headers['Content-Type'], 'application/x-www-form-urlencoded')
+  assert.ok(requests[0].options.signal instanceof AbortSignal)
+  assert.ok(requests[1].options.signal instanceof AbortSignal)
   assert.equal(requests[0].options.body.get('refresh_token'), email.refreshToken)
   assert.equal(requests[1].url, 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send')
   assert.equal(requests[1].options.headers.Authorization, 'Bearer short-lived-access-token')
@@ -73,6 +75,23 @@ test('reports Google OAuth errors without leaking client credentials', async () 
       assert.match(error.message, /HTTP 400/)
       assert.match(error.message, /expired or revoked/i)
       assert.doesNotMatch(error.message, /oauth-client-secret|oauth-refresh-token/)
+      return true
+    },
+  )
+})
+
+test('reports Gmail send failures without leaking OAuth credentials', async () => {
+  await assert.rejects(
+    sendGmailEmail(email, async (url) => {
+      if (url === 'https://oauth2.googleapis.com/token') {
+        return Response.json({ access_token: 'short-lived-access-token' })
+      }
+      return Response.json({ error: { message: 'Mailbox unavailable' } }, { status: 401 })
+    }),
+    (error) => {
+      assert.match(error.message, /HTTP 401/)
+      assert.match(error.message, /Mailbox unavailable/)
+      assert.doesNotMatch(error.message, /oauth-client-secret|oauth-refresh-token|short-lived-access-token/)
       return true
     },
   )

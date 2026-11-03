@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { captcha, username } from 'better-auth/plugins'
 import { createError } from 'h3'
 import { getRequestURL, type H3Event } from 'h3'
-import { resolveAuthOrigins } from './auth-origin'
+import { isLocalAuthHostname, isValidAuthBaseURL, resolveAuthOrigins } from './auth-origin'
 import { seedUserRole } from './admin-role'
 import { getAppEnv, requireDatabase } from './cloudflare'
 import { sendGmailEmail } from './gmail-email'
@@ -24,18 +24,6 @@ async function sendEmail(
   await sendGmailEmail({ sender, clientId, clientSecret, refreshToken, to, subject, text })
 }
 
-function isValidAuthURL(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return (url.protocol === 'https:' || url.protocol === 'http:')
-      && Boolean(url.hostname)
-      && !url.username
-      && !url.password
-  } catch {
-    return false
-  }
-}
-
 export function createAuth(event: H3Event) {
   const env = getAppEnv(event)
   const secret = env.BETTER_AUTH_SECRET?.trim()
@@ -53,14 +41,32 @@ export function createAuth(event: H3Event) {
     })
   }
   const configuredAuthURL = env.BETTER_AUTH_URL?.trim()
-  if (configuredAuthURL && !isValidAuthURL(configuredAuthURL)) {
+  if (configuredAuthURL && !isValidAuthBaseURL(configuredAuthURL)) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'BETTER_AUTH_URL harus berupa alamat HTTP atau HTTPS yang valid.',
+      statusMessage: 'BETTER_AUTH_URL harus berupa origin HTTPS atau origin HTTP loopback untuk pengembangan lokal.',
     })
   }
 
-  const authOrigins = resolveAuthOrigins(configuredAuthURL, getRequestURL(event).origin)
+  const requestURL = getRequestURL(event)
+  const isLocalRequest = isLocalAuthHostname(requestURL.hostname)
+  const isLocalConfiguration = configuredAuthURL
+    ? isLocalAuthHostname(new URL(configuredAuthURL).hostname)
+    : false
+  if (isLocalConfiguration && !isLocalRequest) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'BETTER_AUTH_URL lokal hanya dapat digunakan untuk development lokal.',
+    })
+  }
+  if (!configuredAuthURL && !isLocalRequest) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'BETTER_AUTH_URL wajib dikonfigurasi untuk host production.',
+    })
+  }
+
+  const authOrigins = resolveAuthOrigins(configuredAuthURL, requestURL.origin)
   const { baseURL, allowedHostnames, trustedOrigins } = authOrigins
   const sendLink = async (email: string, subject: string, url: string, event: H3Event) => {
     try {

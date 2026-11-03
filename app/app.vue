@@ -1,13 +1,13 @@
 <template>
   <div class="min-h-screen" :class="{ 'cinematic-cursor': cursorPreset !== 'system' }">
-    <a class="skip-link" href="#main-content">Lewati ke konten utama</a>
-    <SiteNavigation />
-    <div v-if="routeLoading" class="route-loading-track" role="progressbar" aria-label="Memuat halaman">
+    <a class="skip-link" :href="isPublicStoryRoute ? '#entrance-open' : '#main-content'">Lewati ke konten utama</a>
+    <SiteNavigation v-if="!isPublicStoryRoute" />
+    <div v-if="routeLoading && !isPublicStoryRoute" class="route-loading-track" role="progressbar" aria-label="Memuat halaman">
       <span />
     </div>
     <NuxtPage />
     <AppConfirmDialog ref="confirmDialog" />
-    <footer class="site-footer">
+    <footer v-if="!isPublicStoryRoute" class="site-footer">
       <NuxtLink to="/" class="site-footer-brand">selamanya<span>.</span></NuxtLink>
       <nav aria-label="Informasi hukum">
         <NuxtLink to="/privacy-policy">Kebijakan Privasi</NuxtLink>
@@ -16,14 +16,14 @@
     </footer>
     <AppNotifications />
     <div
-      v-show="cursorPreset !== 'system'"
+      v-show="!isPublicStoryRoute && cursorPreset !== 'system'"
       ref="cursor"
-      class="app-cursor pointer-events-none fixed left-0 top-0 z-[100] hidden h-7 w-7 items-center justify-center rounded-full border border-white/70 mix-blend-difference md:flex"
+      class="app-cursor pointer-events-none fixed left-0 top-0 hidden h-7 w-7 items-center justify-center rounded-full border border-white/70 mix-blend-difference md:flex"
       :class="`app-cursor-${cursorPreset}`"
       aria-hidden="true"
     >{{ cursorSymbol }}</div>
     <div
-      v-if="scrollbarVisible"
+      v-if="scrollbarVisible && !isPublicStoryRoute"
       ref="scrollbarTrack"
       class="custom-scrollbar-track"
       @pointerdown="onScrollbarPointerDown"
@@ -54,6 +54,8 @@ const cursor = ref<HTMLElement | null>(null)
 const confirmDialog = ref<{ open: (options: AppConfirmationOptions) => Promise<boolean> } | null>(null)
 const routeLoading = ref(false)
 const router = useRouter()
+const route = useRoute()
+const isPublicStoryRoute = computed(() => route.path.startsWith('/w/'))
 provide(appConfirmationKey, (options: AppConfirmationOptions) => {
   if (!confirmDialog.value) return Promise.resolve(false)
   return confirmDialog.value.open(options)
@@ -83,6 +85,9 @@ let moveCursorY: ((value: number) => void) | undefined
 let resizeObserver: ResizeObserver | undefined
 let removeRouterGuards: Array<() => void> = []
 let metricsFrame = 0
+let scrollFrame = 0
+let viewportHeight = 0
+let trackHeight = 0
 let dragOffset = 0
 let draggingScrollbar = false
 
@@ -91,31 +96,44 @@ function handlePointerMove(event: PointerEvent) {
   moveCursorY?.(event.clientY - 14)
 }
 
-function updateScrollbar() {
-  const documentHeight = Math.max(
-    document.documentElement.scrollHeight,
-    document.body.scrollHeight,
-  )
-  const viewportHeight = window.innerHeight
-  maxScroll.value = Math.max(0, documentHeight - viewportHeight)
+function updateScrollbarPosition() {
+  if (isPublicStoryRoute.value) return
   scrollPosition.value = Math.min(maxScroll.value, Math.max(0, window.scrollY))
-  scrollbarVisible.value = maxScroll.value > 1
-
-  const trackHeight = scrollbarTrack.value?.clientHeight ?? viewportHeight
-  scrollbarThumbHeight.value = Math.min(
-    trackHeight,
-    Math.max(42, trackHeight * viewportHeight / documentHeight),
-  )
   scrollbarThumbTop.value = maxScroll.value > 0
     ? scrollPosition.value / maxScroll.value * (trackHeight - scrollbarThumbHeight.value)
     : 0
 }
 
+function updateScrollbarMetrics() {
+  const documentHeight = Math.max(
+    document.documentElement.scrollHeight,
+    document.body.scrollHeight,
+  )
+  viewportHeight = window.innerHeight
+  maxScroll.value = Math.max(0, documentHeight - viewportHeight)
+  scrollbarVisible.value = maxScroll.value > 1
+
+  trackHeight = scrollbarTrack.value?.clientHeight ?? viewportHeight
+  scrollbarThumbHeight.value = Math.min(
+    trackHeight,
+    Math.max(42, trackHeight * viewportHeight / documentHeight),
+  )
+  updateScrollbarPosition()
+}
+
 function scheduleScrollbarUpdate() {
+  if (scrollFrame) return
+  scrollFrame = window.requestAnimationFrame(() => {
+    scrollFrame = 0
+    updateScrollbarPosition()
+  })
+}
+
+function scheduleScrollbarMetrics() {
   if (metricsFrame) return
   metricsFrame = window.requestAnimationFrame(() => {
     metricsFrame = 0
-    updateScrollbar()
+    updateScrollbarMetrics()
   })
 }
 
@@ -123,7 +141,7 @@ function scrollToThumbPosition(clientY: number, offset: number) {
   const track = scrollbarTrack.value
   if (!track || maxScroll.value <= 0) return
 
-  const availableTrack = track.clientHeight - scrollbarThumbHeight.value
+  const availableTrack = trackHeight - scrollbarThumbHeight.value
   if (availableTrack <= 0) return
 
   const top = Math.min(
@@ -194,18 +212,19 @@ onMounted(() => {
     }),
     router.afterEach(() => {
       routeLoading.value = false
+      nextTick(scheduleScrollbarMetrics)
     }),
     router.onError(() => {
       routeLoading.value = false
     }),
   ]
-  updateScrollbar()
-  nextTick(updateScrollbar)
+  updateScrollbarMetrics()
+  nextTick(scheduleScrollbarMetrics)
   window.addEventListener('scroll', scheduleScrollbarUpdate, { passive: true })
-  window.addEventListener('resize', scheduleScrollbarUpdate, { passive: true })
+  window.addEventListener('resize', scheduleScrollbarMetrics, { passive: true })
   window.addEventListener('pointermove', onScrollbarPointerMove, { passive: true })
   window.addEventListener('pointerup', onScrollbarPointerUp, { passive: true })
-  resizeObserver = new ResizeObserver(scheduleScrollbarUpdate)
+  resizeObserver = new ResizeObserver(scheduleScrollbarMetrics)
   resizeObserver.observe(document.documentElement)
   resizeObserver.observe(document.body)
 
@@ -224,199 +243,14 @@ onBeforeUnmount(() => {
   removeRouterGuards = []
   window.removeEventListener('pointermove', handlePointerMove)
   window.removeEventListener('scroll', scheduleScrollbarUpdate)
-  window.removeEventListener('resize', scheduleScrollbarUpdate)
+  window.removeEventListener('resize', scheduleScrollbarMetrics)
   window.removeEventListener('pointermove', onScrollbarPointerMove)
   window.removeEventListener('pointerup', onScrollbarPointerUp)
   resizeObserver?.disconnect()
   if (metricsFrame) window.cancelAnimationFrame(metricsFrame)
+  if (scrollFrame) window.cancelAnimationFrame(scrollFrame)
   if (cursor.value) gsap.killTweensOf(cursor.value)
   moveCursorX = undefined
   moveCursorY = undefined
 })
 </script>
-
-<style>
-.skip-link {
-  position: fixed;
-  top: 0.75rem;
-  left: 0.75rem;
-  z-index: 200;
-  transform: translateY(calc(-100% - 1rem));
-  border-radius: var(--radius-full);
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-primary-foreground);
-  background: var(--color-primary);
-  box-shadow: var(--shadow-medium);
-  text-decoration: none;
-}
-
-.skip-link:focus-visible {
-  transform: translateY(0);
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 3px;
-}
-
-#main-content {
-  scroll-margin-top: 5rem;
-}
-
-#main-content:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 4px;
-}
-
-.route-loading-track {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 130;
-  height: 3px;
-  overflow: hidden;
-  background: rgb(80 69 245 / 12%);
-}
-
-.site-footer {
-  display: flex;
-  width: min(100% - 2rem, 90rem);
-  min-height: 5rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 3rem auto 0;
-  border-top: 1px solid rgb(32 29 40 / 12%);
-  color: #514d57;
-  font-size: 0.8rem;
-}
-
-.site-footer a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.site-footer a:hover,
-.site-footer a:focus-visible {
-  color: #5045f5;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.site-footer-brand {
-  color: #201d28 !important;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.site-footer-brand span {
-  color: #5045f5;
-}
-
-.site-footer nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.75rem 1.25rem;
-}
-
-.site-footer a:focus-visible {
-  border-radius: 0.2rem;
-  outline: 2px solid #5045f5;
-  outline-offset: 3px;
-}
-
-@media (max-width: 480px) {
-  .site-footer {
-    align-items: flex-start;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: 1rem;
-  }
-
-  .site-footer nav {
-    justify-content: flex-start;
-  }
-}
-
-.route-loading-track span {
-  display: block;
-  width: 40%;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #5045f5, #d8f36a);
-  animation: route-loading 1s ease-in-out infinite;
-}
-
-@keyframes route-loading {
-  from { transform: translateX(-110%); }
-  to { transform: translateX(260%); }
-}
-
-.custom-scrollbar-track {
-  position: fixed;
-  inset: 0 0.25rem 0 0;
-  z-index: 110;
-  width: 0.75rem;
-  touch-action: none;
-}
-
-.app-cursor-heart,
-.app-cursor-sparkle,
-.app-cursor-flower,
-.app-cursor-star {
-  border: 0;
-  color: #fffaf5;
-  font-size: 1.15rem;
-  line-height: 1;
-  text-shadow: 0 1px 5px rgb(32 29 40 / 45%);
-}
-
-.custom-scrollbar-thumb {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 0.55rem;
-  min-height: 2.6rem;
-  border: 1px solid rgb(255 250 245 / 65%);
-  border-radius: 999px;
-  padding: 0;
-  background: linear-gradient(180deg, #d8f36a, #5045f5);
-  box-shadow: 0 2px 12px rgb(32 29 40 / 22%);
-  cursor: grab;
-  transform: translateX(-50%);
-  touch-action: none;
-  transition: background 160ms ease, box-shadow 160ms ease;
-}
-
-.custom-scrollbar-thumb:hover,
-.custom-scrollbar-thumb:focus-visible {
-  background: linear-gradient(180deg, #ff7968, #5045f5);
-  box-shadow: 0 2px 14px rgb(32 29 40 / 35%);
-}
-
-.custom-scrollbar-thumb:active {
-  cursor: grabbing;
-}
-
-.custom-scrollbar-thumb:focus-visible {
-  outline: 2px solid #fffaf5;
-  outline-offset: 2px;
-}
-
-@media (pointer: coarse) {
-  .custom-scrollbar-track {
-    width: 1.75rem;
-  }
-
-  .custom-scrollbar-thumb {
-    width: 1.5rem;
-  }
-}
-
-@media (pointer: fine) and (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .cinematic-cursor,
-  .cinematic-cursor * {
-    cursor: none !important;
-  }
-}
-</style>

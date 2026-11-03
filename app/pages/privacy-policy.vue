@@ -106,82 +106,9 @@
 useSeoMeta({
   title: 'Kebijakan Privasi — Selamanya',
   description: 'Kebijakan privasi Selamanya dan cara data akun, cerita, serta email diproses.',
+  ogTitle: 'Kebijakan Privasi — Selamanya',
+  ogDescription: 'Kebijakan privasi Selamanya dan cara data akun, cerita, serta email diproses.',
+  ogType: 'article',
   robots: 'index, follow',
 })
 </script>
-
-<style scoped>
-.legal-page {
-  width: min(100% - 2rem, 54rem);
-  margin: 0 auto;
-  padding: clamp(2rem, 6vw, 5rem) 0;
-  color: #34313a;
-  line-height: 1.75;
-}
-
-.legal-page a {
-  color: #5045f5;
-  text-underline-offset: 0.2em;
-}
-
-.legal-back {
-  display: inline-block;
-  margin-bottom: 2.5rem;
-  font-size: 0.85rem;
-  text-decoration: none;
-}
-
-.legal-eyebrow {
-  margin: 0 0 0.5rem;
-  color: #5045f5;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-h1,
-h2 {
-  color: #201d28;
-  font-family: 'Space Grotesk', sans-serif;
-  line-height: 1.2;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(2.4rem, 8vw, 4.5rem);
-  letter-spacing: -0.06em;
-}
-
-.legal-intro {
-  max-width: 42rem;
-  margin: 1.25rem 0 3rem;
-  color: #66616d;
-  font-size: 1.1rem;
-}
-
-section {
-  margin: 2.5rem 0;
-}
-
-h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.35rem;
-}
-
-p {
-  margin: 0.75rem 0;
-}
-
-ul {
-  display: grid;
-  gap: 0.75rem;
-  padding-left: 1.25rem;
-}
-
-.legal-related-link {
-  display: inline-block;
-  margin-top: 1rem;
-  font-weight: 700;
-}
-</style>

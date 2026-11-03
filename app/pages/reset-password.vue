@@ -12,10 +12,10 @@
       </div>
       <p v-if="!token || invalidToken" class="reset-feedback reset-feedback-error" role="alert">Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru dari halaman masuk.</p>
       <form class="reset-form" @submit.prevent="resetPassword">
-        <label>
-          <span class="editor-label">Kata sandi baru</span>
+        <div class="floating-field">
+          <label for="new-password" class="editor-label">Kata sandi baru</label>
           <span class="reset-password-field">
-            <input id="new-password" v-model="password" name="newPassword" class="editor-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" required>
+            <input id="new-password" v-model="password" name="newPassword" class="editor-input" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="••••••••••••">
             <button
               type="button"
               class="reset-password-toggle"
@@ -23,16 +23,22 @@
               :aria-pressed="showPassword"
               @click="showPassword = !showPassword"
             >
-              {{ showPassword ? 'Sembunyikan' : 'Lihat' }}
+              <AppIcon :name="showPassword ? 'eye-off' : 'eye'" :size="19" />
             </button>
           </span>
           <span class="reset-hint">Gunakan minimal 12 karakter.</span>
-        </label>
+        </div>
         <p v-if="message" class="reset-feedback reset-feedback-success" role="status">{{ message }}</p>
-        <p v-if="error" class="reset-feedback reset-feedback-error" role="alert">{{ error }}</p>
+        <AppErrorAlert
+          v-if="error"
+          class="reset-feedback"
+          title="Kata sandi belum berhasil diubah"
+          :message="error"
+          location="Form keamanan akun"
+        />
         <button class="reset-submit" :disabled="busy || !token || invalidToken">
           <span v-if="busy" class="loading-spinner" aria-hidden="true" />
-          <span>{{ busy ? 'Menyimpan…' : 'Simpan kata sandi baru' }}</span><span aria-hidden="true">↗</span>
+          <span>{{ busy ? 'Menyimpan…' : 'Simpan kata sandi baru' }}</span><AppIcon name="arrow-up-right" :size="18" />
         </button>
       </form>
       <NuxtLink to="/login" class="reset-login-link">Kembali ke masuk</NuxtLink>
@@ -43,6 +49,7 @@
 <script setup lang="ts">
 import { createAuthClient } from 'better-auth/vue'
 import { gsap } from 'gsap'
+import { getUserFacingError } from '#shared/utils/user-facing-error'
 
 const authClient = createAuthClient()
 const { success, error: notifyError } = useNotifications()
@@ -58,13 +65,6 @@ const error = ref('')
 let resetMotion: gsap.MatchMedia | undefined
 
 useSeoMeta({ title: 'Atur ulang sandi — Selamanya', robots: 'noindex, nofollow' })
-
-function getRequestError(caught: unknown): string {
-  if (caught instanceof TypeError) {
-    return 'Tidak dapat terhubung ke server. Pastikan Worker berjalan dan buka https://localhost:8787 (bukan port alternatif seperti 8788).'
-  }
-  return caught instanceof Error ? caught.message : 'Sandi belum berhasil diubah.'
-}
 
 onMounted(() => {
   const root = page.value
@@ -111,8 +111,13 @@ async function resetPassword() {
     success(message.value)
     password.value = ''
   } catch (caught) {
-    error.value = getRequestError(caught)
-    notifyError(error.value)
+    const details = getUserFacingError(caught, {
+      title: 'Kata sandi belum berhasil diubah',
+      fallback: 'Periksa tautan reset dan koneksi, lalu coba lagi.',
+      location: 'Form keamanan akun',
+    })
+    error.value = details.message
+    notifyError(details)
   } finally {
     busy.value = false
   }
@@ -194,18 +199,25 @@ async function resetPassword() {
 .reset-form { display: grid; gap: 1rem; margin-top: 1.5rem; }
 .reset-form .editor-input { min-height: 3.1rem; }
 .reset-password-field { position: relative; display: block; }
-.reset-password-field .editor-input { padding-right: 5.2rem; }
+.reset-password-field .editor-input { padding-right: 3.5rem; }
 .reset-password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.85rem;
+  right: 0.35rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
   border: 0;
-  padding: 0.35rem 0;
+  border-radius: 50%;
   color: var(--brand-cobalt);
   background: transparent;
-  font-size: 0.7rem;
-  font-weight: 600;
   transform: translateY(-50%);
+  cursor: pointer;
+}
+.reset-password-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .reset-hint {
   display: block;

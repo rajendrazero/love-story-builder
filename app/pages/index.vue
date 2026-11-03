@@ -5,70 +5,66 @@
       <div class="hero-glow hero-glow-two" />
       <div class="home-hero-content">
         <div class="home-hero-copy">
-          <span class="home-pill"><i /> bukan template biasa</span>
-          <p class="home-kicker">Ruang kecil. Cerita paling kalian.</p>
-          <h1>LOVE,<br>IN YOUR<br><em>own words.</em></h1>
-          <p class="home-intro">Bikin halaman internet dari foto receh, cerita dalam, dan lagu yang cuma kalian berdua tahu.</p>
+          <p class="home-kicker">SELAMANYA · A PLACE FOR YOUR STORY</p>
+          <h1>Yang kecil-kecil,<br><em>jadi selamanya.</em></h1>
+          <p class="home-intro">Foto, pesan, dan lagu kalian—dirangkai jadi satu halaman yang terasa seperti kalian.</p>
           <div class="home-actions">
-            <NuxtLink to="/preview" class="button-primary">Intip hasil jadinya ↗</NuxtLink>
-            <NuxtLink to="/templates" class="button-quiet">Bikin cerita kalian ↗</NuxtLink>
+            <NuxtLink to="/templates" class="button-primary">Mulai cerita ↗</NuxtLink>
+            <NuxtLink to="/preview" class="button-quiet">Lihat contoh ↓</NuxtLink>
           </div>
         </div>
-        <div class="home-hero-collage" aria-label="Kolase foto kenangan">
-          <figure class="hero-photo hero-photo-main">
-            <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1100&q=85" alt="Sepasang kekasih berbagi senja">
-            <figcaption>sore favorit kita ♡</figcaption>
-          </figure>
-          <figure class="hero-photo hero-photo-small">
-            <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=85" alt="Kencan kecil yang jadi kenangan">
-          </figure>
-          <span class="hero-note">made with<br>your memories ✳</span>
-          <span class="hero-flower" aria-hidden="true">✳</span>
+        <div
+          class="home-hero-collage"
+          :class="{ 'home-hero-3d-ready': sceneReady }"
+          role="img"
+          aria-label="Ilustrasi tiga dimensi album cerita Selamanya"
+        >
+          <div class="hero-scene-halo" />
+          <div class="hero-scene-fallback" aria-hidden="true">
+            <figure class="hero-fallback-card hero-fallback-card-secondary">
+              <img :src="heroOne" alt="">
+              <figcaption>little moments</figcaption>
+            </figure>
+            <figure class="hero-fallback-card hero-fallback-card-main">
+              <img :src="heroTwo" alt="">
+              <figcaption>our story ♡</figcaption>
+            </figure>
+          </div>
+          <ClientOnly>
+            <HomeHeroScene @ready="sceneReady = true" />
+          </ClientOnly>
         </div>
-        <span class="hero-index">01 / made of you two</span>
       </div>
     </section>
 
     <section id="fitur" class="home-screen home-features">
       <header class="feature-heading">
         <div>
-          <p class="home-kicker">Buat yang personal, bukan yang sempurna</p>
-          <h2>Foto blur pun punya <em>cerita.</em></h2>
+          <p class="home-kicker">DIBUAT DARI YANG NYATA</p>
+          <h2>Kenangan kecil.<br><em>Rasa yang besar.</em></h2>
         </div>
-        <p class="feature-intro">Pilih foto, tulis kisahnya, lihat dulu hasilnya. Baru kalau sudah pas, terbitkan.</p>
+        <p class="feature-intro">Pilih suasana. Isi cerita. Bagikan saat siap.</p>
       </header>
       <div class="feature-grid">
         <article class="feature-card feature-cover">
-          <span class="feature-number">01 / pembuka</span>
           <div><h3>Foto favorit.<br>Judul kalian.</h3><span class="feature-script">itu udah cukup ♡</span></div>
           <img src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=85" alt="" loading="lazy">
         </article>
         <article class="feature-card feature-gallery">
-          <span class="feature-number">02 / galeri</span>
           <div><span class="feature-symbol">↗</span><h3>Scroll kenangan kalian.</h3></div>
         </article>
         <article class="feature-card feature-book">
-          <span class="feature-number">03 / buku kecil</span>
           <div><span class="feature-symbol">✳</span><h3>Satu bab, satu rasa.</h3></div>
         </article>
         <article class="feature-card feature-note">
-          <span class="feature-number">04 / kartu ucapan</span>
           <div><span class="feature-script">dear you,</span><h3>Tulis yang jarang kamu bilang.</h3></div>
         </article>
         <article class="feature-card feature-song">
-          <span class="feature-number">05 / lagu kalian</span>
           <div><span class="feature-symbol">♫</span><h3>Kasih soundtrack ke ceritanya.</h3></div>
         </article>
         <article class="feature-card feature-share">
-          <span class="feature-number">06 / cara berbagi</span>
           <div><span class="qr-mark" aria-hidden="true">▦</span><h3>Satu link. Satu QR. Jadi milik kalian.</h3></div>
         </article>
-      </div>
-      <div class="feature-ticker" aria-label="Foto favorit, inside jokes, lagu kalian, cerita nyata">
-        <div class="ticker-track">
-          <span v-for="(item, index) in tickerItems" :key="item">{{ item }} <b>{{ index % 2 ? '♡' : '✳' }}</b></span>
-          <span v-for="(item, index) in tickerItems" :key="`repeat-${item}`" aria-hidden="true">{{ item }} <b>{{ index % 2 ? '♡' : '✳' }}</b></span>
-        </div>
       </div>
     </section>
 
@@ -76,12 +72,12 @@
       <div class="cta-glow" />
       <div class="cta-content">
         <div class="cta-copy">
-          <p class="home-kicker">No design degree required</p>
-          <h2>Internet, tapi rasanya <em>kalian banget.</em></h2>
-          <p>Lihat contoh dulu. Kalau suka, ubah semuanya jadi cerita kalian. Tidak ada yang diterbitkan sebelum kamu bilang siap.</p>
+          <p class="home-kicker">PUNYA KALIAN, SEPENUHNYA</p>
+          <h2>Satu link.<br><em>Seluruh cerita.</em></h2>
+          <p>Rangkai sesuka hati. Terbitkan hanya saat kamu siap.</p>
           <div class="home-actions">
-            <NuxtLink to="/preview" class="button-primary">Lihat pratinjau ↗</NuxtLink>
-            <NuxtLink to="/templates" class="button-quiet">Mulai bikin cerita ↗</NuxtLink>
+            <NuxtLink to="/templates" class="button-primary">Buat cerita ↗</NuxtLink>
+            <NuxtLink to="/preview" class="button-quiet">Lihat contoh ↗</NuxtLink>
           </div>
         </div>
         <div class="cta-photo-wrap">
@@ -89,25 +85,28 @@
           <span>buat & bagikan ✳</span>
         </div>
       </div>
-      <footer class="home-footer">
-        <span>selamanya<span class="brand-mark">®</span></span>
-        <span>Dibuat dari banyak kenangan kecil.</span>
-        <NuxtLink to="/preview">Preview template ↗</NuxtLink>
-      </footer>
     </section>
   </main>
 </template>
 
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import heroOne from '../assets/img/hero1.jpg'
+import heroTwo from '../assets/img/hero2.jpg'
+
+const HomeHeroScene = defineAsyncComponent(() => import('../components/HomeHeroScene.vue'))
+const sceneReady = ref(false)
 
 useSeoMeta({
   title: 'Selamanya — Bikin Cerita Kalian',
   description: 'Ubah foto, cerita, dan lagu favorit jadi halaman digital yang personal. Lihat pratinjau tanpa mengisi form.',
+  ogTitle: 'Selamanya — Bikin Cerita Kalian',
+  ogDescription: 'Ubah foto, cerita, dan lagu favorit jadi halaman digital yang personal. Lihat pratinjau tanpa mengisi form.',
+  ogType: 'website',
 })
 
-const tickerItems = ['foto favorit', 'inside jokes', 'lagu kalian', 'cerita nyata', 'made by you']
 const page = ref<HTMLElement | null>(null)
 let motionMedia: gsap.MatchMedia | undefined
 
@@ -148,33 +147,77 @@ onMounted(() => {
       },
     })
 
+    const featureSection = root.querySelector<HTMLElement>('.home-features')
+    const ctaSection = root.querySelector<HTMLElement>('.home-cta')
+    const heroCopy = root.querySelector<HTMLElement>('.home-hero-copy')
+    const heroCollage = root.querySelector<HTMLElement>('.home-hero-collage')
+    const heroGlows = root.querySelectorAll<HTMLElement>('.hero-glow')
+    const ctaGlow = root.querySelector<HTMLElement>('.cta-glow')
+    const featureHeading = root.querySelector<HTMLElement>('.feature-heading')
+    const featureGrid = root.querySelector<HTMLElement>('.feature-grid')
+
+    const navigationOffset = () => {
+      return document.querySelector('.site-nav-shell')?.getBoundingClientRect().height ?? 68
+    }
+
+    if (featureSection && ctaSection && heroCopy && heroCollage && featureHeading && featureGrid) {
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: featureSection,
+          start: 'top bottom',
+          end: () => `top top+=${navigationOffset()}`,
+          scrub: 0.35,
+        },
+      })
+        .to(heroCopy, { yPercent: -15, scale: 0.94, opacity: 0.68, ease: 'none' }, 0)
+        .to(heroCollage, { yPercent: 18, rotate: -4, ease: 'none' }, 0)
+        .to(heroGlows, { yPercent: 32, ease: 'none' }, 0)
+
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: ctaSection,
+          start: 'top bottom',
+          end: () => `top top+=${navigationOffset()}`,
+          scrub: 0.35,
+        },
+      })
+        .to(featureHeading, { yPercent: -8, opacity: 0.76, ease: 'none' }, 0)
+        .to(featureGrid, { yPercent: -5, scale: 0.97, opacity: 0.76, ease: 'none' }, 0)
+      if (ctaGlow) {
+        gsap.to(ctaGlow, {
+          yPercent: -22,
+          xPercent: -10,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: ctaSection,
+            start: 'top bottom',
+            end: () => `top top+=${navigationOffset()}`,
+            scrub: 0.45,
+          },
+        })
+      }
+    }
+
     const cleanupHandlers: Array<() => void> = []
     const cards = root.querySelectorAll<HTMLElement>('.feature-card')
     cards.forEach((card) => {
+      const rotateYTo = gsap.quickTo(card, 'rotationY', { duration: 0.3, ease: 'power2.out' })
+      const rotateXTo = gsap.quickTo(card, 'rotationX', { duration: 0.3, ease: 'power2.out' })
+      const liftTo = gsap.quickTo(card, 'y', { duration: 0.3, ease: 'power2.out' })
       const onPointerMove = (event: PointerEvent) => {
         if (event.pointerType !== 'mouse') return
         const bounds = card.getBoundingClientRect()
+        if (bounds.width === 0 || bounds.height === 0) return
         const x = (event.clientX - bounds.left) / bounds.width - 0.5
         const y = (event.clientY - bounds.top) / bounds.height - 0.5
-        gsap.to(card, {
-          rotationY: x * 7,
-          rotationX: y * -7,
-          y: -4,
-          transformPerspective: 900,
-          duration: 0.3,
-          ease: 'power2.out',
-          overwrite: 'auto',
-        })
+        rotateYTo(x * 7)
+        rotateXTo(y * -7)
+        liftTo(-4)
       }
       const onPointerLeave = () => {
-        gsap.to(card, {
-          rotationY: 0,
-          rotationX: 0,
-          y: 0,
-          duration: 0.55,
-          ease: 'elastic.out(1, 0.55)',
-          overwrite: 'auto',
-        })
+        rotateYTo(0)
+        rotateXTo(0)
+        liftTo(0)
       }
 
       card.addEventListener('pointermove', onPointerMove)
@@ -186,8 +229,12 @@ onMounted(() => {
       })
     })
 
-    return () => cleanupHandlers.forEach(cleanup => cleanup())
+    return () => {
+      cleanupHandlers.forEach(cleanup => cleanup())
+    }
   })
+
+  nextTick(() => ScrollTrigger.refresh())
 })
 
 onBeforeUnmount(() => {
@@ -1157,6 +1204,444 @@ onBeforeUnmount(() => {
 
   .button-primary,
   .button-quiet {
+    transition: none;
+  }
+}
+
+.home-page {
+  --page-pad: clamp(1.25rem, 7vw, 7.5rem);
+  scroll-snap-type: y proximity;
+}
+
+.home-screen {
+  height: auto;
+  min-height: 100svh;
+  scroll-snap-stop: normal;
+  overflow: clip;
+}
+
+.home-hero {
+  min-height: 100svh;
+  padding: clamp(5.5rem, 11svh, 8rem) var(--page-pad) clamp(2rem, 5svh, 4rem);
+  background:
+    radial-gradient(ellipse at 82% 18%, rgb(255 214 110 / 26%), transparent 26rem),
+    radial-gradient(ellipse at 88% 82%, rgb(255 121 104 / 38%), transparent 30rem),
+    #5045f5;
+}
+
+.home-hero-content {
+  min-height: calc(100svh - 12rem);
+  grid-template-columns: minmax(0, 1.04fr) minmax(20rem, 0.96fr);
+  gap: clamp(1.5rem, 5vw, 5rem);
+}
+
+.home-kicker {
+  margin: 0;
+  color: var(--brand-lime);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.home-hero h1 {
+  max-width: 11ch;
+  margin-top: 1.2rem;
+  font-size: clamp(3.3rem, 6.7vw, 7.25rem);
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.home-intro {
+  max-width: 29rem;
+  margin-top: 1.5rem;
+  font-size: clamp(0.94rem, 1.3vw, 1.1rem);
+  line-height: 1.7;
+}
+
+.home-actions {
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.button-primary,
+.button-quiet {
+  min-height: 3rem;
+  padding-inline: 1.25rem;
+  font-size: 0.78rem;
+}
+
+.button-primary:hover,
+.button-quiet:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.home-hero-collage {
+  width: 100%;
+  height: min(74svh, 47rem);
+  min-height: 26rem;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.hero-scene-halo {
+  position: absolute;
+  inset: 8%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 216 185 / 78%), rgb(216 243 106 / 12%) 54%, transparent 72%);
+  filter: blur(0.3rem);
+}
+
+.hero-scene-fallback {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 48% 52% 43% 57% / 54% 46% 54% 46%;
+  background:
+    radial-gradient(circle at 30% 24%, rgb(255 255 255 / 54%) 0 0.4%, transparent 0.55%),
+    radial-gradient(ellipse at 50% 50%, rgb(201 196 255 / 24%), transparent 68%);
+}
+
+.hero-fallback-card {
+  position: absolute;
+  display: grid;
+  margin: 0;
+  border: 0.55rem solid #fffaf3;
+  border-radius: 0.35rem;
+  padding: 0.65rem 0.65rem 2.45rem;
+  color: #fffaf3;
+  box-shadow: 0 2rem 5rem rgb(20 14 56 / 28%);
+  background: #fffaf3;
+}
+
+.hero-fallback-card-secondary {
+  top: 25%;
+  left: 4%;
+  width: 42%;
+  height: 60%;
+  padding-bottom: 2rem;
+  transform: rotate(8deg);
+}
+
+.hero-fallback-card-main {
+  top: 9%;
+  right: 9%;
+  width: 51%;
+  height: 78%;
+  transform: rotate(-7deg);
+}
+
+.hero-fallback-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-fallback-card figcaption {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.55rem;
+  left: 0.65rem;
+  color: #38314b;
+  font-family: var(--font-family-display);
+  font-size: clamp(0.75rem, 1.2vw, 1rem);
+  font-style: italic;
+  text-align: center;
+}
+
+.home-hero-scene {
+  z-index: 2;
+}
+
+.hero-scene-fallback {
+  opacity: 1;
+  transition: opacity 400ms ease, transform 400ms ease, visibility 400ms ease;
+}
+
+.home-hero-3d-ready .hero-scene-fallback {
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.hero-note {
+  right: 1%;
+  bottom: 9%;
+  z-index: 3;
+  border: 1px solid rgb(32 29 40 / 8%);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  color: var(--brand-ink);
+  background: var(--brand-lime);
+  box-shadow: 0 0.8rem 2rem rgb(20 14 56 / 18%);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  transform: rotate(-5deg);
+}
+
+.hero-flower {
+  bottom: 11%;
+  left: 1%;
+  z-index: 3;
+  color: #fffaf3;
+}
+
+.home-features {
+  height: auto;
+  min-height: 100svh;
+  gap: clamp(1.5rem, 4svh, 3rem);
+  padding-block: clamp(5rem, 10svh, 7rem) clamp(2rem, 5svh, 4rem);
+}
+
+.feature-heading h2 {
+  max-width: 18ch;
+}
+
+.feature-grid {
+  min-height: 24rem;
+  flex: initial;
+  grid-auto-rows: minmax(11rem, auto);
+}
+
+.feature-card {
+  min-height: 11rem;
+  transition: box-shadow 220ms var(--motion-ease-standard);
+}
+
+.feature-card:hover {
+  box-shadow: 0 1.2rem 2.4rem rgb(32 29 40 / 14%);
+}
+
+.home-cta {
+  height: auto;
+  min-height: 100svh;
+  padding-block: clamp(5rem, 11svh, 8rem) 1.5rem;
+}
+
+.cta-content {
+  min-height: 32rem;
+}
+
+.cta-photo-wrap {
+  transition: transform 450ms var(--motion-ease-standard);
+}
+
+.cta-photo-wrap:hover {
+  transform: rotate(1deg) translateY(-0.3rem);
+}
+
+.home-footer {
+  min-height: 3.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 959px) {
+  .home-hero {
+    min-height: auto;
+    padding: 6rem 1.25rem 2rem;
+  }
+
+  .home-hero-content {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .home-hero-copy {
+    max-width: 40rem;
+  }
+
+  .home-hero h1 {
+    max-width: 12ch;
+    margin-top: 0.85rem;
+    font-size: clamp(3rem, 11.5vw, 5.3rem);
+  }
+
+  .home-intro {
+    max-width: 32rem;
+    margin-top: 0.9rem;
+    font-size: 0.94rem;
+  }
+
+  .home-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1.2rem;
+  }
+
+  .button-primary,
+  .button-quiet {
+    min-height: 2.9rem;
+    padding-inline: 0.95rem;
+    font-size: 0.72rem;
+  }
+
+  .home-hero-collage {
+    width: min(100%, 33rem);
+    height: clamp(20rem, 62svh, 31rem);
+    min-height: 20rem;
+    justify-self: center;
+  }
+
+  .hero-note {
+    right: 0;
+    bottom: 8%;
+  }
+
+  .hero-flower {
+    bottom: 9%;
+    left: 0;
+  }
+
+  .home-features {
+    min-height: 0;
+    gap: 1.5rem;
+    padding: 5rem 1.1rem 2rem;
+  }
+
+  .feature-heading {
+    display: block;
+  }
+
+  .feature-heading h2 {
+    font-size: clamp(2rem, 7vw, 3.2rem);
+  }
+
+  .feature-intro {
+    display: block;
+    margin: 0.9rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  .feature-grid {
+    min-height: 0;
+    grid-template-rows: none;
+    grid-auto-rows: minmax(10rem, auto);
+    gap: 0.65rem;
+    margin: 0;
+  }
+
+  .feature-card {
+    min-height: 10rem;
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  .feature-card h3 {
+    font-size: clamp(0.95rem, 3.4vw, 1.25rem);
+  }
+
+  .home-cta {
+    min-height: 0;
+    gap: 3rem;
+    padding: 5rem 1.2rem 1rem;
+  }
+
+  .cta-content {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .cta-copy h2 {
+    font-size: clamp(2.8rem, 10vw, 4.5rem);
+  }
+
+  .cta-photo-wrap {
+    width: min(88%, 25rem);
+    height: clamp(16rem, 62vw, 23rem);
+  }
+
+  .home-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding-block: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-hero {
+    padding-inline: 1rem;
+  }
+
+  .home-hero h1 {
+    font-size: clamp(2.55rem, 11.5vw, 3rem);
+  }
+
+  .home-intro {
+    font-size: 0.86rem;
+  }
+
+  .home-actions {
+    flex-wrap: wrap;
+  }
+
+  .feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-card,
+  .cta-photo-wrap,
+  .hero-scene-fallback {
+    transition: none;
+  }
+
+  .feature-card:hover,
+  .cta-photo-wrap:hover {
+    transform: none;
+  }
+}
+
+@media (min-width: 960px) and (min-height: 720px) and (prefers-reduced-motion: no-preference) {
+  .home-page {
+    --home-stack-offset: 4.3rem;
+  }
+
+  .home-screen {
+    position: sticky;
+    top: var(--home-stack-offset);
+    min-height: calc(100svh - var(--home-stack-offset));
+  }
+
+  .home-hero {
+    z-index: 1;
+    min-height: calc(100svh - var(--home-stack-offset));
+    padding-top: clamp(4rem, 8svh, 6rem);
+    padding-bottom: clamp(1.5rem, 3svh, 2.5rem);
+  }
+
+  .home-hero-content {
+    min-height: calc(100svh - 11rem);
+  }
+
+  .home-hero h1 {
+    max-width: 14ch;
+    font-size: clamp(3.25rem, 5vw, 5.2rem);
+    letter-spacing: -0.075em;
+    line-height: 0.96;
+  }
+
+  .home-features {
+    z-index: 2;
+    min-height: calc(100svh - var(--home-stack-offset));
+    border-radius: 1.75rem 1.75rem 0 0;
+    box-shadow: 0 -1rem 3rem rgb(32 29 40 / 12%);
+  }
+
+  .home-cta {
+    z-index: 3;
+    min-height: calc(100svh - var(--home-stack-offset));
+    border-radius: 1.75rem 1.75rem 0 0;
+    box-shadow: 0 -1rem 3rem rgb(32 29 40 / 16%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene-fallback {
     transition: none;
   }
 }

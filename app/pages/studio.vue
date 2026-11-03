@@ -33,6 +33,13 @@
           </AppButton>
         </div>
       </div>
+      <AppErrorAlert
+        v-if="error && !previewOpen"
+        class="mb-6"
+        :title="errorTitle"
+        :message="error"
+        :location="errorLocation"
+      />
 
       <div class="mb-3 flex items-center justify-between">
         <div>
@@ -56,27 +63,27 @@
             </div>
           </div>
           <div class="grid gap-5 md:grid-cols-2">
-            <label><span class="editor-label">Judul cerita</span><input v-model="draft.title" name="storyTitle" class="editor-input" maxlength="100" required placeholder="Sebuah kisah tentang kita"></label>
-            <label><span class="editor-label">Nama kalian</span><input v-model="draft.coupleNames" name="coupleNames" class="editor-input" maxlength="100" required placeholder="Alya & Bima"></label>
-            <label><span class="editor-label">Tanggal spesial</span><input v-model="draft.date" name="storyDate" class="editor-input" maxlength="80" required placeholder="Sejak 14 Februari 2022"></label>
+            <label class="floating-field"><span class="editor-label">Judul cerita</span><input v-model="draft.title" name="storyTitle" class="editor-input" maxlength="100" required placeholder="Sebuah kisah tentang kita"></label>
+            <label class="floating-field"><span class="editor-label">Nama kalian</span><input v-model="draft.coupleNames" name="coupleNames" class="editor-input" maxlength="100" required placeholder="Alya & Bima"></label>
+            <label class="floating-field"><span class="editor-label">Tanggal spesial</span><input v-model="draft.date" name="storyDate" class="editor-input" maxlength="80" required placeholder="Sejak 14 Februari 2022"></label>
             <ImageField v-model="draft.heroImage" label="Foto sampul" />
           </div>
           <div class="mt-6 grid gap-4 rounded-2xl bg-[#f7f4ed] p-5 md:grid-cols-2">
             <template v-if="draft.templateId === 'editorial-rose'">
-              <label><span class="editor-label">Dedikasi pada sampul majalah</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="editorialDedication" class="editor-input" maxlength="180" placeholder="Edisi khusus untuk dua hati"></label>
-              <label><span class="editor-label">Tanda tangan penutup</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="editorialSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
+              <label class="floating-field"><span class="editor-label">Dedikasi pada sampul majalah</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="editorialDedication" class="editor-input" maxlength="180" placeholder="Edisi khusus untuk dua hati"></label>
+              <label class="floating-field"><span class="editor-label">Tanda tangan penutup</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="editorialSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
             </template>
             <template v-else-if="draft.templateId === 'love-letter'">
-              <label><span class="editor-label">Salam pembuka surat</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="letterDedication" class="editor-input" maxlength="180" placeholder="Untuk orang yang selalu kupilih"></label>
-              <label><span class="editor-label">Tanda tangan surat</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="letterSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
+              <label class="floating-field"><span class="editor-label">Salam pembuka surat</span><input v-model="draft.templateDetails!.editorialRose!.dedication" name="letterDedication" class="editor-input" maxlength="180" placeholder="Untuk orang yang selalu kupilih"></label>
+              <label class="floating-field"><span class="editor-label">Tanda tangan surat</span><input v-model="draft.templateDetails!.editorialRose!.signature" name="letterSignature" class="editor-input" maxlength="80" placeholder="Dengan cinta, selalu"></label>
             </template>
             <template v-else-if="draft.templateId === 'midnight-cinema'">
-              <label><span class="editor-label">Kutipan pembuka film</span><textarea v-model="draft.templateDetails!.midnightCinema!.openingQuote" name="filmOpeningQuote" class="editor-input min-h-24" maxlength="220" placeholder="Setiap kisah punya satu adegan yang ingin diulang."></textarea></label>
-              <label><span class="editor-label">Kredit penutup film</span><input v-model="draft.templateDetails!.midnightCinema!.credits" name="filmCredits" class="editor-input" maxlength="120" placeholder="Dibintangi kalian · 2021—selamanya"></label>
+              <label class="floating-field"><span class="editor-label">Kutipan pembuka film</span><textarea v-model="draft.templateDetails!.midnightCinema!.openingQuote" name="filmOpeningQuote" class="editor-input min-h-24" maxlength="220" placeholder="Setiap kisah punya satu adegan yang ingin diulang."></textarea></label>
+              <label class="floating-field"><span class="editor-label">Kredit penutup film</span><input v-model="draft.templateDetails!.midnightCinema!.credits" name="filmCredits" class="editor-input" maxlength="120" placeholder="Dibintangi kalian · 2021—selamanya"></label>
             </template>
             <template v-else-if="draft.templateId === 'botanical-journal'">
-              <label><span class="editor-label">Label jurnal</span><input v-model="draft.templateDetails!.botanicalJournal!.journalLabel" name="journalLabel" class="editor-input" maxlength="80" placeholder="Catatan perjalanan no. 01"></label>
-              <label><span class="editor-label">Catatan lapangan</span><textarea v-model="draft.templateDetails!.botanicalJournal!.fieldNote" name="fieldNote" class="editor-input min-h-24" maxlength="220" placeholder="Bahagia tumbuh dari hal-hal kecil yang dirawat bersama."></textarea></label>
+              <label class="floating-field"><span class="editor-label">Label jurnal</span><input v-model="draft.templateDetails!.botanicalJournal!.journalLabel" name="journalLabel" class="editor-input" maxlength="80" placeholder="Catatan perjalanan no. 01"></label>
+              <label class="floating-field"><span class="editor-label">Catatan lapangan</span><textarea v-model="draft.templateDetails!.botanicalJournal!.fieldNote" name="fieldNote" class="editor-input min-h-24" maxlength="220" placeholder="Bahagia tumbuh dari hal-hal kecil yang dirawat bersama."></textarea></label>
             </template>
           </div>
         </section>
@@ -85,8 +92,8 @@
           <p class="section-kicker">02 — Kartu ucapan</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.greetingImage" label="Latar kartu" />
-            <label><span class="editor-label">Tulisan untuknya</span><textarea v-model="draft.greetingText" name="greetingText" class="editor-input min-h-36" maxlength="1000" required placeholder="Untuk kamu, rumah yang selalu ingin kutuju..." /></label>
-            <label class="md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
+            <label class="floating-field"><span class="editor-label">Tulisan untuknya</span><textarea v-model="draft.greetingText" name="greetingText" class="editor-input min-h-36" maxlength="1000" required placeholder="Untuk kamu, rumah yang selalu ingin kutuju..." /></label>
+            <label class="floating-field md:col-span-2"><span class="editor-label">Tautan video latar (opsional)</span><input v-model="draft.greetingVideoUrl" name="greetingVideoUrl" class="editor-input" type="url" placeholder="https://... tautan video MP4 langsung"><span class="mt-2 block text-xs text-muted">Jika diisi, video menggantikan foto pada bagian latar kartu.</span></label>
           </div>
         </section>
 
@@ -95,10 +102,10 @@
           <div class="space-y-4">
             <div v-for="(photo, index) in draft.gallery" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <ImageField v-model="photo.url" :label="`Foto ${index + 1}`" />
-              <label><span class="editor-label">Cerita singkat</span><input v-model="photo.caption" :name="`galleryCaption-${index}`" class="editor-input" maxlength="120" placeholder="Hari pertama kita bertemu"></label>
-              <button v-if="draft.gallery.length > 1" type="button" class="pb-3 text-sm text-[#9c6257]" @click="draft.gallery.splice(index, 1)">Hapus</button>
+              <label class="floating-field"><span class="editor-label">Cerita singkat</span><input v-model="photo.caption" :name="`galleryCaption-${index}`" class="editor-input" maxlength="120" placeholder="Hari pertama kita bertemu"></label>
+              <button v-if="draft.gallery.length > 1" type="button" class="inline-flex min-h-11 items-center gap-2 pb-3 text-sm text-[#9c6257]" @click="draft.gallery.splice(index, 1)"><AppIcon name="trash" :size="16" />Hapus</button>
             </div>
-            <button v-if="draft.gallery.length < 12" type="button" class="text-sm text-[#9c6257]" @click="draft.gallery.push({ url: '', caption: '' })">+ Tambah foto ke galeri</button>
+            <button v-if="draft.gallery.length < 12" type="button" class="inline-flex min-h-11 items-center gap-2 text-sm text-[#9c6257]" @click="draft.gallery.push({ url: '', caption: '' })"><AppIcon name="plus" :size="16" />Tambah foto ke galeri</button>
           </div>
         </section>
 
@@ -107,8 +114,8 @@
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.secondImage" label="Foto berdua" />
             <div class="space-y-5">
-              <label><span class="editor-label">Judul momen</span><input v-model="draft.detailTitle" name="detailTitle" class="editor-input" maxlength="100" required placeholder="Semua berawal dari hari itu"></label>
-              <label><span class="editor-label">Ceritakan momen kalian</span><textarea v-model="draft.detailText" name="detailText" class="editor-input min-h-28" maxlength="1000" required placeholder="Ceritakan bagaimana perjalanan kalian dimulai..." /></label>
+              <label class="floating-field"><span class="editor-label">Judul momen</span><input v-model="draft.detailTitle" name="detailTitle" class="editor-input" maxlength="100" required placeholder="Semua berawal dari hari itu"></label>
+              <label class="floating-field"><span class="editor-label">Ceritakan momen kalian</span><textarea v-model="draft.detailText" name="detailText" class="editor-input min-h-28" maxlength="1000" required placeholder="Ceritakan bagaimana perjalanan kalian dimulai..." /></label>
             </div>
           </div>
         </section>
@@ -118,12 +125,12 @@
           <p class="mb-4 text-sm text-[#756a62]">Setiap bagian menjadi satu halaman dalam buku kenangan kalian.</p>
           <div class="space-y-4">
             <article v-for="(page, index) in draft.storyPages" :key="index" class="grid gap-4 rounded-2xl border border-[#e3dbd2] p-4 md:grid-cols-2">
-              <label><span class="editor-label">Halaman {{ index + 1 }} · Judul</span><input v-model="page.title" :name="`storyPageTitle-${index}`" class="editor-input" maxlength="100" required placeholder="Pertemuan pertama"></label>
+              <label class="floating-field"><span class="editor-label">Halaman {{ index + 1 }} · Judul</span><input v-model="page.title" :name="`storyPageTitle-${index}`" class="editor-input" maxlength="100" required placeholder="Pertemuan pertama"></label>
               <ImageField v-model="page.image" label="Foto halaman" />
-              <label class="md:col-span-2"><span class="editor-label">Kisah di halaman ini</span><textarea v-model="page.text" :name="`storyPageText-${index}`" class="editor-input min-h-28" maxlength="1200" required placeholder="Tulis cerita kalian di sini..." /></label>
-              <button v-if="draft.storyPages.length > 1" type="button" class="text-left text-sm text-[#9c6257]" @click="draft.storyPages.splice(index, 1)">Hapus halaman</button>
+              <label class="floating-field md:col-span-2"><span class="editor-label">Kisah di halaman ini</span><textarea v-model="page.text" :name="`storyPageText-${index}`" class="editor-input min-h-28" maxlength="1200" required placeholder="Tulis cerita kalian di sini..." /></label>
+              <button v-if="draft.storyPages.length > 1" type="button" class="inline-flex min-h-11 items-center gap-2 text-left text-sm text-[#9c6257]" @click="draft.storyPages.splice(index, 1)"><AppIcon name="trash" :size="16" />Hapus halaman</button>
             </article>
-            <button v-if="draft.storyPages.length < 8" type="button" class="text-sm text-[#9c6257]" @click="draft.storyPages.push({ title: '', text: '', image: '' })">+ Tambah halaman</button>
+            <button v-if="draft.storyPages.length < 8" type="button" class="inline-flex min-h-11 items-center gap-2 text-sm text-[#9c6257]" @click="draft.storyPages.push({ title: '', text: '', image: '' })"><AppIcon name="plus" :size="16" />Tambah halaman</button>
           </div>
         </section>
 
@@ -131,19 +138,20 @@
           <p class="section-kicker">06 — Pesan terakhir</p>
           <div class="grid gap-5 md:grid-cols-2">
             <ImageField v-model="draft.finalImage" label="Foto penutup" />
-            <label><span class="editor-label">Pesan untuknya</span><textarea v-model="draft.finalMessage" name="finalMessage" class="editor-input min-h-36" maxlength="1000" required placeholder="Dan jika aku harus memilih lagi, tetap kamu..." /></label>
+            <label class="floating-field"><span class="editor-label">Pesan untuknya</span><textarea v-model="draft.finalMessage" name="finalMessage" class="editor-input min-h-36" maxlength="1000" required placeholder="Dan jika aku harus memilih lagi, tetap kamu..." /></label>
           </div>
         </section>
 
         <section v-show="activeStep === 6" class="editor-card">
           <p class="section-kicker">07 — Lagu & privasi</p>
           <div class="grid gap-5 md:grid-cols-2">
-            <label>
-              <span class="editor-label">Tautan lagu (opsional)</span>
-              <input v-model="draft.musicUrl" name="musicUrl" class="editor-input" type="url" placeholder="Spotify, YouTube Music, SoundCloud, atau URL audio">
-              <span class="mt-2 block text-xs leading-5 text-muted">Bisa memakai pemutar Spotify, YouTube Music, SoundCloud, atau URL HTTPS audio langsung (MP3/M4A/OGG). Pemutar baru dimuat setelah pengunjung menekan tombol putar agar hemat data.</span>
-            </label>
-            <label>
+            <AudioField v-model="draft.musicUrl" />
+            <label class="floating-field"><span class="editor-label">Judul lagu (opsional)</span><input v-model="draft.musicTitle" name="musicTitle" class="editor-input" maxlength="120" placeholder="Lagu yang mengingatkan kalian"></label>
+            <label class="floating-field"><span class="editor-label">Penyanyi (opsional)</span><input v-model="draft.musicArtist" name="musicArtist" class="editor-input" maxlength="120" placeholder="Nama penyanyi"></label>
+            <p v-if="unsupportedMusicProvider" class="text-sm text-amber-800 md:col-span-2" role="alert">
+              Tautan {{ unsupportedMusicProvider }} tidak bisa diputar di cerita. Gunakan URL HTTPS file audio langsung atau unggah file yang hak penggunaannya kamu miliki.
+            </p>
+            <label class="floating-field">
               <span class="editor-label">Kursor halaman</span>
               <select v-model="draft.cursorPreset" name="cursorPreset" class="editor-input">
                 <option value="ring">Cincin minimal</option>
@@ -155,7 +163,7 @@
               </select>
               <span class="mt-2 block text-xs text-muted">Default mengikuti kursor perangkat. Pilihan lain memakai ikon bawaan yang aman.</span>
             </label>
-            <label class="md:col-span-2">
+            <label class="floating-field md:col-span-2">
               <span class="editor-label">Atur link berbagi singkat (opsional)</span>
               <span class="share-slug-field">
                 <span>{{ shareOrigin }}/w/</span>
@@ -172,33 +180,57 @@
                   autocapitalize="none"
                   spellcheck="false"
                   placeholder="contoh: kisah-kita"
-                  aria-describedby="custom-story-link-hint"
+                  :aria-invalid="Boolean(customSlugError)"
+                  :aria-describedby="customSlugError ? 'custom-story-link-hint custom-story-link-error' : 'custom-story-link-hint'"
                 >
               </span>
               <span id="custom-story-link-hint" class="mt-2 block text-xs leading-5 text-muted">
                 3–32 huruf, angka, dan tanda hubung. Link yang dipakai berubah setelah cerita diterbitkan atau diperbarui.
               </span>
+              <span v-if="customSlugError" id="custom-story-link-error" class="mt-2 block text-sm text-red-700" role="alert">
+                {{ customSlugError }}
+              </span>
             </label>
-            <label>
-              <span class="editor-label">{{ editingStorySlug ? 'Ubah sandi cerita (opsional)' : 'Sandi cerita (opsional)' }}</span>
-              <input v-model="draft.password" name="storyPassword" class="editor-input" type="password" maxlength="128" :placeholder="editingStorySlug ? 'Kosongkan untuk mempertahankan sandi saat ini' : 'Hanya orang dengan sandi yang bisa membuka'">
+            <div class="floating-field">
+              <label for="story-password" class="editor-label">{{ editingStorySlug ? 'Ubah sandi cerita (opsional)' : 'Sandi cerita (opsional)' }}</label>
+              <span class="story-password-field">
+                <input
+                  id="story-password"
+                  v-model="draft.password"
+                  name="storyPassword"
+                  class="editor-input"
+                  :type="storyPasswordVisible ? 'text' : 'password'"
+                  maxlength="128"
+                  :placeholder="editingStorySlug ? 'Kosongkan untuk mempertahankan sandi saat ini' : 'Hanya orang dengan sandi yang bisa membuka'"
+                >
+                <button
+                  type="button"
+                  class="story-password-toggle"
+                  :aria-label="storyPasswordVisible ? 'Sembunyikan sandi cerita' : 'Tampilkan sandi cerita'"
+                  :aria-pressed="storyPasswordVisible"
+                  @click="storyPasswordVisible = !storyPasswordVisible"
+                ><AppIcon :name="storyPasswordVisible ? 'eye-off' : 'eye'" :size="19" /></button>
+              </span>
               <span v-if="editingStorySlug" class="mt-2 block text-xs text-muted">Sandi yang ada tetap berlaku bila kolom dikosongkan.</span>
-            </label>
+            </div>
           </div>
           <label v-if="editingStorySlug" class="mt-4 flex items-center gap-2 text-sm text-[#756a62]">
             <input v-model="removePassword" name="removeStoryPassword" type="checkbox">
             Hapus perlindungan sandi pada cerita ini
           </label>
-          <p class="mt-3 text-xs leading-5 text-muted">Gunakan tautan berbagi Spotify, YouTube Music, SoundCloud (lagu atau playlist), atau URL HTTPS file audio langsung dari layanan penyimpanan/CDN yang mendukung pemutaran publik. Pemutar hanya dimuat saat tombol putar ditekan. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>
+          <p class="mt-3 text-xs leading-5 text-muted">Spotify, YouTube Music, dan SoundCloud tidak dapat diputar langsung. URL audio langsung harus mendukung pemutaran publik; file yang diunggah ke akun disimpan di Cloudinary. Musik baru mulai setelah cerita dibuka. Sandi disimpan sebagai hash, bukan sebagai teks biasa.</p>
         </section>
 
         <div class="flex flex-col gap-4 pb-14 sm:flex-row sm:items-center sm:justify-between">
-          <AppButton variant="secondary" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)">← Sebelumnya</AppButton>
-          <p v-if="error" class="text-sm text-red-700" role="alert">{{ error }}</p>
+          <AppButton variant="secondary" :disabled="activeStep === 0" @click="goToStep(activeStep - 1)"><AppIcon name="chevron-left" :size="16" />Sebelumnya</AppButton>
           <div class="flex flex-wrap gap-3">
-            <AppButton v-if="activeStep < steps.length - 1" @click="goToStep(activeStep + 1)">Simpan & lanjut ↗</AppButton>
+            <AppButton v-if="activeStep < steps.length - 1" @click="goToStep(activeStep + 1)">
+              Simpan & lanjut
+              <AppIcon name="arrow-up-right" :size="16" />
+            </AppButton>
             <AppButton v-else :disabled="savingDraft || saving" :loading="savingDraft || saving" @click="openPreview">
-              {{ savingDraft || saving ? 'Menyiapkan…' : 'Lihat pratinjau ↗' }}
+              {{ savingDraft || saving ? 'Menyiapkan…' : 'Lihat pratinjau' }}
+              <AppIcon v-if="!savingDraft && !saving" name="eye" :size="16" />
             </AppButton>
           </div>
         </div>
@@ -208,31 +240,75 @@
         <div class="fixed inset-x-4 top-4 z-50 flex items-center justify-between rounded-full bg-paper px-4 py-2 shadow-lg md:inset-x-10">
           <span class="text-xs font-semibold uppercase tracking-widest text-[#9c6257]">Pratinjau cerita utuh</span>
           <div class="flex items-center gap-3">
-            <AppButton variant="ghost" size="sm" @click="previewOpen = false">Kembali ke editor ×</AppButton>
-            <AppButton size="sm" :disabled="saving" :loading="saving" @click="publish">{{ saving ? 'Menerbitkan…' : 'Konfirmasi & terbitkan ↗' }}</AppButton>
+            <AppButton variant="ghost" size="sm" @click="previewOpen = false">
+              <AppIcon name="close" :size="16" />
+              Kembali ke editor
+            </AppButton>
+            <AppButton size="sm" :disabled="saving" :loading="saving" @click="publish">
+              {{ saving ? 'Menerbitkan…' : 'Konfirmasi & terbitkan' }}
+              <AppIcon v-if="!saving" name="arrow-up-right" :size="16" />
+            </AppButton>
           </div>
         </div>
         <div class="mx-auto max-w-7xl pt-14">
+          <p v-if="previewLinkWarning" class="mx-auto mb-4 max-w-2xl rounded-xl bg-paper px-4 py-3 text-sm text-ink shadow-lg" role="status">
+            {{ previewLinkWarning }}
+          </p>
           <StoryExperience v-if="previewStory" :story="previewStory" />
           <p v-if="draft.password" class="mx-auto mt-4 w-fit rounded-full bg-paper px-5 py-3 text-sm text-ink shadow-lg">Cerita ini akan meminta sandi saat dibuka.</p>
-          <p v-if="error" class="mt-4 text-sm text-red-700">{{ error }}</p>
+          <AppErrorAlert
+            v-if="error && previewOpen"
+            class="mx-auto mt-4 max-w-2xl"
+            :title="errorTitle"
+            :message="error"
+            :location="errorLocation"
+          />
         </div>
       </div>
 
-      <div v-if="publishedUrl" class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-5">
-        <div class="w-full max-w-md rounded-3xl bg-paper p-7 text-center shadow-2xl">
-          <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Cerita sudah terbit</p>
-          <h2 class="mt-2 font-display text-4xl">{{ publishedIsUpdate ? 'Perubahan sudah terbit.' : 'Saatnya dibagikan.' }}</h2>
-          <p class="mt-2 break-all text-sm text-muted">{{ publishedUrl }}</p>
-          <div class="my-5 flex justify-center"><QrcodeVue :value="publishedUrl" :size="180" level="H" background="#f5f0e9" foreground="#171311" /></div>
-          <div class="flex justify-center gap-3">
-            <AppButton :disabled="copyingLink" :loading="copyingLink" @click="copyLink">
-              {{ copyingLink ? 'Menyalin…' : 'Salin tautan' }}
-            </AppButton>
-            <NuxtLink :to="`/w/${publishedSlug}`" class="rounded-full border border-ink px-5 py-3 text-sm">Lihat cerita</NuxtLink>
+      <div
+        v-if="publishedUrl"
+        class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-3 sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="published-dialog-title"
+        tabindex="-1"
+        @keydown="onPublishedDialogKeydown"
+      >
+        <div ref="publishedDialog" class="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-3xl bg-paper p-5 shadow-2xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7">
+          <button
+            ref="publishedDialogClose"
+            type="button"
+            class="published-dialog-close absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full border border-[#d6c9bf] text-2xl leading-none text-ink transition hover:-rotate-6 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:right-4 sm:top-4"
+            aria-label="Tutup konfirmasi publikasi"
+            @click="closePublishedDialog"
+          ><AppIcon name="close" :size="20" /></button>
+          <div class="mb-5 pr-12 sm:mb-6">
+            <p class="text-xs uppercase tracking-[0.25em] text-[#9c6257]">Cerita sudah terbit ✳</p>
+            <h2 id="published-dialog-title" class="mt-2 font-display text-3xl sm:text-4xl">{{ publishedIsUpdate ? 'Perubahan sudah terbit.' : 'Saatnya dibagikan.' }}</h2>
           </div>
-          <p v-if="copyMessage" class="mt-3 text-sm text-muted" role="status">{{ copyMessage }}</p>
-          <AppButton variant="ghost" size="sm" class="mt-5" @click="publishedUrl = ''">Tutup</AppButton>
+          <div class="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-7">
+            <div class="mx-auto flex size-44 shrink-0 items-center justify-center rounded-2xl border border-[#e7ddd4] bg-white p-2 sm:size-48">
+              <QrcodeVue :value="publishedUrl" :size="160" level="H" background="#ffffff" foreground="#171311" />
+            </div>
+            <div class="min-w-0 text-center sm:text-left">
+              <p class="text-sm text-muted">Bagikan lewat tautan atau pindai QR.</p>
+              <p class="mt-2 break-all rounded-2xl bg-white/80 px-4 py-3 text-sm text-ink">{{ publishedUrl }}</p>
+              <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                <AppButton class="min-h-11 w-full justify-center sm:w-auto" :disabled="copyingLink" :loading="copyingLink" @click="copyLink">
+                  {{ copyingLink ? 'Menyalin…' : 'Salin tautan' }}
+                </AppButton>
+                <NuxtLink
+                  :to="`/w/${publishedSlug}`"
+                  class="published-dialog-link inline-flex min-h-11 w-full items-center justify-center rounded-full border border-ink px-5 py-3 text-sm transition hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
+                ><span>Lihat cerita</span><AppIcon name="arrow-up-right" :size="16" /></NuxtLink>
+              </div>
+              <p v-if="copyMessage" class="mt-3 text-sm text-muted" role="status">{{ copyMessage }}</p>
+            </div>
+          </div>
+          <div class="mt-5 flex justify-center sm:justify-end">
+            <AppButton variant="ghost" size="sm" @click="closePublishedDialog">Tutup</AppButton>
+          </div>
         </div>
       </div>
     </div>
@@ -243,6 +319,10 @@
 import AppButton from '../components/AppButton.vue'
 import { storyContentSchema, type StoryContent } from '#shared/schema/story'
 import { createTemplateCustomization, getTemplateDefinition, storyTemplateSchema, storyTemplates } from '#shared/story-templates'
+import { getUnsupportedMusicProvider } from '#shared/music-embed'
+import { isValidStorySlug } from '#shared/story-slug'
+import { getUserFacingError } from '#shared/utils/user-facing-error'
+import type { ZodIssue } from 'zod'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -250,6 +330,8 @@ const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'))
 definePageMeta({ middleware: 'auth' })
 const route = useRoute()
 const studioPage = ref<HTMLElement | null>(null)
+const publishedDialog = ref<HTMLElement | null>(null)
+const publishedDialogClose = ref<HTMLButtonElement | null>(null)
 let studioMotion: gsap.MatchMedia | undefined
 const steps = [
   { title: 'Sampul' },
@@ -279,14 +361,19 @@ const draft = reactive<StoryContent & { password: string }>({
   finalImage: '',
   finalMessage: '',
   musicUrl: '',
+  musicTitle: '',
+  musicArtist: '',
   password: '',
 })
 const selectedTemplate = computed(() => getTemplateDefinition(draft.templateId) ?? storyTemplates[0])
+const unsupportedMusicProvider = computed(() => getUnsupportedMusicProvider(draft.musicUrl))
 const saving = ref(false)
 const savingDraft = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const activeStep = ref(0)
 const error = ref('')
+const errorTitle = ref('Ada bagian yang perlu diperiksa')
+const errorLocation = ref('Studio cerita')
 const { success, error: notifyError } = useNotifications()
 const publishedUrl = ref('')
 const publishedSlug = ref('')
@@ -297,16 +384,119 @@ const copyingLink = ref(false)
 const draftId = ref('')
 const editingStorySlug = ref('')
 const customSlug = ref('')
+const storyPasswordVisible = ref(false)
+const customSlugError = computed(() => {
+  const slug = customSlug.value.trim().toLowerCase()
+  return slug && !isValidStorySlug(slug)
+    ? 'Link harus terdiri dari 3–32 huruf atau angka. Gunakan satu tanda hubung untuk memisahkan kata; jangan gunakan spasi atau simbol.'
+    : ''
+})
 const removePassword = ref(false)
 const lastSavedAt = ref('')
-const previewStory = computed(() => {
-  const parsed = storyContentSchema.safeParse(draft)
-  return parsed.success ? parsed.data : null
-})
-const shareOrigin = computed(() => import.meta.client ? window.location.origin : '')
 const lastSavedLabel = computed(() => lastSavedAt.value
   ? new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastSavedAt.value))
   : '')
+
+watch(publishedUrl, async (url) => {
+  if (!url) return
+  await nextTick()
+  publishedDialogClose.value?.focus()
+})
+
+function closePublishedDialog() {
+  publishedUrl.value = ''
+  void nextTick(() => studioPage.value?.focus())
+}
+
+function onPublishedDialogKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closePublishedDialog()
+    return
+  }
+  if (event.key !== 'Tab') return
+
+  const dialog = publishedDialog.value
+  if (!dialog) return
+  const focusableElements = dialog.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )
+  const first = focusableElements.item(0)
+  const last = focusableElements.item(focusableElements.length - 1)
+  if (!first || !last) {
+    event.preventDefault()
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+const invalidOptionalPreviewLinks = computed(() => [
+  { field: 'greetingVideoUrl' as const, label: 'tautan video latar' },
+  { field: 'musicUrl' as const, label: 'tautan lagu' },
+].filter(({ field }) => {
+  const value = draft[field]
+  return value.trim() !== '' && !storyContentSchema.shape[field].safeParse(value).success
+}))
+function storyContentForPreview() {
+  const content = { ...draft }
+  for (const { field } of invalidOptionalPreviewLinks.value) {
+    content[field] = ''
+  }
+  return content
+}
+const previewStory = computed(() => {
+  const parsed = storyContentSchema.safeParse(storyContentForPreview())
+  return parsed.success ? parsed.data : null
+})
+const previewLinkWarning = computed(() => invalidOptionalPreviewLinks.value.length
+  ? `Pratinjau mengabaikan ${invalidOptionalPreviewLinks.value.map(link => link.label).join(' dan ')} yang tidak valid. Perbaiki atau kosongkan tautan sebelum menerbitkan.`
+  : '')
+const shareOrigin = useState('studio-share-origin', () => useRequestURL().origin)
+const previewStepByField: Record<string, number> = {
+  title: 0,
+  coupleNames: 0,
+  date: 0,
+  heroImage: 0,
+  templateDetails: 0,
+  greetingImage: 1,
+  greetingVideoUrl: 1,
+  greetingText: 1,
+  gallery: 2,
+  secondImage: 3,
+  detailTitle: 3,
+  detailText: 3,
+  storyPages: 4,
+  finalImage: 5,
+  finalMessage: 5,
+  musicUrl: 6,
+  musicTitle: 6,
+  musicArtist: 6,
+  cursorPreset: 6,
+}
+const previewFieldLabels: Record<string, string> = {
+  title: 'Judul cerita',
+  coupleNames: 'Nama kalian',
+  date: 'Tanggal spesial',
+  heroImage: 'Foto sampul',
+  templateDetails: 'Detail template',
+  greetingImage: 'Latar kartu',
+  greetingVideoUrl: 'Tautan video latar',
+  greetingText: 'Tulisan kartu ucapan',
+  gallery: 'Foto galeri',
+  secondImage: 'Foto momen',
+  detailTitle: 'Judul momen',
+  detailText: 'Cerita momen',
+  storyPages: 'Bab cerita',
+  finalImage: 'Foto penutup',
+  finalMessage: 'Pesan terakhir',
+  musicUrl: 'Tautan lagu',
+  musicTitle: 'Judul lagu',
+  musicArtist: 'Penyanyi',
+  cursorPreset: 'Kursor halaman',
+}
 let localDraftRefKey = ''
 let localDraftContentKey = ''
 let saveTimer: ReturnType<typeof setTimeout> | undefined
@@ -379,9 +569,18 @@ async function saveDraftWork() {
     } while (saveQueued)
     saveStatus.value = 'saved'
     error.value = ''
+    errorLocation.value = ''
   } catch (caught) {
     saveStatus.value = 'error'
-    error.value = caught instanceof Error ? caught.message : 'Draft belum berhasil disimpan.'
+    const details = getUserFacingError(caught, {
+      title: 'Draft belum tersimpan',
+      fallback: 'Coba simpan lagi. Salinan perubahan tetap ada di browser ini.',
+      location: 'Studio cerita · Draft otomatis',
+    })
+    error.value = details.message
+    errorTitle.value = details.title
+    errorLocation.value = details.location ?? 'Studio cerita · Draft otomatis'
+    if (details.location?.includes('Langkah 7')) activeStep.value = 6
     persistLocalSnapshot()
   } finally {
     savingDraft.value = false
@@ -523,6 +722,7 @@ async function goToStep(index: number) {
 }
 
 onMounted(() => {
+  shareOrigin.value = window.location.origin
   isRestoring = true
   void (async () => {
     const user = await $fetch<{ id: string }>('/api/account/me')
@@ -532,9 +732,16 @@ onMounted(() => {
     stopCustomSlugWatch = watch(customSlug, scheduleSave)
     await restoreDraft()
   })().catch((caught: unknown) => {
-    error.value = caught instanceof Error ? caught.message : 'Draft belum berhasil dimuat.'
+    const details = getUserFacingError(caught, {
+      title: 'Draft belum berhasil dimuat',
+      fallback: 'Periksa koneksi, lalu muat ulang Studio.',
+      location: 'Studio cerita · Pemulihan draft',
+    })
+    error.value = details.message
+    errorTitle.value = details.title
+    errorLocation.value = details.location ?? 'Studio cerita · Pemulihan draft'
     saveStatus.value = 'error'
-    notifyError(error.value)
+    notifyError(details)
   }).finally(() => {
     isRestoring = false
   })
@@ -568,19 +775,58 @@ onMounted(() => {
   })
 })
 
+function showStoryValidationIssue(issue: ZodIssue | undefined) {
+  const field = issue?.path[0]
+  const fieldName = typeof field === 'string' ? field : ''
+  const label = previewFieldLabels[fieldName] ?? 'Konten cerita'
+  const step = previewStepByField[fieldName]
+  if (step !== undefined) {
+    activeStep.value = step
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (issue?.code === 'invalid_format' && issue.format === 'url') {
+    let value: unknown = draft
+    for (const key of issue.path) {
+      if (typeof value !== 'object' || value === null) {
+        value = undefined
+        break
+      }
+      value = Reflect.get(value, key)
+    }
+    error.value = typeof value === 'string' && value.trim()
+      ? `${label} harus berupa URL HTTPS yang valid.`
+      : `Tambahkan URL HTTPS untuk ${label.toLowerCase()}.`
+  } else if (issue?.code === 'too_small') {
+    error.value = `Lengkapi ${label.toLowerCase()} sebelum pratinjau.`
+  } else {
+    error.value = `${label} belum lengkap atau tidak valid.`
+  }
+  errorTitle.value = 'Pratinjau belum siap'
+  errorLocation.value = `Studio · Langkah ${(step ?? activeStep.value) + 1} · ${steps[step ?? activeStep.value]?.title ?? 'Konten cerita'}`
+}
+
 function openPreview() {
-  if (!previewStory.value) {
-    const parsed = storyContentSchema.safeParse(draft)
-    error.value = parsed.error?.issues[0]?.message ?? 'Lengkapi semua bagian dan foto sebelum pratinjau.'
+  const parsed = storyContentSchema.safeParse(storyContentForPreview())
+  if (!parsed.success) {
+    showStoryValidationIssue(parsed.error.issues[0])
     return
   }
   error.value = ''
+  errorLocation.value = ''
   void saveDraft()
   previewOpen.value = true
 }
 
 async function publish() {
   error.value = ''
+  errorLocation.value = ''
+  const parsed = storyContentSchema.safeParse(draft)
+  if (!parsed.success) {
+    previewOpen.value = false
+    showStoryValidationIssue(parsed.error.issues[0])
+    return
+  }
   saving.value = true
   try {
     if (saveTimer) clearTimeout(saveTimer)
@@ -611,8 +857,19 @@ async function publish() {
     if (localDraftContentKey) localStorage.removeItem(localDraftContentKey)
     draftId.value = ''
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Cerita belum berhasil diterbitkan.'
-    notifyError(error.value)
+    const details = getUserFacingError(caught, {
+      title: 'Cerita belum berhasil diterbitkan',
+      fallback: 'Coba lagi. Draft dan perubahanmu tetap tersimpan.',
+      location: 'Studio cerita · Publikasi',
+    })
+    error.value = details.message
+    errorTitle.value = details.title
+    errorLocation.value = details.location ?? 'Studio cerita · Publikasi'
+    if (details.location?.includes('Langkah 7')) {
+      activeStep.value = 6
+      previewOpen.value = false
+    }
+    notifyError(details)
   } finally {
     saving.value = false
   }
@@ -627,8 +884,13 @@ async function copyLink() {
     copyMessage.value = 'Tautan berhasil disalin.'
     success(copyMessage.value)
   } catch {
+    const details = {
+      title: 'Link belum bisa disalin',
+      message: 'Salin alamat di atas secara manual atau izinkan akses clipboard.',
+      location: 'Studio cerita · Dialog publikasi',
+    }
     copyMessage.value = 'Tautan belum bisa disalin. Salin alamat di atas secara manual.'
-    notifyError(copyMessage.value)
+    notifyError(details)
   } finally {
     copyingLink.value = false
   }
@@ -675,11 +937,41 @@ onBeforeUnmount(() => {
   font-size: 0.85rem;
   white-space: nowrap;
 }
+.floating-field:focus-within .share-slug-field {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(80 69 245 / 12%);
+}
 .share-slug-field .editor-input {
   min-width: 0;
   border: 0;
   background: transparent;
   padding-left: 0.25rem;
+}
+.story-password-field {
+  position: relative;
+  display: block;
+}
+.story-password-field .editor-input {
+  padding-right: 3.5rem;
+}
+.story-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-primary);
+  background: transparent;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.story-password-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .step-tab {
   display: flex;
@@ -732,6 +1024,10 @@ onBeforeUnmount(() => {
 .template-swatch i:nth-child(2) { background: var(--template-accent); }
 .template-swatch i:nth-child(3) { background: var(--template-ink); }
 .template-check { color: var(--template-accent) !important; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .published-dialog-close, .published-dialog-link { transition: none; }
+  .published-dialog-close:hover { transform: none; }
+}
 @media (min-width: 768px) {
   .editor-card { padding: 2rem; }
 }

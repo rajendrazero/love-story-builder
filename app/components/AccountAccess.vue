@@ -38,21 +38,21 @@
         </nav>
 
         <form class="auth-form" @submit.prevent="submit">
-          <label v-if="props.mode === 'signup'">
+          <label v-if="props.mode === 'signup'" class="floating-field">
             <span class="editor-label">Nama</span>
             <input id="account-name" v-model="name" name="name" class="editor-input" autocomplete="name" maxlength="80" required placeholder="Nama yang ingin ditampilkan">
           </label>
-          <label v-if="props.mode === 'signup'">
+          <label v-if="props.mode === 'signup'" class="floating-field">
             <span class="editor-label">Username</span>
             <input id="account-username" v-model="username" name="username" class="editor-input" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+" required placeholder="contoh: ceritakita">
             <span class="auth-hint">3–30 karakter: huruf, angka, titik, atau garis bawah. Username tidak dapat dipakai ulang.</span>
           </label>
-          <label>
+          <label class="floating-field">
             <span class="editor-label">{{ props.mode === 'signup' ? 'Alamat email' : 'Username atau email' }}</span>
             <input id="account-identifier" v-model="identifier" name="email" class="editor-input" :type="props.mode === 'signup' ? 'email' : 'text'" :autocomplete="props.mode === 'signup' ? 'email' : 'username'" maxlength="254" required :placeholder="props.mode === 'signup' ? 'kamu@email.com' : 'username atau kamu@email.com'">
           </label>
-          <label class="auth-password-label">
-            <span class="editor-label">Kata sandi</span>
+          <div class="auth-password-label floating-field">
+            <label for="account-password" class="editor-label">Kata sandi</label>
             <span class="auth-password-field">
               <input id="account-password" v-model="password" name="password" class="editor-input" :type="showPassword ? 'text' : 'password'" :autocomplete="props.mode === 'signup' ? 'new-password' : 'current-password'" :minlength="props.mode === 'signup' ? 12 : 1" maxlength="128" required placeholder="••••••••••••">
               <button
@@ -62,14 +62,14 @@
                 :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
               >
-                {{ showPassword ? 'Sembunyikan' : 'Lihat' }}
+                <AppIcon :name="showPassword ? 'eye-off' : 'eye'" :size="19" />
               </button>
             </span>
             <span v-if="props.mode === 'signup'" class="auth-hint">Gunakan minimal 12 karakter untuk menjaga akunmu.</span>
-          </label>
+          </div>
           <TurnstileWidget ref="turnstile" v-model="captchaToken" />
           <p v-if="message" class="auth-feedback auth-feedback-success" role="status">{{ message }}</p>
-          <p v-if="error" class="auth-feedback auth-feedback-error" role="alert">{{ error }}</p>
+          <AppErrorAlert v-if="error" class="auth-feedback" :title="errorTitle" :message="error" :location="errorLocation" />
           <AppButton
             type="submit"
             class="auth-submit"
@@ -77,7 +77,7 @@
             :loading="busy"
           >
             <span>{{ busy ? 'Mohon tunggu…' : props.mode === 'signup' ? 'Buat akun & verifikasi email' : 'Masuk ke akun' }}</span>
-            <span aria-hidden="true">↗</span>
+            <AppIcon name="arrow-up-right" :size="18" />
           </AppButton>
           <AppButton
             v-if="identifier.includes('@')"
@@ -106,6 +106,7 @@ import AppButton from './AppButton.vue'
 import { createAuthClient } from 'better-auth/vue'
 import { usernameClient } from 'better-auth/client/plugins'
 import { gsap } from 'gsap'
+import { getUserFacingError } from '#shared/utils/user-facing-error'
 
 const props = defineProps<{
   mode: 'signin' | 'signup'
@@ -126,6 +127,8 @@ const turnstile = ref<{ reset: () => void } | null>(null)
 const busy = ref(false)
 const message = ref('')
 const error = ref('')
+const errorTitle = ref('Permintaan akun belum berhasil')
+const errorLocation = ref('Form akun')
 let authMotion: gsap.MatchMedia | undefined
 
 useSeoMeta({
@@ -194,11 +197,16 @@ function destination() {
   return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/account'
 }
 
-function getRequestError(caught: unknown, fallback: string): string {
-  if (caught instanceof TypeError) {
-    return 'Tidak dapat terhubung ke server. Pastikan Worker berjalan dan buka https://localhost:8787 (bukan port alternatif seperti 8788).'
-  }
-  return caught instanceof Error ? caught.message : fallback
+function showRequestError(caught: unknown, title: string, fallback: string) {
+  const details = getUserFacingError(caught, {
+    title,
+    fallback,
+    location: 'Form akun',
+  })
+  error.value = details.message
+  errorTitle.value = details.title
+  errorLocation.value = details.location ?? 'Form akun'
+  notifyError(details)
 }
 
 async function submit() {
@@ -243,8 +251,7 @@ async function submit() {
     success('Berhasil masuk. Selamat datang kembali.')
     await router.push(destination())
   } catch (caught) {
-    error.value = getRequestError(caught, 'Permintaan belum berhasil.')
-    notifyError(error.value)
+    showRequestError(caught, props.mode === 'signup' ? 'Pendaftaran belum berhasil' : 'Belum berhasil masuk', 'Periksa isian, lalu coba lagi.')
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -273,8 +280,7 @@ async function sendResetLink() {
     message.value = 'Jika email terdaftar, tautan reset sandi akan dikirim.'
     success(message.value)
   } catch (caught) {
-    error.value = getRequestError(caught, 'Permintaan reset belum berhasil.')
-    notifyError(error.value)
+    showRequestError(caught, 'Link reset belum berhasil dikirim', 'Periksa alamat email dan coba lagi.')
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -303,8 +309,7 @@ async function resendVerificationEmail() {
     message.value = 'Jika akun tersebut belum aktif, email aktivasi akan dikirim. Periksa Inbox, Spam, dan Promosi.'
     success(message.value)
   } catch (caught) {
-    error.value = getRequestError(caught, 'Email aktivasi belum berhasil dikirim.')
-    notifyError(error.value)
+    showRequestError(caught, 'Email aktivasi belum berhasil dikirim', 'Periksa alamat email dan coba lagi.')
   } finally {
     turnstile.value?.reset()
     busy.value = false
@@ -533,22 +538,35 @@ async function resendVerificationEmail() {
   box-shadow: var(--shadow-small);
   font-weight: 700;
 }
-.auth-form { display: grid; gap: 1rem; }
+.auth-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.auth-form > label,
+.auth-form > .auth-password-label { min-width: 0; }
 .auth-form .editor-label { color: var(--color-foreground); }
 .auth-form .editor-input { min-height: 3.1rem; }
 .auth-password-field { position: relative; display: block; }
-.auth-password-field .editor-input { padding-right: 5.2rem; }
+.auth-password-field .editor-input { padding-right: 3.5rem; }
 .auth-password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.85rem;
+  right: 0.35rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
   border: 0;
-  padding: 0.35rem 0;
+  border-radius: 50%;
   color: var(--color-primary);
   background: transparent;
-  font-size: 0.7rem;
-  font-weight: 600;
   transform: translateY(-50%);
+  cursor: pointer;
+}
+.auth-password-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .auth-hint {
   display: block;
@@ -596,9 +614,13 @@ async function resendVerificationEmail() {
   .auth-page { padding-inline: 1.1rem; }
   .auth-layout {
     min-height: 0;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
     margin-top: 1.25rem;
+  }
+  .auth-story-panel,
+  .auth-card {
+    min-width: 0;
   }
   .auth-story-panel {
     min-height: 15rem;

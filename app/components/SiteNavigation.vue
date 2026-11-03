@@ -11,7 +11,7 @@
         :aria-label="mobileMenuOpen ? 'Tutup navigasi' : 'Buka navigasi'"
         @click="mobileMenuOpen = !mobileMenuOpen"
       >
-        <span aria-hidden="true">{{ mobileMenuOpen ? '×' : '☰' }}</span>
+        <AppIcon :name="mobileMenuOpen ? 'close' : 'menu'" :size="21" />
       </button>
       <div id="site-navigation-links" class="site-nav-links" :class="{ 'site-nav-links-open': mobileMenuOpen }">
         <NuxtLink to="/templates" :aria-current="route.path === '/templates' ? 'page' : undefined" @click="closeMobileMenu(true)">Template</NuxtLink>
@@ -38,6 +38,7 @@
           :loading="signingOut"
           @click="closeMobileMenu(true); signOut()"
         >
+          <AppIcon name="log-out" :size="17" />
           {{ signingOut ? 'Keluar…' : 'Keluar' }}
         </AppButton>
         <template v-else>
@@ -53,6 +54,7 @@
 import AppButton from './AppButton.vue'
 import { createAuthClient } from 'better-auth/vue'
 import { ref, useTemplateRef } from 'vue'
+import { getUserFacingError } from '#shared/utils/user-facing-error'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
@@ -84,7 +86,11 @@ async function signOut() {
     success('Kamu sudah keluar dari akun.')
     await navigateTo('/login')
   } catch (caught) {
-    notifyError(caught instanceof Error ? caught.message : 'Belum berhasil keluar dari akun.')
+    notifyError(getUserFacingError(caught, {
+      title: 'Belum berhasil keluar dari akun',
+      fallback: 'Coba lagi. Sesi akunmu mungkin masih aktif.',
+      location: 'Navigasi akun',
+    }))
   } finally {
     signingOut.value = false
   }
@@ -95,7 +101,7 @@ async function signOut() {
 .site-nav-shell {
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: var(--z-navigation);
   padding-inline: clamp(1rem, 5vw, 5rem);
   border-bottom: 1px solid rgb(32 29 40 / 8%);
   background: rgb(247 244 237 / 92%);
@@ -141,6 +147,12 @@ async function signOut() {
   color: var(--color-muted-foreground);
   text-decoration: none;
   white-space: nowrap;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.site-nav-links a:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .site-nav-links a[aria-current='page'] {
@@ -153,12 +165,31 @@ async function signOut() {
   padding: 0.7rem 1rem;
   color: #fff;
   background: var(--color-primary);
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.site-nav-links .site-nav-cta:hover {
+  color: #fff;
+  background: var(--color-primary-hover);
+  transform: translateY(-2px) rotate(-1deg);
 }
 
 .site-nav-logout {
   gap: 0.4rem;
   padding: 0.6rem 0.85rem;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-links a,
+  .site-nav-links .site-nav-cta {
+    transition: none;
+  }
+
+  .site-nav-links a:hover,
+  .site-nav-links .site-nav-cta:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 560px) {
@@ -176,7 +207,7 @@ async function signOut() {
     top: calc(100% + 0.35rem);
     right: 0;
     left: 0;
-    z-index: 1;
+    z-index: var(--z-local-menu);
     display: none;
     align-items: stretch;
     gap: 0.25rem;

@@ -1,0 +1,107 @@
+.editor-input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-foreground);
+  transition:
+    border-color var(--motion-duration-normal) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-ease-standard);
+}
+
+.editor-input:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(80 69 245 / 12%);
+}
+
+.editor-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.floating-field {
+  position: relative;
+  display: block;
+  min-width: 0;
+  --floating-label-background: var(--color-surface);
+}
+
+.floating-field > .editor-label {
+  position: absolute;
+  z-index: 1;
+  top: 1.375rem;
+  left: 0.8rem;
+  max-width: calc(100% - 1.6rem);
+  overflow: hidden;
+  margin: 0;
+  padding: 0 0.25rem;
+  color: var(--color-muted-foreground);
+  background: var(--floating-label-background);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transform-origin: left center;
+  transition:
+    top var(--motion-duration-normal) var(--motion-ease-standard),
+    color var(--motion-duration-normal) var(--motion-ease-standard),
+    font-size var(--motion-duration-normal) var(--motion-ease-standard);
+}
+
+.floating-field .editor-input {
+  padding: 1rem var(--space-4) 0.65rem;
+}
+
+.floating-field .editor-input::placeholder {
+  opacity: 0;
+  transition: opacity var(--motion-duration-normal) var(--motion-ease-standard);
+}
+
+.floating-field .editor-input:focus::placeholder {
+  opacity: 0.65;
+}
+
+.floating-field:focus-within > .editor-label,
+.floating-field:has(.editor-input:not(:placeholder-shown)) > .editor-label,
+.floating-field:has(select:valid) > .editor-label {
+  top: 0;
+  color: var(--color-primary);
+  font-size: 0.7rem;
+}
+
+.floating-field:focus-within .editor-input {
+  border-color: var(--color-primary);
+}
+
+.floating-field:focus-within .editor-input:focus-visible {
+  box-shadow: 0 0 0 3px rgb(80 69 245 / 12%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .editor-input {
+    transition:
+      border-color var(--motion-duration-normal) var(--motion-ease-standard),
+      box-shadow var(--motion-duration-normal) var(--motion-ease-standard),
+      transform var(--motion-duration-normal) var(--motion-ease-standard);
+  }
+
+  .editor-input:focus-visible {
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-field > .editor-label,
+  .floating-field .editor-input::placeholder {
+    transition: none;
+  }
+}

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { StoryContent } from '#shared/schema/story'
 import type { StoryTemplateId } from '#shared/story-templates'
+import DecorativeLayer from './DecorativeLayer.vue'
 
 type StorySection = 'greeting' | 'detail' | 'finale'
 
@@ -88,6 +89,7 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     class="story-screen story-greeting"
     :class="`template-${templateId}`"
   >
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
     <div class="greeting-copy">
       <p class="eyebrow">{{ sectionCopy.greetingEyebrow }}</p>
       <p class="greeting-text">{{ story.greetingText }}</p>
@@ -120,6 +122,7 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     class="story-screen story-detail"
     :class="`template-${templateId}`"
   >
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
     <div class="detail-photo">
       <img :src="story.secondImage" :alt="story.coupleNames" loading="lazy">
       <span class="photo-sticker">{{ sectionCopy.detailSticker }}</span>
@@ -136,6 +139,7 @@ const sectionCopy = computed(() => sectionCopyByTemplate[templateId.value])
     class="story-screen story-finale"
     :class="`template-${templateId}`"
   >
+    <DecorativeLayer class="story-section-decorations" :template-id="templateId" :scene="section" />
     <figure class="final-photo">
       <img :src="story.finalImage" alt="Foto kenangan terakhir" loading="lazy">
       <figcaption>{{ sectionCopy.finaleCaption }}</figcaption>

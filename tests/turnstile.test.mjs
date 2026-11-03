@@ -16,7 +16,10 @@ const middleware = captcha({
 
 const context = {
   options: { basePath: '/api/auth' },
-  logger: { error() {} },
+  logger: {
+    error() {},
+    warn() {},
+  },
 }
 
 test('rejects protected auth requests when no Turnstile response is present', async () => {
@@ -49,4 +52,29 @@ test('does not apply the auth challenge to unrelated session reads', async () =>
   )
 
   assert.equal(result, undefined)
+})
+
+test('rejects invalid and expired Turnstile tokens using server-side verification', async () => {
+  const originalFetch = globalThis.fetch
+  try {
+    for (const errorCode of ['invalid-input-response', 'timeout-or-duplicate']) {
+      let verificationUrl = ''
+      globalThis.fetch = async (input) => {
+        verificationUrl = String(input)
+        return Response.json({ success: false, 'error-codes': [errorCode] })
+      }
+
+      const result = await middleware.onRequest(
+        new Request('https://localhost/api/auth/sign-in/email', {
+          method: 'POST',
+          headers: { 'x-captcha-response': 'invalid-test-token' },
+        }),
+        context,
+      )
+      assert.equal(new URL(verificationUrl).hostname, 'challenges.cloudflare.com')
+      assert.equal(result?.response.status, 403)
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })

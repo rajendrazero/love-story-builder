@@ -53,6 +53,8 @@ export const storyDraftSchema = z.object({
   finalImage: draftUrl,
   finalMessage: draftText(1000),
   musicUrl: draftUrl,
+  musicTitle: draftText(120),
+  musicArtist: draftText(120),
 }).strict()
 
 export type StoryDraft = z.infer<typeof storyDraftSchema>

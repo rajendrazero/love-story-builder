@@ -1,0 +1,17 @@
+:root {
+  color-scheme: light;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.brand-ui {
+  background-image:
+    radial-gradient(ellipse at 8% 12%, rgb(216 243 106 / 16%), transparent 29rem),
+    radial-gradient(ellipse at 96% 28%, var(--brand-lavender-soft), transparent 32rem),
+    radial-gradient(ellipse at 9% 90%, var(--brand-coral-soft), transparent 30rem);
+}
+
+::selection {
+  color: #fffaf5;
+  background: var(--brand-cobalt);
+}

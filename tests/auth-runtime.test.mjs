@@ -84,8 +84,8 @@ function createD1Database(sqlite) {
   }
 }
 
-function createEvent(database, path, method = 'GET', body, headers = {}) {
-  const request = new Request(`https://localhost:8787${path}`, {
+function createEvent(database, path, method = 'GET', body, headers = {}, origin = 'https://localhost:8787') {
+  const request = new Request(`${origin}${path}`, {
     method,
     headers: {
       'cf-connecting-ip': '127.0.0.1',
@@ -275,6 +275,40 @@ test('Better Auth returns service unavailable for missing runtime configuration'
   assert.throws(
     () => createAuth(event),
     error => error.statusCode === 503 && /BETTER_AUTH_URL/.test(error.statusMessage),
+  )
+
+  event.context.cloudflare.env.BETTER_AUTH_URL = 'http://stories.example.com'
+  assert.throws(
+    () => createAuth(event),
+    error => error.statusCode === 503 && /HTTPS/.test(error.statusMessage),
+  )
+
+  const missingProductionURL = createEvent(
+    { prepare() {} },
+    '/api/auth/get-session',
+    'GET',
+    undefined,
+    {},
+    'https://stories.example.com',
+  )
+  delete missingProductionURL.context.cloudflare.env.BETTER_AUTH_URL
+  assert.throws(
+    () => createAuth(missingProductionURL),
+    error => error.statusCode === 503 && /BETTER_AUTH_URL/.test(error.statusMessage),
+  )
+
+  const localURLOnPublicRequest = createEvent(
+    { prepare() {} },
+    '/api/auth/get-session',
+    'GET',
+    undefined,
+    {},
+    'https://stories.example.com',
+  )
+  localURLOnPublicRequest.context.cloudflare.env.BETTER_AUTH_URL = 'http://localhost:8787'
+  assert.throws(
+    () => createAuth(localURLOnPublicRequest),
+    error => error.statusCode === 503 && /development lokal/.test(error.statusMessage),
   )
 
   assert.throws(

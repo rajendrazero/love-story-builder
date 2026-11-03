@@ -3,12 +3,27 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 const globalStyles = readFileSync(new URL('../app/assets/css/main.css', import.meta.url), 'utf8')
+const tokenStyles = readFileSync(new URL('../app/assets/css/foundation/tokens.css', import.meta.url), 'utf8')
+const accessibilityStyles = readFileSync(new URL('../app/assets/css/foundation/accessibility.css', import.meta.url), 'utf8')
+const animationStyles = readFileSync(new URL('../app/assets/css/utilities/animations.css', import.meta.url), 'utf8')
+const inputStyles = readFileSync(new URL('../app/assets/css/components/inputs.css', import.meta.url), 'utf8')
+const appShellStyles = readFileSync(new URL('../app/assets/css/layouts/app-shell.css', import.meta.url), 'utf8')
 const tailwindConfig = readFileSync(new URL('../tailwind.config.ts', import.meta.url), 'utf8')
 const appButton = readFileSync(new URL('../app/components/AppButton.vue', import.meta.url), 'utf8')
 const appConfirmDialog = readFileSync(new URL('../app/components/AppConfirmDialog.vue', import.meta.url), 'utf8')
 const siteNavigation = readFileSync(new URL('../app/components/SiteNavigation.vue', import.meta.url), 'utf8')
 const imageField = readFileSync(new URL('../app/components/ImageField.vue', import.meta.url), 'utf8')
 const storyExperience = readFileSync(new URL('../app/components/StoryExperience.vue', import.meta.url), 'utf8')
+const templateStyles = new Map([
+  'editorial-rose',
+  'midnight-cinema',
+  'botanical-journal',
+  'love-letter',
+  'memory-atlas',
+].map(id => [
+  id,
+  readFileSync(new URL(`../app/assets/css/templates/${id}.css`, import.meta.url), 'utf8'),
+]))
 const storySectionRenderer = readFileSync(new URL('../app/components/story-experience/StorySectionRenderer.vue', import.meta.url), 'utf8')
 const appShell = readFileSync(new URL('../app/app.vue', import.meta.url), 'utf8')
 const templatesCatalog = readFileSync(new URL('../app/pages/templates.vue', import.meta.url), 'utf8')
@@ -33,7 +48,7 @@ const sharedButtonSurfaces = [
 ].map(file => readFileSync(new URL(file, import.meta.url), 'utf8'))
 
 function colorToken(name) {
-  const match = globalStyles.match(new RegExp(`${name}:\\s*(#[\\da-fA-F]{6})`))
+  const match = tokenStyles.match(new RegExp(`${name}:\\s*(#[\\da-fA-F]{6})`))
   assert.ok(match, `${name} should be a six-digit hex color`)
   return match[1]
 }
@@ -83,8 +98,21 @@ test('design tokens cover semantic colors, typography, spacing, shape, elevation
     '--shadow-overlay',
     '--motion-duration-fast',
     '--motion-ease-standard',
+    '--breakpoint-xs',
+    '--breakpoint-compact',
+    '--breakpoint-3xl',
+    '--z-dialog',
   ]) {
-    assert.ok(globalStyles.includes(`${token}:`), `${token} should be defined`)
+    assert.ok(tokenStyles.includes(`${token}:`), `${token} should be defined`)
+  }
+  for (const stylesheet of [
+    './foundation/tokens.css',
+    './foundation/accessibility.css',
+    './utilities/animations.css',
+    './components/inputs.css',
+    './layouts/app-shell.css',
+  ]) {
+    assert.ok(globalStyles.includes(stylesheet), `${stylesheet} should be imported`)
   }
 })
 
@@ -127,6 +155,23 @@ test('Tailwind maps semantic and legacy utilities to CSS design tokens', () => {
   assert.match(tailwindConfig, /paper: 'var\(--color-background\)'/)
 })
 
+test('template variants remain isolated beneath their scoped root namespaces', () => {
+  for (const [templateId, stylesheet] of templateStyles) {
+    assert.ok(storyExperience.includes(`src="../assets/css/templates/${templateId}.css"`))
+    assert.ok(stylesheet.includes(`.template-${templateId}`), `${templateId} styles should define their root namespace`)
+    for (const otherId of templateStyles.keys()) {
+      if (otherId === templateId) continue
+      assert.doesNotMatch(
+        stylesheet,
+        new RegExp(`\\.template-${otherId}(?![\\w-])`),
+        `${templateId} styles should not select ${otherId}`,
+      )
+    }
+  }
+  assert.match(storyExperience, /<style scoped>/)
+  assert.match(storyExperience, /:class="\[`template-\$\{story\.templateId/)
+})
+
 test('AppButton exposes typed variants and native disabled/loading semantics', () => {
   assert.match(appButton, /type ButtonVariant = 'primary' \| 'secondary' \| 'ghost' \| 'danger'/)
   assert.match(appButton, /:disabled="disabled \|\| loading"/)
@@ -142,11 +187,11 @@ test('AppButton exposes typed variants and native disabled/loading semantics', (
 })
 
 test('shared form controls and reduced-motion behavior use the design tokens', () => {
-  assert.match(globalStyles, /\.editor-input:focus-visible/)
-  assert.doesNotMatch(globalStyles, /\.editor-input\s*\{[^}]*outline:\s*none/s)
-  assert.match(globalStyles, /select:focus-visible/)
-  assert.match(globalStyles, /@media \(prefers-reduced-motion: reduce\)/)
-  assert.match(globalStyles, /--motion-duration-normal:\s*0ms/)
+  assert.match(inputStyles, /\.editor-input:focus-visible/)
+  assert.doesNotMatch(inputStyles, /\.editor-input\s*\{[^}]*outline:\s*none/s)
+  assert.match(accessibilityStyles, /select:focus-visible/)
+  assert.match(animationStyles, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(animationStyles, /--motion-duration-normal:\s*0ms/)
 })
 
 test('shared button variants are integrated into app navigation and account/editor/catalog actions', () => {
@@ -189,8 +234,8 @@ test('mobile navigation is operable and restores focus when dismissed', () => {
 test('image library controls meet touch target size and identify each photo', () => {
   assert.match(imageField, /class="inline-flex min-h-11 items-center text-xs font-semibold/)
   assert.match(imageField, /:aria-label="`Gunakan foto \$\{index \+ 1\} dari koleksi foto`"/)
-  assert.match(appShell, /@media \(pointer: coarse\)\s*\{\s*\.custom-scrollbar-track\s*\{\s*width: 1\.75rem;/)
-  assert.match(appShell, /\.custom-scrollbar-thumb\s*\{\s*width: 1\.5rem;/)
+  assert.match(appShellStyles, /@media \(pointer: coarse\)\s*\{\s*\.custom-scrollbar-track\s*\{\s*width: 1\.75rem;/)
+  assert.match(appShellStyles, /\.custom-scrollbar-thumb\s*\{\s*width: 1\.5rem;/)
 })
 
 test('greeting video provides controls and pauses when reduced motion is enabled', () => {
@@ -202,9 +247,9 @@ test('greeting video provides controls and pauses when reduced motion is enabled
 })
 
 test('shared shell provides a visible-on-focus skip link to each route main landmark', () => {
-  assert.match(appShell, /<a class="skip-link" href="#main-content">/)
-  assert.match(appShell, /\.skip-link:focus-visible/)
-  assert.match(appShell, /#main-content:focus-visible/)
+  assert.match(appShell, /<a class="skip-link" :href="isPublicStoryRoute \? '#entrance-open' : '#main-content'">/)
+  assert.match(appShellStyles, /\.skip-link:focus-visible/)
+  assert.match(appShellStyles, /#main-content:focus-visible/)
   for (const source of mainLandmarkSources) {
     assert.match(source, /id="main-content"/)
     assert.match(source, /tabindex="-1"/)

@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-stack" aria-label="Notifikasi" aria-live="polite">
+  <div class="notification-stack" aria-label="Notifikasi">
     <TransitionGroup name="notification">
       <article
         v-for="notification in notifications"
@@ -9,10 +9,19 @@
         :role="notification.tone === 'error' ? 'alert' : 'status'"
       >
         <span class="notification-mark" aria-hidden="true">
-          {{ notification.tone === 'success' ? '✓' : notification.tone === 'error' ? '!' : '✳' }}
+          <AppIcon
+            :name="notification.tone === 'success' ? 'check' : notification.tone === 'error' ? 'alert' : 'info'"
+            :size="16"
+          />
         </span>
-        <p>{{ notification.message }}</p>
-        <button type="button" aria-label="Tutup notifikasi" @click="dismiss(notification.id)">×</button>
+        <div class="notification-content">
+          <p class="notification-title">{{ notification.title }}</p>
+          <p v-if="notification.location" class="notification-location">{{ notification.location }}</p>
+          <p class="notification-message">{{ notification.message }}</p>
+        </div>
+        <button type="button" aria-label="Tutup notifikasi" @click="dismiss(notification.id)">
+          <AppIcon name="close" :size="17" />
+        </button>
       </article>
     </TransitionGroup>
   </div>
@@ -47,7 +56,7 @@ onBeforeUnmount(() => {
   position: fixed;
   top: 5.25rem;
   right: clamp(0.75rem, 3vw, 2rem);
-  z-index: 120;
+  z-index: var(--z-notifications);
   display: grid;
   width: min(24rem, calc(100vw - 1.5rem));
   gap: 0.65rem;
@@ -80,15 +89,37 @@ onBeforeUnmount(() => {
 }
 
 .notification-card p {
+  margin: 0;
+}
+
+.notification-content {
+  min-width: 0;
   flex: 1;
-  margin: 0.1rem 0 0;
+}
+
+.notification-title {
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.notification-location {
+  margin-top: 0.15rem !important;
+  color: var(--color-muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.notification-message {
+  margin-top: 0.2rem !important;
   font-size: 0.82rem;
   line-height: 1.5;
 }
 
 .notification-card > button {
+  display: grid;
   min-width: 1.5rem;
   min-height: 1.5rem;
+  place-items: center;
   border: 0;
   padding: 0;
   color: var(--color-muted-foreground);

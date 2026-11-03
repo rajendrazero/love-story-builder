@@ -1,5 +1,4 @@
 name = "website-for-kekasih"
-main = ".output/server/index.mjs"
 account_id = "795d6ba8d3c6d69f7f065c5b865a1433"
 compatibility_date = "2025-03-01"
 compatibility_flags = ["nodejs_compat"]
@@ -15,4 +14,4 @@ database_id = "0a185ee6-2e34-42bb-9c13-81a3cbb20b39"
 migrations_dir = "migrations"
 
 [vars]
-CLOUDINARY_CLOUD_NAME = ""
+CLOUDINARY_CLOUD_NAME = "dripo32vz"

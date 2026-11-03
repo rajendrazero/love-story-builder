@@ -1,0 +1,45 @@
+.ticker-track {
+  animation: ticker-scroll 28s linear infinite;
+}
+
+@keyframes ticker-scroll {
+  to { transform: translateX(-50%); }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loading-spin var(--motion-duration-loading) linear infinite;
+}
+
+.loading-panel .loading-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--brand-cobalt);
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  :root {
+    --motion-duration-fast: 0ms;
+    --motion-duration-normal: 0ms;
+    --motion-duration-slow: 0ms;
+  }
+
+  .ticker-track,
+  .loading-spinner {
+    animation: none;
+  }
+}

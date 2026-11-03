@@ -1,0 +1,48 @@
+@media (max-width: 760px) {
+  .template-love-letter .story-hero { grid-template-columns: 1fr; }
+  .template-love-letter .story-hero-photo {
+    position: absolute;
+    inset: 15% 5% auto auto;
+    width: 53%;
+    height: 55%;
+  }
+  .template-love-letter .story-hero-copy { align-self: end; width: 72%; }
+}
+
+.template-love-letter {
+  --letter-paper: #f5e8d5;
+  --letter-ink: #342923;
+  --letter-accent: #995d50;
+  color: var(--letter-ink);
+}
+.template-love-letter .story-hero, .template-love-letter .story-greeting, .template-love-letter .story-detail, .template-love-letter .story-finale {
+  background-color: var(--letter-paper);
+  background-image:
+    radial-gradient(ellipse at 10% 12%, rgb(255 255 255 / 74%), transparent 38%),
+    repeating-linear-gradient(0deg, transparent 0 2.25rem, rgb(153 93 80 / 7%) 2.25rem 2.3rem);
+}
+.template-love-letter .story-hero-copy {
+  border-left: 1px solid rgb(153 93 80 / 35%);
+  padding: clamp(1rem, 4vw, 3rem);
+}
+.template-love-letter .story-hero h1, .template-love-letter .story-title {
+  color: #49362f;
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+.template-love-letter .story-hero h1 { font-size: clamp(3.2rem, 8.5vw, 7.5rem); }
+.template-love-letter .story-title { color: var(--letter-accent); }
+.template-love-letter .story-date {
+  color: #fffaf5;
+  background: var(--letter-accent);
+  transform: rotate(-1deg);
+}
+.template-love-letter .story-date, .template-love-letter .hero-sparkle { color: var(--letter-accent); }
+.template-love-letter .story-date { color: #fffaf5; }
+
+@media (max-width: 760px) {
+  .template-love-letter .story-hero-copy { width: 77%; }
+  .template-love-letter .story-detail { grid-template-columns: 0.9fr 1.1fr; }
+  .template-love-letter .story-finale { grid-template-columns: 0.85fr 1.15fr; }
+}

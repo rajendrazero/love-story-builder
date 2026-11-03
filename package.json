@@ -7,15 +7,16 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "dev": "pnpm build && wrangler dev --port 8787 --local-protocol https --https-key-path .certs/localhost-key.pem --https-cert-path .certs/localhost.pem",
-    "dev:https:untrusted": "pnpm build && wrangler dev --port 8787 --local-protocol https",
-    "dev:http": "pnpm build && wrangler dev --port 8787 --local-protocol http",
+    "dev": "pnpm build && node scripts/dev-worker.mjs",
+    "dev:https:untrusted": "pnpm build && node scripts/dev-worker.mjs --untrusted-https",
+    "dev:http": "pnpm build && node scripts/dev-worker.mjs --http",
     "dev:ui": "nuxt dev",
     "build": "nuxt build",
     "test": "node --experimental-strip-types --test",
     "gmail:oauth": "node scripts/gmail-oauth.mjs",
     "preview": "pnpm dev",
-    "deploy": "pnpm build && wrangler deploy",
+    "check:worker": "node scripts/check-worker-config.mjs",
+    "deploy": "pnpm build && pnpm check:worker && wrangler --cwd .output --config server/wrangler.json deploy server/index.mjs",
     "db:local": "wrangler d1 migrations apply kekasih-db --local",
     "db:remote": "wrangler d1 migrations apply kekasih-db --remote",
     "typecheck": "nuxt typecheck"
@@ -24,11 +25,15 @@
     "better-auth": "^1.7.14",
     "gsap": "^3.14.0",
     "nuxt": "^4.6.3",
-    "qrcode. vue": "^3.6.0",
+    "qrcode.vue": "^3.6.0",
+    "three": "^0.187.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.150",
+    "@nuxt/icon": "^2.6.2",
     "@rollup/plugin-terser": "1.0.2",
+    "@types/three": "^0.187.0",
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
